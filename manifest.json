@@ -1,0 +1,19 @@
+{
+  "manifest_version": 2,
+  "name": "url-portal",
+  "version": "0.1",
+  "description": "This extension lets you configure redirect rules and set a custom homepage.",
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "permissions": ["webRequest", "webRequestBlocking", "*://*/*", "storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html",
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  }
+}

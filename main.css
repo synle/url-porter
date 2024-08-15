@@ -1,0 +1,63 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: white;
+  color: black;
+}
+
+ul {
+  margin-left: 1.5rem;
+  padding-left: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+li {
+  margin-bottom: 0.25rem;
+}
+
+a {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+textarea {
+  width: 100%;
+  max-width: 900px;
+  height: 600px;
+}
+
+input {
+  width: 100%;
+  max-width: 900px;
+}
+
+button {
+  margin-top: 10px;
+}
+
+input,
+textarea,
+button {
+  border: 1px solid black;
+  padding: 0.5rem 0.75rem;
+}
+
+/* Background color for dark mode */
+@media (prefers-color-scheme: dark) {
+  body,
+  input,
+  textarea,
+  button {
+    background-color: black;
+    color: white;
+  }
+
+  input,
+  textarea,
+  button {
+    border-color: white;
+  }
+}

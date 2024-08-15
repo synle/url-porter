@@ -1,0 +1,13 @@
+{
+  "name": "url-portal",
+  "main": "background.js",
+  "devDependencies": {
+    "prettier": "3.3.3"
+  },
+  "scripts": {
+    "format": "prettier . --write"
+  },
+  "author": "Sy Le",
+  "license": "ISC",
+  "description": "This extension lets you configure redirect rules and set a custom homepage."
+}
