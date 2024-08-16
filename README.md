@@ -15,11 +15,11 @@ The `config` object is used to define conditions for redirecting URLs based on s
 ```json
 [
   {
-    "from": "fav",
+    "from": "||fav^",
     "to": "http://synle.github.io/fav/"
   },
   {
-    "from": "plex",
+    "from": "||plex^",
     "to": "https://app.plex.tv/desktop/#!/"
   }
 ]
