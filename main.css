@@ -2,6 +2,7 @@ body {
   font-family: Arial, sans-serif;
   background-color: white;
   color: black;
+  width: 600px;
 }
 
 ul {
@@ -25,13 +26,13 @@ a:hover {
 
 textarea {
   width: 100%;
-  max-width: 900px;
-  height: 600px;
+  max-width: 600px;
+  height: 300px;
 }
 
 input {
   width: 100%;
-  max-width: 900px;
+  max-width: 600px;
 }
 
 button {
