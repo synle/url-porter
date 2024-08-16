@@ -56,20 +56,14 @@ function updateRedirectRules() {
   if (rules.length > 0) {
     // Remove all existing dynamic rules
     chrome.declarativeNetRequest.getDynamicRules((oldRules) => {
-      chrome.declarativeNetRequest.updateDynamicRules(
-        {
-          removeRuleIds: oldRules.map((rule) => rule.id),
-          addRules: rules,
-        },
-        () => {
-          if (chrome.runtime.lastError) {
-            console.error(
-              "chrome.declarativeNetRequest.updateDynamicRules",
-              chrome.runtime.lastError,
-            );
-          }
-        },
-      );
+      chrome.declarativeNetRequest.updateDynamicRules({
+        removeRuleIds: oldRules.map(rule => rule.id),
+        addRules: rules
+      }, () => {
+        if (chrome.runtime.lastError) {
+          console.error('chrome.declarativeNetRequest.updateDynamicRules', chrome.runtime.lastError);
+        }
+      });
     });
   }
 }
