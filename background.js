@@ -1,51 +1,72 @@
 let configs = [];
 
 // Fetch initial configuration
-getConfig().then((_configs) => (configs = _configs));
-
-// Listener for handling web requests
-chrome.webRequest.onBeforeRequest.addListener(
-  function (details) {
-    const url = new URL(details.url);
-    let { hostname } = url;
-
-    // Check each configuration
-    for (const config of configs) {
-      let { from, to, type = "equal", ignoreCase = true } = config;
-
-      if (from && to && type) {
-        switch (type) {
-          case "regex":
-            const regexFrom = new RegExp(from, ignoreCase ? "i" : null);
-            if (regexFrom.test(url)) {
-              return { redirectUrl: to };
-            }
-            break;
-          case "equal":
-          default:
-            if (ignoreCase === true) {
-              from = from.toLowerCase();
-              hostname = hostname.toLowerCase();
-            }
-
-            if (from === hostname) {
-              return { redirectUrl: to };
-            }
-            break;
-        }
-      }
-    }
-  },
-  { urls: ["*://*/*"] }, // Match all URLs
-  ["blocking"], // Block the request and perform the redirection
-);
+chrome.runtime.onInstalled.addListener(() => {
+  getConfig()
+    .then((_configs) => (configs = _configs))
+    .then(updateRedirectRules);
+});
 
 // Listener for runtime messages
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   if (request.type === "Myevent.updateConfig") {
     configs = (await getConfig()) || [];
+    updateRedirectRules();
   }
 });
+
+function updateRedirectRules() {
+  let i = 1;
+  const rules = [];
+  for (const config of configs) {
+    let { from, to, ignoreCase = true } = config;
+
+    let redirectUrl = "";
+    let urlFilter = "";
+
+    if (from && to) {
+      urlFilter = from;
+      redirectUrl = to;
+    }
+
+    if (redirectUrl) {
+      rules.push({
+        id: i,
+        condition: {
+          urlFilter: `${urlFilter}`,
+          resourceTypes: ["main_frame"],
+        },
+        action: {
+          type: "redirect",
+          redirect: {
+            url: redirectUrl,
+          },
+        },
+      });
+
+      i++;
+    }
+  }
+
+  console.log(
+    "chrome.declarativeNetRequest.updateDynamicRules",
+    configs,
+    rules,
+  );
+  if (rules.length > 0) {
+    // Remove all existing dynamic rules
+    chrome.declarativeNetRequest.getDynamicRules((oldRules) => {
+      chrome.declarativeNetRequest.updateDynamicRules({
+        removeRuleIds: oldRules.map(rule => rule.id),
+        addRules: rules
+      }, () => {
+        if (chrome.runtime.lastError) {
+          console.error('chrome.declarativeNetRequest.updateDynamicRules', chrome.runtime.lastError);
+        }
+      });
+    });
+  }
+}
 
 // Function to retrieve configuration
 function getConfig() {
