@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "URL Portal",
+  "name": "URL Porter",
   "version": "0.1",
   "description": "This extension lets you configure redirect rules and set a custom homepage.",
   "icons": {
@@ -10,8 +10,7 @@
   },
   "permissions": [
     "storage",
-    "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess"
+    "declarativeNetRequest"
   ],
   "host_permissions": ["*://*/*"],
   "background": {
