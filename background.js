@@ -11,7 +11,7 @@ chrome.webRequest.onBeforeRequest.addListener(
 
     // Check each configuration
     for (const config of configs) {
-      let { type, from, to, ignoreCase = true } = config;
+      let { from, to, type = "equal", ignoreCase = true } = config;
 
       if (from && to && type) {
         switch (type) {

@@ -25,13 +25,13 @@ a:hover {
 
 textarea {
   width: 100%;
-  max-width: 900px;
-  height: 600px;
+  max-width: 600px;
+  height: 400px;
 }
 
 input {
   width: 100%;
-  max-width: 900px;
+  max-width: 600px;
 }
 
 button {
