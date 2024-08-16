@@ -1,4 +1,4 @@
-# url-portal
+# URL Porter
 
 This extension lets you configure redirect rules and set a custom homepage. Enhance your browsing experience with this extension, designed to help you customize your online environment. Easily configure redirect rules and set a personalized homepage to better suit your needs
 

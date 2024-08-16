@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       await setConfig(jsonConfigInput.value.trim());
       await setHomepageUrl(homepageUrlInput.value.trim());
       chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
+      _refresh();
       alert("Options Saved!");
     } catch (err) {
       alert(err);

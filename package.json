@@ -1,5 +1,5 @@
 {
-  "name": "url-portal",
+  "name": "url-porter",
   "main": "background.js",
   "devDependencies": {
     "prettier": "3.3.3"
