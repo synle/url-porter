@@ -24,3 +24,19 @@ The `config` object is used to define conditions for redirecting URLs based on s
   }
 ]
 ```
+
+## Installation
+
+### Mac / Linux
+
+```bash
+curl -L -o url-porter.zip https://github.com/synle/url-porter/raw/main/url-porter.zip && unzip url-porter.zip -d url-porter
+```
+
+### Windows
+
+```bash
+powershell -Command "Start-BitsTransfer -Source https://github.com/synle/url-porter/raw/main/url-porter.zip -Destination url-porter.zip"
+powershell -Command "Expand-Archive -Path url-porter.zip -DestinationPath url-porter"
+```
+
