@@ -10,7 +10,7 @@ chrome.runtime.onInstalled.addListener(() => {
 // Listener for runtime messages
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   if (request.type === "Myevent.updateConfig") {
-    configs = (await getConfig()) || [];
+    configs = await getConfig();
     updateRedirectRules();
   }
 });
@@ -18,6 +18,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 function updateRedirectRules() {
   let i = 1;
   const rules = [];
+  configs = configs || [];
   for (const config of configs) {
     let { from, to, ignoreCase = true } = config;
 
