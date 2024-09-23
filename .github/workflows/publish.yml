@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths-ignore:
-      - '**/url-porter.zip'
+      - "**/url-porter.zip"
 
 jobs:
   zip-code:
@@ -13,27 +13,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-      with:
-        persist-credentials: true
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: true
 
-    - name: Set up Git user
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Set up Git user
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-    - name: Zip code into url-porter.zip
-      run: |
-        zip -r url-porter.zip ./*
+      - name: Zip code into url-porter.zip
+        run: |
+          zip -r url-porter.zip ./*
 
-    - name: Stage and commit zip file
-      run: |
-        git add url-porter.zip
-        git commit -m "Build and publish [skip ci]"
+      - name: Stage and commit zip file
+        run: |
+          git add url-porter.zip
+          git commit -m "Build and publish [skip ci]"
 
-    - name: Push changes
-      run: |
-        git push origin main
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN  }}
+      - name: Push changes
+        run: |
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN  }}
