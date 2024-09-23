@@ -39,4 +39,3 @@ curl -L -o url-porter.zip https://github.com/synle/url-porter/raw/main/url-porte
 powershell -Command "Start-BitsTransfer -Source https://github.com/synle/url-porter/raw/main/url-porter.zip -Destination url-porter.zip"
 powershell -Command "Expand-Archive -Path url-porter.zip -DestinationPath url-porter"
 ```
-

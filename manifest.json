@@ -8,10 +8,7 @@
     "48": "icon.png",
     "128": "icon.png"
   },
-  "permissions": [
-    "storage",
-    "declarativeNetRequest"
-  ],
+  "permissions": ["storage", "declarativeNetRequest"],
   "host_permissions": ["*://*/*"],
   "background": {
     "service_worker": "background.js"
