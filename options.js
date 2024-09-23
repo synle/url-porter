@@ -15,6 +15,48 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
+  document.querySelector(".close").addEventListener("click", async (e) => {
+    const modalId = e.target.closest(".modal").id;
+    toggleModal("modal-add-link", false); // open modal
+  });
+
+  document
+    .getElementById("modal-add-link-button")
+    .addEventListener("click", async () => {
+      toggleModal("modal-add-link", true); // open modal
+
+      document.getElementById("link-from").value = "";
+      document.getElementById("link-from").focus();
+      document.getElementById("link-to").value = "";
+    });
+
+  document
+    .getElementById("form-add-link")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const newConfigs = await getConfig();
+      newConfigs.push({
+        from: `||${document.getElementById("link-from").value.trim()}^`,
+        to: document.getElementById("link-to").value.trim(),
+      });
+
+      try {
+        await setConfig(JSON.stringify(newConfigs));
+        chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
+        _refresh();
+        alert("New Link Added!");
+
+        document.getElementById("link-from").value = "";
+        document.getElementById("link-to").value = "";
+
+        // close modal
+        toggleModal("modal-add-link", false); // close modal
+      } catch (err) {
+        alert(err);
+      }
+    });
+
   // Load the JSON config from storage
   _refresh();
 
@@ -22,6 +64,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const config = await getConfig();
     homepageUrlInput.value = await getHomepageUrl();
     jsonConfigInput.value = config ? JSON.stringify(config, null, 2) : "";
+  }
+
+  function toggleModal(modalId, open) {
+    document.getElementById(modalId).style.display = !!open ? "block" : "none";
   }
 });
 

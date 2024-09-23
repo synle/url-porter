@@ -4,17 +4,32 @@
     <title>URL Porter Extension Options</title>
     <link rel="stylesheet" href="main.css" />
   </head>
-  <body>
+  <body class="form">
     <h1>URL Porter Options</h1>
     <h2>Homepage URL</h2>
     <input id="homepage-input" placeholder="Enter your Homepage URL here" />
-    <h2>JSON Config Extension</h2>
-    <textarea
-      id="json-input"
-      placeholder="Enter your JSON config here"
-    ></textarea>
     <div>
-      <button id="save">Save</button>
+      <h2>
+        JSON Config Extension | <a id="modal-add-link-button">Add a link</a>
+      </h2>
+      <textarea
+        id="json-input"
+        placeholder="Enter your JSON config here"
+      ></textarea>
+      <div>
+        <button id="save">Save</button>
+      </div>
+    </div>
+    <div class="modal" id="modal-add-link">
+      <form class="form modal-content" id="form-add-link">
+        <a class="close" href="#">X</a>
+        <h2>Add a single link</h2>
+        <input placeholder="Link alias" id="link-from" required />
+        <input placeholder="Full URL" id="link-to" required />
+        <div>
+          <button id="add" type="submit">Add</button>
+        </div>
+      </form>
     </div>
     <script src="options.js"></script>
   </body>

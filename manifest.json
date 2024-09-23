@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "URL Porter",
-  "version": "0.1",
+  "version": "0.2",
   "description": "This extension lets you configure redirect rules and set a custom homepage.",
   "icons": {
     "16": "icon.png",
