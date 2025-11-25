@@ -1,7 +1,11 @@
+const settingsSyncUrl = "https://synle.github.io/fav/url-porter.json";
+
+
 document.addEventListener("DOMContentLoaded", async () => {
   const homepageUrlInput = document.getElementById("homepage-input");
   const jsonConfigInput = document.getElementById("json-input");
   const saveButton = document.getElementById("save");
+  const syncButton = document.getElementById("sync-settings");
 
   saveButton.addEventListener("click", async () => {
     try {
@@ -12,6 +16,35 @@ document.addEventListener("DOMContentLoaded", async () => {
       alert("Options Saved!");
     } catch (err) {
       alert(err);
+    }
+  });
+
+  // Sync Settings handler
+  syncButton.addEventListener("click", async () => {
+    try {
+      const res = await fetch(settingsSyncUrl, { method: "GET" });
+
+      if (!res.ok) throw new Error("Failed to sync settings from server");
+
+      const ajaxResponse = await res.json();
+
+      if (!("homepage" in ajaxResponse) || !("configs" in ajaxResponse)) {
+        throw new Error("Invalid response format");
+      }
+
+      // Populate UI fields
+      homepageUrlInput.value = (ajaxResponse.homepage || "").trim();
+
+      jsonConfigInput.value = JSON.stringify(
+        ajaxResponse.configs ?? [],
+        null,
+        2
+      );
+
+      // Reuse your save action to write to chrome.storage
+      saveButton.click();
+    } catch (err) {
+      alert("Sync failed: " + err.message);
     }
   });
 
