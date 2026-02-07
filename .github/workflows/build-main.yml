@@ -1,0 +1,15 @@
+name: build-main
+
+on:
+  push:
+    branches: [master, main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: synle/gha-workflow/.github/workflows/build-and-commit-sh.yml@main
+    permissions:
+      contents: write

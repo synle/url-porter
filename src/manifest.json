@@ -11,13 +11,13 @@
   "permissions": ["storage", "declarativeNetRequest"],
   "host_permissions": ["*://*/*"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background/background.js"
   },
-  "options_page": "options.html",
+  "options_page": "pages/options/options.html",
   "action": {
-    "default_popup": "options.html"
+    "default_popup": "pages/options/options.html"
   },
   "chrome_url_overrides": {
-    "newtab": "newtab.html"
+    "newtab": "pages/newtab/newtab.html"
   }
 }
