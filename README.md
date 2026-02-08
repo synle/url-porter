@@ -21,7 +21,8 @@ The `config` object is used to define conditions for redirecting URLs based on s
   {
     "from": "||plex^",
     "to": "https://app.plex.tv/desktop/#!/"
-  }
+  },
+  ["google", "google.com"]
 ]
 ```
 
