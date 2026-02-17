@@ -151,7 +151,10 @@ export default function Options() {
               className="link-button"
               onClick={() => {
                 setShowAddLinkModal(true);
-                setTimeout(() => document.getElementById("link-from")?.focus(), 100);
+                setTimeout(
+                  () => document.getElementById("link-from")?.focus(),
+                  100,
+                );
               }}
             >
               Add a link
@@ -261,7 +264,7 @@ function stripJsonComments(jsonString) {
   // Remove multi-line comments (/* */)
   return jsonString
     .replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, g) =>
-      g ? "" : m
+      g ? "" : m,
     )
     .trim();
 }

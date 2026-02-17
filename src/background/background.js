@@ -68,29 +68,29 @@ async function getConfig(shouldTransform = false) {
 
     const normalized = raw
       // Step 1: unified pre-filter (only structurally valid entries)
-      .filter(item =>
-        // legacy object
-        (item &&
-          typeof item === "object" &&
-          !Array.isArray(item) &&
-          ("from" in item || "to" in item)) ||
-
-        // array format
-        (Array.isArray(item) && item.length === 2)
+      .filter(
+        (item) =>
+          // legacy object
+          (item &&
+            typeof item === "object" &&
+            !Array.isArray(item) &&
+            ("from" in item || "to" in item)) ||
+          // array format
+          (Array.isArray(item) && item.length === 2),
       )
 
       // Step 2: normalize shape → always { from, to }
-      .map(item => {
+      .map((item) => {
         if (Array.isArray(item)) {
           return {
             from: String(item[0] ?? "").trim(),
-            to: String(item[1] ?? "").trim()
+            to: String(item[1] ?? "").trim(),
           };
         }
 
         return {
           from: String(item.from ?? "").trim(),
-          to: String(item.to ?? "").trim()
+          to: String(item.to ?? "").trim(),
         };
       })
 
@@ -117,12 +117,12 @@ async function getConfig(shouldTransform = false) {
 
         return {
           from: normalizedFrom,
-          to: normalizedTo
+          to: normalizedTo,
         };
       })
 
       // Step 4: final hard validation (must have both)
-      .filter(item => Boolean(item.from) && Boolean(item.to));
+      .filter((item) => Boolean(item.from) && Boolean(item.to));
 
     return normalized;
   } catch (error) {

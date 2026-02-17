@@ -48,7 +48,7 @@ export default defineConfig({
       closeBundle() {
         copyFileSync(
           resolve(__dirname, "src/manifest.json"),
-          resolve(__dirname, "dist/manifest.json")
+          resolve(__dirname, "dist/manifest.json"),
         );
       },
     },
@@ -74,22 +74,22 @@ export default defineConfig({
               // Fix script and link paths to be relative
               content = content.replace(
                 /src="\/pages\/[^/]+\/([^"]+)"/g,
-                'src="./$1"'
+                'src="./$1"',
               );
               content = content.replace(
                 /href="\/chunks\/([^"]+)"/g,
-                'href="../../chunks/$1"'
+                'href="../../chunks/$1"',
               );
               content = content.replace(
                 /href="\/assets\/([^"]+)"/g,
-                'href="../../assets/$1"'
+                'href="../../assets/$1"',
               );
 
               // Fix newtab.html link to options
               if (page === "newtab") {
                 content = content.replace(
                   /href="\/src\/pages\/options\/options\.html"/g,
-                  'href="../options/options.html"'
+                  'href="../options/options.html"',
                 );
               }
 

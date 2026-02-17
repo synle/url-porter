@@ -86,6 +86,7 @@ npm run package
 ```
 
 This will:
+
 1. Build the extension from source
 2. Create `url-porter.zip` containing only the distribution files
 
