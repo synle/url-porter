@@ -1,0 +1,4 @@
+*.min.*
+.build
+dist
+*.bundle.*
