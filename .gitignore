@@ -1,1 +1,10 @@
+.cache
+.claude
+.DS_Store
+.nyc_output
+.prettier-cache
+coverage
+dist
 node_modules
+npm-debug.log
+yarn.lock
