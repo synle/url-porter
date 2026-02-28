@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createWriteStream, existsSync } from "fs";
-import { readdir, stat, readFile } from "fs/promises";
+import { readdir, stat, readFile, writeFile } from "fs/promises";
 import { join, relative } from "path";
 import { createGzip } from "zlib";
 import archiver from "archiver";
@@ -14,6 +14,18 @@ const rootDir = join(__dirname, "..");
 const distDir = join(rootDir, "dist");
 const outputPath = join(rootDir, "url-porter.zip");
 
+async function syncManifestVersion() {
+  const pkgPath = join(rootDir, "package.json");
+  const manifestPath = join(distDir, "manifest.json");
+
+  const pkg = JSON.parse(await readFile(pkgPath, "utf-8"));
+  const manifest = JSON.parse(await readFile(manifestPath, "utf-8"));
+
+  manifest.version = pkg.version;
+  await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+  console.log(`✓ Set manifest.json version to ${pkg.version}`);
+}
+
 async function createZip() {
   if (!existsSync(distDir)) {
     console.error(
@@ -22,6 +34,7 @@ async function createZip() {
     process.exit(1);
   }
 
+  await syncManifestVersion();
   console.log("Creating zip file...");
 
   const output = createWriteStream(outputPath);

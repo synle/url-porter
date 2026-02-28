@@ -31,10 +31,16 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 // Listen for configuration updates
-chrome.runtime.onMessage.addListener(async (request) => {
+chrome.runtime.onMessage.addListener((request) => {
   if (request.type === "Myevent.updateConfig") {
-    await updateRedirectRules();
-    reconcileBookmarksFromStorage();
+    updateRedirectRules().then(() => reconcileBookmarksFromStorage());
+  }
+});
+
+// Backup listener: sync bookmarks whenever config storage changes
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "sync" && changes.jsonConfig) {
+    updateRedirectRules().then(() => reconcileBookmarksFromStorage());
   }
 });
 

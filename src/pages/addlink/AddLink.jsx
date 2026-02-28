@@ -170,10 +170,11 @@ function AddLinkContent() {
   return (
     <Box
       sx={{
-        width: 800,
+        width: "100%",
+        maxWidth: 800,
+        mx: "auto",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
       }}
     >
       <Container disableGutters sx={{ px: 2.5, py: 2, flexGrow: 1 }}>

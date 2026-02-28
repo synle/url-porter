@@ -448,7 +448,7 @@ function OptionsContent() {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
         {/* Mode Toggle */}
         <Box display="flex" justifyContent="center" mb={3}>
           <ToggleButtonGroup value={mode} exclusive onChange={handleModeChange} size="small">
