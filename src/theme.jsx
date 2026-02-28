@@ -1,3 +1,8 @@
+/**
+ * Shared MUI theme with automatic light/dark mode detection.
+ * All extension pages wrap their content in <ThemeContextProvider>.
+ */
+
 import { useMemo } from "react";
 import { createTheme, ThemeProvider, CssBaseline, useMediaQuery } from "@mui/material";
 

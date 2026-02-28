@@ -9,9 +9,9 @@ URL Porter is a Chrome Extension (Manifest V3) that lets users configure custom 
 ## Build & Development Commands
 
 ```bash
-npm run dev          # Vite dev server with hot reload (localhost:5173)
-npm run build        # Production build → dist/ (also generates types/)
-npm run bundle       # Create url-porter.zip from dist/
+npm run dev          # Build to dist/ in watch mode (rebuilds on file changes)
+npm run build        # One-off production build → dist/ (also generates types/)
+npm run bundle       # Bump minor version + create url-porter.zip from dist/
 npm run package      # build + bundle (full release pipeline)
 npm run format       # Prettier (140 char width)
 ```
@@ -20,9 +20,23 @@ There is no test suite. Node version is pinned to 20.19.1 via Volta.
 
 The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server endpoint at build time.
 
+## Local Development with Chrome
+
+To test the extension locally during development:
+
+1. Run `npm run dev` — this builds to `dist/` and watches for file changes, rebuilding automatically.
+2. Open Chrome and go to `chrome://extensions/`.
+3. Enable **Developer mode** (toggle in the top-right corner).
+4. Click **Load unpacked** and select the `dist/` folder from this project.
+5. The extension is now loaded. You should see it in your extensions list.
+6. As you edit source files, `npm run dev` will rebuild `dist/` automatically. After a rebuild, go back to `chrome://extensions/` and click the **reload** button (circular arrow) on the URL Porter card to pick up changes.
+
+> **Tip:** Pin the extension to your toolbar (click the puzzle-piece icon → pin URL Porter) for quick access to the Add Link popup.
+
 ## Architecture
 
 **Extension entry points** (each is a separate Vite input with its own HTML/JSX):
+
 - `src/background/background.js` — Service worker. Manages `chrome.declarativeNetRequest` redirect rules, context menus, and message handling.
 - `src/pages/options/` — Main settings UI with "Clean" (table) and "Advanced" (JSON editor) modes.
 - `src/pages/addlink/` — Browser action popup for quick-adding the current page as a redirect rule.
@@ -30,6 +44,7 @@ The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server
 - `src/pages/history/` — Audit trail of redirect rule changes.
 
 **Shared helpers** (`src/helpers/`):
+
 - `storage.js` — Chrome storage API wrappers. Config rules use `chrome.storage.sync`; homepage URL, sync URL, and history use `chrome.storage.local`.
 - `configUtils.js` — Normalizes redirect entries for `declarativeNetRequest` format. Only file with TypeScript declarations (emitted to `types/`).
 - `historyUtils.js` — History tracking with configurable limits (5000 aliases, 20 entries per alias).
@@ -41,6 +56,7 @@ The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server
 ## Build System Details
 
 `vite.config.js` has custom post-build plugins that:
+
 1. Copy `src/manifest.json` to `dist/`
 2. Move generated HTML files to their expected extension paths (`dist/pages/[name]/`)
 3. Fix relative asset paths in the moved HTML files

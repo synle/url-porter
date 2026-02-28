@@ -1,14 +1,7 @@
 import { defineConfig } from "vite";
 import { resolve, dirname, join } from "path";
 import { fileURLToPath } from "url";
-import {
-  copyFileSync,
-  mkdirSync,
-  existsSync,
-  readFileSync,
-  writeFileSync,
-  rmSync,
-} from "fs";
+import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync, rmSync } from "fs";
 import react from "@vitejs/plugin-react";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -48,10 +41,7 @@ export default defineConfig({
     {
       name: "copy-manifest",
       closeBundle() {
-        copyFileSync(
-          resolve(__dirname, "src/manifest.json"),
-          resolve(__dirname, "dist/manifest.json"),
-        );
+        copyFileSync(resolve(__dirname, "src/manifest.json"), resolve(__dirname, "dist/manifest.json"));
       },
     },
     {
@@ -74,25 +64,13 @@ export default defineConfig({
               let content = readFileSync(srcFile, "utf-8");
 
               // Fix script and link paths to be relative
-              content = content.replace(
-                /src="\/pages\/[^/]+\/([^"]+)"/g,
-                'src="./$1"',
-              );
-              content = content.replace(
-                /href="\/chunks\/([^"]+)"/g,
-                'href="../../chunks/$1"',
-              );
-              content = content.replace(
-                /href="\/assets\/([^"]+)"/g,
-                'href="../../assets/$1"',
-              );
+              content = content.replace(/src="\/pages\/[^/]+\/([^"]+)"/g, 'src="./$1"');
+              content = content.replace(/href="\/chunks\/([^"]+)"/g, 'href="../../chunks/$1"');
+              content = content.replace(/href="\/assets\/([^"]+)"/g, 'href="../../assets/$1"');
 
               // Fix newtab.html link to options
               if (page === "newtab") {
-                content = content.replace(
-                  /href="\/src\/pages\/options\/options\.html"/g,
-                  'href="../options/options.html"',
-                );
+                content = content.replace(/href="\/src\/pages\/options\/options\.html"/g, 'href="../options/options.html"');
               }
 
               writeFileSync(destFile, content);

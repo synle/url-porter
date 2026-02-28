@@ -88,13 +88,13 @@ After making changes, run `npm run build` again and click the reload button on t
 
 ### Scripts
 
-| Script | Description |
-|---|---|
-| `npm run dev` | Start Vite dev server with hot reload |
-| `npm run build` | Build the extension for production |
-| `npm run bundle` | Create a zip from the built extension |
+| Script            | Description                                              |
+| ----------------- | -------------------------------------------------------- |
+| `npm run dev`     | Start Vite dev server with hot reload                    |
+| `npm run build`   | Build the extension for production                       |
+| `npm run bundle`  | Create a zip from the built extension                    |
 | `npm run package` | Build + bundle in one command (creates `url-porter.zip`) |
-| `npm run format` | Format code with Prettier |
+| `npm run format`  | Format code with Prettier                                |
 
 ### Project Structure
 

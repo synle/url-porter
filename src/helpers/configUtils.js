@@ -46,7 +46,9 @@ export function normalizeEntries(entries) {
  * @returns {string} Normalized urlFilter pattern
  */
 export function normalizeFrom(from) {
-  let result = String(from ?? "").trim().toLowerCase();
+  let result = String(from ?? "")
+    .trim()
+    .toLowerCase();
   if (!result.startsWith("||")) result = "||" + result;
   if (!result.endsWith("^")) result = result + "^";
   return result;
@@ -59,7 +61,9 @@ export function normalizeFrom(from) {
  * @returns {string} URL with protocol prefix
  */
 export function normalizeTo(to) {
-  let result = String(to ?? "").trim().toLowerCase();
+  let result = String(to ?? "")
+    .trim()
+    .toLowerCase();
   if (!result.startsWith("http://") && !result.startsWith("https://")) {
     result = "https://" + result;
   }
@@ -113,6 +117,43 @@ export function normalizeEntriesForRedirect(entries) {
  * @param {number} [skipIndex=-1] - Index to skip (for edit mode, so the entry being edited is not matched)
  * @returns {DuplicateResult | null} The duplicate entry and its index, or null if no duplicate
  */
+/**
+ * Strip the `||` prefix and `^` suffix from an alias to get the bare keyword.
+ *
+ * @param {string} alias - The raw alias (may or may not have delimiters)
+ * @returns {string} The bare alias without declarativeNetRequest delimiters
+ */
+export function stripAlias(alias) {
+  let result = String(alias ?? "");
+  if (result.startsWith("||")) result = result.slice(2);
+  if (result.endsWith("^")) result = result.slice(0, -1);
+  return result;
+}
+
+/**
+ * Clean a user-entered alias: trim whitespace and lowercase.
+ *
+ * @param {string} value - Raw user input
+ * @returns {string} Cleaned alias
+ */
+export function cleanAlias(value) {
+  return value.trim().toLowerCase();
+}
+
+/**
+ * Clean a user-entered URL: trim, lowercase, and prepend https:// if no protocol.
+ *
+ * @param {string} value - Raw user input
+ * @returns {string} Cleaned URL with protocol
+ */
+export function cleanUrl(value) {
+  let result = value.trim().toLowerCase();
+  if (result && !result.startsWith("http://") && !result.startsWith("https://")) {
+    result = "https://" + result;
+  }
+  return result;
+}
+
 export function findDuplicateEntry(entries, alias, skipIndex = -1) {
   if (!Array.isArray(entries) || !alias) return null;
 

@@ -28,9 +28,7 @@ async function syncManifestVersion() {
 
 async function createZip() {
   if (!existsSync(distDir)) {
-    console.error(
-      "Error: dist directory not found. Run 'npm run build' first.",
-    );
+    console.error("Error: dist directory not found. Run 'npm run build' first.");
     process.exit(1);
   }
 

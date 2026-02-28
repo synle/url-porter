@@ -45,6 +45,16 @@ import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import HistoryIcon from "@mui/icons-material/History";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import AddLinkIcon from "@mui/icons-material/AddLink";
+/**
+ * Options page — main settings UI for URL Porter.
+ *
+ * Two modes:
+ * - "Clean" (default): table UI with search, sort, multi-select, and CRUD dialogs.
+ * - "Advanced": raw JSON editor with comment support.
+ *
+ * Also manages homepage URL, sync server, history limits, and bulk operations.
+ */
+
 import { ThemeContextProvider } from "../../theme.jsx";
 import {
   getConfig,
@@ -56,20 +66,15 @@ import {
   isValidUrl,
   DEFAULT_SYNC_URL,
 } from "../../helpers/storage.js";
-import { normalizeEntry, normalizeFrom, normalizeTo, findDuplicateEntry } from "../../helpers/configUtils.js";
-import { addHistoryEntry, getHistoryAliasLimit, setHistoryAliasLimit, getHistoryEntryLimit, setHistoryEntryLimit } from "../../helpers/historyUtils.js";
-
-function cleanAlias(value) {
-  return value.trim().toLowerCase();
-}
-
-function cleanUrl(value) {
-  let result = value.trim().toLowerCase();
-  if (result && !result.startsWith("http://") && !result.startsWith("https://")) {
-    result = "https://" + result;
-  }
-  return result;
-}
+import { normalizeEntry, normalizeFrom, normalizeTo, findDuplicateEntry, cleanAlias, cleanUrl } from "../../helpers/configUtils.js";
+import { ALIAS_PLACEHOLDER, ALIAS_HELPER_TEXT, URL_PLACEHOLDER, URL_HELPER_TEXT } from "../../helpers/fieldHelpers.js";
+import {
+  addHistoryEntry,
+  getHistoryAliasLimit,
+  setHistoryAliasLimit,
+  getHistoryEntryLimit,
+  setHistoryEntryLimit,
+} from "../../helpers/historyUtils.js";
 
 function OptionsContent() {
   // Core state
@@ -369,10 +374,7 @@ function OptionsContent() {
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      entries = entries.filter(
-        (e) =>
-          (e.from || "").toLowerCase().includes(q) || (e.to || "").toLowerCase().includes(q),
-      );
+      entries = entries.filter((e) => (e.from || "").toLowerCase().includes(q) || (e.to || "").toLowerCase().includes(q));
     }
 
     entries.sort((a, b) => {
@@ -394,9 +396,7 @@ function OptionsContent() {
   };
 
   const toggleSelect = (origIndex) => {
-    setSelected((prev) =>
-      prev.includes(origIndex) ? prev.filter((i) => i !== origIndex) : [...prev, origIndex],
-    );
+    setSelected((prev) => (prev.includes(origIndex) ? prev.filter((i) => i !== origIndex) : [...prev, origIndex]));
   };
 
   const toggleSelectAll = () => {
@@ -508,12 +508,7 @@ function OptionsContent() {
                 </Select>
               </FormControl>
               {selected.length > 0 && (
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<DeleteIcon />}
-                  onClick={() => setMassDeleteDialogOpen(true)}
-                >
+                <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setMassDeleteDialogOpen(true)}>
                   Delete ({selected.length})
                 </Button>
               )}
@@ -526,27 +521,15 @@ function OptionsContent() {
                   <TableRow>
                     <TableCell padding="checkbox">
                       <Checkbox
-                        indeterminate={
-                          selected.length > 0 &&
-                          selected.length < filteredEntries.length
-                        }
-                        checked={
-                          filteredEntries.length > 0 &&
-                          filteredEntries.every((e) => selected.includes(e._origIndex))
-                        }
+                        indeterminate={selected.length > 0 && selected.length < filteredEntries.length}
+                        checked={filteredEntries.length > 0 && filteredEntries.every((e) => selected.includes(e._origIndex))}
                         onChange={toggleSelectAll}
                       />
                     </TableCell>
-                    <TableCell
-                      onClick={() => handleSort("from")}
-                      sx={{ cursor: "pointer", fontWeight: "bold", userSelect: "none" }}
-                    >
+                    <TableCell onClick={() => handleSort("from")} sx={{ cursor: "pointer", fontWeight: "bold", userSelect: "none" }}>
                       From{sortIndicator("from")}
                     </TableCell>
-                    <TableCell
-                      onClick={() => handleSort("to")}
-                      sx={{ cursor: "pointer", fontWeight: "bold", userSelect: "none" }}
-                    >
+                    <TableCell onClick={() => handleSort("to")} sx={{ cursor: "pointer", fontWeight: "bold", userSelect: "none" }}>
                       To{sortIndicator("to")}
                     </TableCell>
                     <TableCell align="right" sx={{ fontWeight: "bold" }}>
@@ -567,10 +550,7 @@ function OptionsContent() {
                     filteredEntries.map((entry) => (
                       <TableRow key={entry._origIndex} hover>
                         <TableCell padding="checkbox">
-                          <Checkbox
-                            checked={selected.includes(entry._origIndex)}
-                            onChange={() => toggleSelect(entry._origIndex)}
-                          />
+                          <Checkbox checked={selected.includes(entry._origIndex)} onChange={() => toggleSelect(entry._origIndex)} />
                         </TableCell>
                         <TableCell
                           sx={{
@@ -662,12 +642,7 @@ function OptionsContent() {
               }}
               sx={{ mb: 2 }}
             />
-            <Button
-              variant="contained"
-              startIcon={<SaveIcon />}
-              onClick={handleAdvancedSave}
-              size="large"
-            >
+            <Button variant="contained" startIcon={<SaveIcon />} onClick={handleAdvancedSave} size="large">
               Save
             </Button>
           </Box>
@@ -719,7 +694,12 @@ function OptionsContent() {
           onEntered: () => fromInputRef.current?.focus(),
         }}
       >
-        <form onSubmit={(e) => { e.preventDefault(); handleAddLink(); }}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleAddLink();
+          }}
+        >
           <DialogTitle>Add a Link</DialogTitle>
           <DialogContent>
             <TextField
@@ -729,6 +709,8 @@ function OptionsContent() {
               value={linkFrom}
               onChange={(e) => setLinkFrom(e.target.value)}
               onBlur={() => setLinkFrom(cleanAlias(linkFrom))}
+              placeholder={ALIAS_PLACEHOLDER}
+              helperText={ALIAS_HELPER_TEXT}
               sx={{ mt: 1, mb: 2 }}
               required
             />
@@ -737,7 +719,11 @@ function OptionsContent() {
               fullWidth
               value={linkTo}
               onChange={(e) => setLinkTo(e.target.value)}
-              onBlur={() => { if (linkTo.trim()) setLinkTo(cleanUrl(linkTo)); }}
+              onBlur={() => {
+                if (linkTo.trim()) setLinkTo(cleanUrl(linkTo));
+              }}
+              placeholder={URL_PLACEHOLDER}
+              helperText={URL_HELPER_TEXT}
               required
             />
           </DialogContent>
@@ -752,7 +738,12 @@ function OptionsContent() {
 
       {/* Edit Link Dialog */}
       <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
-        <form onSubmit={(e) => { e.preventDefault(); handleEditSave(); }}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleEditSave();
+          }}
+        >
           <DialogTitle>Edit Link</DialogTitle>
           <DialogContent>
             <TextField
@@ -761,6 +752,8 @@ function OptionsContent() {
               value={editFrom}
               onChange={(e) => setEditFrom(e.target.value)}
               onBlur={() => setEditFrom(cleanAlias(editFrom))}
+              placeholder={ALIAS_PLACEHOLDER}
+              helperText={ALIAS_HELPER_TEXT}
               sx={{ mt: 1, mb: 2 }}
             />
             <TextField
@@ -768,7 +761,11 @@ function OptionsContent() {
               fullWidth
               value={editTo}
               onChange={(e) => setEditTo(e.target.value)}
-              onBlur={() => { if (editTo.trim()) setEditTo(cleanUrl(editTo)); }}
+              onBlur={() => {
+                if (editTo.trim()) setEditTo(cleanUrl(editTo));
+              }}
+              placeholder={URL_PLACEHOLDER}
+              helperText={URL_HELPER_TEXT}
             />
           </DialogContent>
           <DialogActions>
@@ -798,9 +795,7 @@ function OptionsContent() {
       <Dialog open={massDeleteDialogOpen} onClose={() => setMassDeleteDialogOpen(false)}>
         <DialogTitle>Delete Selected Links</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete {selected.length} selected link(s)?
-          </DialogContentText>
+          <DialogContentText>Are you sure you want to delete {selected.length} selected link(s)?</DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setMassDeleteDialogOpen(false)}>Cancel</Button>
@@ -814,9 +809,7 @@ function OptionsContent() {
       <Dialog open={syncDialogOpen} onClose={() => setSyncDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Sync Settings</DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            Enter the URL of your settings configuration file.
-          </DialogContentText>
+          <DialogContentText sx={{ mb: 2 }}>Enter the URL of your settings configuration file.</DialogContentText>
           <TextField
             label="Server URL"
             type="url"
@@ -838,9 +831,7 @@ function OptionsContent() {
       <Dialog open={unsavedDialogOpen} onClose={() => setUnsavedDialogOpen(false)}>
         <DialogTitle>Unsaved Changes</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            You have unsaved changes in the editor. Switching modes will discard them. Continue?
-          </DialogContentText>
+          <DialogContentText>You have unsaved changes in the editor. Switching modes will discard them. Continue?</DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setUnsavedDialogOpen(false)}>Cancel</Button>
@@ -861,10 +852,7 @@ function OptionsContent() {
       <Dialog open={jsonErrorDialogOpen} onClose={() => setJsonErrorDialogOpen(false)}>
         <DialogTitle>Invalid JSON</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Invalid JSON. Please fix errors before saving. The editor highlights syntax errors
-            inline.
-          </DialogContentText>
+          <DialogContentText>Invalid JSON. Please fix errors before saving. The editor highlights syntax errors inline.</DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button variant="contained" onClick={() => setJsonErrorDialogOpen(false)}>
@@ -899,7 +887,8 @@ function OptionsContent() {
         <DialogTitle>Duplicate Alias</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            An alias matching <strong>{(duplicateDialog.context === "edit" ? editFrom : linkFrom).trim()}</strong> already exists and points to:
+            An alias matching <strong>{(duplicateDialog.context === "edit" ? editFrom : linkFrom).trim()}</strong> already exists and points
+            to:
           </DialogContentText>
           <Typography
             variant="body2"
@@ -914,9 +903,7 @@ function OptionsContent() {
           >
             {duplicateDialog.oldTo}
           </Typography>
-          <DialogContentText sx={{ mt: 2 }}>
-            Do you want to update it to point to the new URL instead?
-          </DialogContentText>
+          <DialogContentText sx={{ mt: 2 }}>Do you want to update it to point to the new URL instead?</DialogContentText>
           <Typography
             variant="body2"
             sx={{
@@ -932,9 +919,7 @@ function OptionsContent() {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDuplicateDialog({ open: false, index: -1, oldTo: "", context: "" })}>
-            Cancel
-          </Button>
+          <Button onClick={() => setDuplicateDialog({ open: false, index: -1, oldTo: "", context: "" })}>Cancel</Button>
           <Button variant="contained" onClick={handleDuplicateUpdate}>
             Update Existing Link
           </Button>

@@ -14,16 +14,12 @@
     "vite-plugin-web-extension": "^4.5.0"
   },
   "scripts": {
-    "predev": "npm run build:types",
-    "dev": "vite",
-    "prebuild": "npm run build:types",
-    "build": "vite build && npm run build:types",
+    "dev": "npm run build:types && vite build --watch",
+    "build": "npm run build:types && vite build",
     "build:types": "tsc",
-    "prebundle": "npm version minor --no-git-tag-version",
-    "bundle": "node scripts/bundle.js",
+    "bundle": "npm version minor --no-git-tag-version && node scripts/bundle.js",
     "package": "npm run build && npm run bundle",
     "package-syle": "VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL=https://synle.github.io/fav/url-porter.json npm run package",
-    "preview": "vite preview",
     "format": "prettier --write --print-width 140 --ignore-unknown --no-error-on-unmatched-pattern --cache '**/*.{js,jsx,ts,tsx,mjs,cjs,json,html,css,scss,less,md,yml,yaml,graphql,vue,xml}'"
   },
   "author": "Sy Le",

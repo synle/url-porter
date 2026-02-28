@@ -1,4 +1,15 @@
-import { normalizeEntry } from "./configUtils.js";
+/**
+ * Bookmark synchronization utilities.
+ *
+ * Maintains a "url-porter" bookmark folder under "Other Bookmarks" that
+ * mirrors the current redirect config. Bookmarks are resolved to their
+ * final URL (following redirects) so they point to the real destination.
+ */
+
+import { normalizeEntry, stripAlias } from "./configUtils.js";
+
+/** Timeout (ms) for HEAD requests when resolving redirect URLs. */
+const RESOLVE_TIMEOUT_MS = 5000;
 
 /**
  * Extract a clean bookmark title from a config entry's `from` field.
@@ -10,21 +21,26 @@ import { normalizeEntry } from "./configUtils.js";
 export function bookmarkTitleFromEntry(entry) {
   const normalized = normalizeEntry(entry);
   if (!normalized) return "";
-  let from = normalized.from;
-  if (from.startsWith("||")) from = from.slice(2);
-  if (from.endsWith("^")) from = from.slice(0, -1);
-  return from;
+  return stripAlias(normalized.from);
 }
 
 /**
  * Follow redirects to resolve the final URL.
+ * Returns the original URL on network error or timeout.
  *
  * @param {string} url
  * @returns {Promise<string>} The resolved URL, or the original on error
  */
 export async function resolveUrl(url) {
   try {
-    const response = await fetch(url, { method: "HEAD", redirect: "follow" });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), RESOLVE_TIMEOUT_MS);
+    const response = await fetch(url, {
+      method: "HEAD",
+      redirect: "follow",
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
     return response.url;
   } catch {
     return url;
@@ -33,15 +49,14 @@ export async function resolveUrl(url) {
 
 /**
  * Find or create the "url-porter" bookmark folder under "Other Bookmarks".
+ * Chrome uses well-known folder IDs: "1" = Bookmarks Bar, "2" = Other Bookmarks.
  *
  * @returns {Promise<chrome.bookmarks.BookmarkTreeNode>}
  */
 async function findOrCreateFolder() {
   const results = await chrome.bookmarks.search({ title: "url-porter" });
-  // Accept folders (no url) whose parent is a top-level folder (id "1" or "2")
-  const existing = results.find(
-    (node) => !node.url && (node.parentId === "1" || node.parentId === "2"),
-  );
+  // Accept folders (no url) whose parent is a top-level root folder
+  const existing = results.find((node) => !node.url && (node.parentId === "1" || node.parentId === "2"));
   if (existing) return existing;
 
   // Create under "Other Bookmarks" (id "2" in Chrome)
@@ -81,7 +96,7 @@ export async function reconcileBookmarks(configEntries) {
     if (result) desiredMap.set(result.title, result.url);
   }
 
-  // Add missing and update changed
+  // Add missing and update changed bookmarks
   for (const [title, url] of desiredMap) {
     const existing = existingMap.get(title);
     if (!existing) {
@@ -91,7 +106,7 @@ export async function reconcileBookmarks(configEntries) {
     }
   }
 
-  // Remove stale
+  // Remove bookmarks that are no longer in the config
   for (const [title, { id }] of existingMap) {
     if (!desiredMap.has(title)) {
       await chrome.bookmarks.remove(id);

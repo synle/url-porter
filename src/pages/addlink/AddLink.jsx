@@ -1,3 +1,11 @@
+/**
+ * Add Link popup — lightweight form for quick-adding a redirect rule.
+ *
+ * Opens as the browser action popup or in a new tab from the context menu.
+ * Pre-fills from the current tab URL or from query params passed by the
+ * background script's context menu handler.
+ */
+
 import { useState, useEffect, useRef } from "react";
 import {
   Container,
@@ -21,20 +29,9 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { ThemeContextProvider } from "../../theme.jsx";
 import { getConfig, setConfig } from "../../helpers/storage.js";
-import { normalizeFrom, normalizeTo, findDuplicateEntry } from "../../helpers/configUtils.js";
+import { normalizeFrom, normalizeTo, findDuplicateEntry, cleanAlias, cleanUrl } from "../../helpers/configUtils.js";
+import { ALIAS_PLACEHOLDER, ALIAS_HELPER_TEXT, URL_PLACEHOLDER, URL_HELPER_TEXT } from "../../helpers/fieldHelpers.js";
 import { addHistoryEntry } from "../../helpers/historyUtils.js";
-
-function cleanAlias(value) {
-  return value.trim().toLowerCase();
-}
-
-function cleanUrl(value) {
-  let result = value.trim().toLowerCase();
-  if (result && !result.startsWith("http://") && !result.startsWith("https://")) {
-    result = "https://" + result;
-  }
-  return result;
-}
 
 function AddLinkContent() {
   const [linkFrom, setLinkFrom] = useState("");
@@ -48,15 +45,16 @@ function AddLinkContent() {
   }, []);
 
   const detectContextAndPrefill = async () => {
-    // Check for URL passed via query param (from context menu)
+    // Check for URL passed via query param (from context menu).
+    // Values are URI-encoded by the background script's context menu handler.
     const params = new URLSearchParams(window.location.search);
     const paramUrl = params.get("url");
     const paramTitle = params.get("title");
 
     if (paramUrl) {
-      setLinkTo(paramUrl);
+      setLinkTo(decodeURIComponent(paramUrl));
       if (paramTitle) {
-        setLinkFrom(paramTitle);
+        setLinkFrom(decodeURIComponent(paramTitle));
       }
       setTimeout(() => fromInputRef.current?.focus(), 100);
       return;
@@ -204,12 +202,8 @@ function AddLinkContent() {
             value={linkFrom}
             onChange={(e) => setLinkFrom(e.target.value)}
             onBlur={handleFromBlur}
-            placeholder="e.g. my-shortcut"
-            helperText={
-              'Bare word (e.g. "drive") matches anywhere in URL. ' +
-              '"||" anchors to domain start. "^" requires a separator (/, :, ?) after. ' +
-              'e.g. "||drive^" only matches http://drive/'
-            }
+            placeholder={ALIAS_PLACEHOLDER}
+            helperText={ALIAS_HELPER_TEXT}
             sx={{ mb: 2 }}
             required
             autoFocus
@@ -222,8 +216,8 @@ function AddLinkContent() {
             value={linkTo}
             onChange={(e) => setLinkTo(e.target.value)}
             onBlur={handleToBlur}
-            placeholder="https://example.com"
-            helperText="The URL this alias will redirect to"
+            placeholder={URL_PLACEHOLDER}
+            helperText={URL_HELPER_TEXT}
             sx={{ mb: 2.5 }}
             size="small"
             required
@@ -241,12 +235,7 @@ function AddLinkContent() {
       </Container>
 
       {/* Duplicate Alias Dialog */}
-      <Dialog
-        open={duplicateDialog.open}
-        onClose={() => setDuplicateDialog({ open: false, index: -1, oldTo: "" })}
-        maxWidth="sm"
-        fullWidth
-      >
+      <Dialog open={duplicateDialog.open} onClose={() => setDuplicateDialog({ open: false, index: -1, oldTo: "" })} maxWidth="sm" fullWidth>
         <DialogTitle>Duplicate Alias</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -265,9 +254,7 @@ function AddLinkContent() {
           >
             {duplicateDialog.oldTo}
           </Typography>
-          <DialogContentText sx={{ mt: 2 }}>
-            Do you want to update it to point to the new URL instead?
-          </DialogContentText>
+          <DialogContentText sx={{ mt: 2 }}>Do you want to update it to point to the new URL instead?</DialogContentText>
           <Typography
             variant="body2"
             sx={{
@@ -283,9 +270,7 @@ function AddLinkContent() {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDuplicateDialog({ open: false, index: -1, oldTo: "" })}>
-            Cancel
-          </Button>
+          <Button onClick={() => setDuplicateDialog({ open: false, index: -1, oldTo: "" })}>Cancel</Button>
           <Button variant="contained" onClick={handleUpdateExisting}>
             Update Existing Link
           </Button>
