@@ -21,6 +21,8 @@ export default defineConfig({
       input: {
         options: resolve(__dirname, "src/pages/options/options.html"),
         newtab: resolve(__dirname, "src/pages/newtab/newtab.html"),
+        addlink: resolve(__dirname, "src/pages/addlink/addlink.html"),
+        history: resolve(__dirname, "src/pages/history/history.html"),
         background: resolve(__dirname, "src/background/background.js"),
       },
       output: {
@@ -60,7 +62,7 @@ export default defineConfig({
         const destPagesDir = resolve(__dirname, "dist/pages");
 
         if (existsSync(srcPagesDir)) {
-          ["options", "newtab"].forEach((page) => {
+          ["options", "newtab", "addlink", "history"].forEach((page) => {
             const srcFile = join(srcPagesDir, page, `${page}.html`);
             const destDir = join(destPagesDir, page);
             const destFile = join(destDir, `${page}.html`);

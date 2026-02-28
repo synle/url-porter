@@ -1,52 +1,128 @@
-// Initialize redirect rules on installation
+import { normalizeEntriesForRedirect, normalizeEntry } from "../helpers/configUtils.js";
+import { reconcileBookmarks } from "../helpers/bookmarkUtils.js";
+
+// Initialize redirect rules, bookmarks, context menu, and omnibox on installation
 chrome.runtime.onInstalled.addListener(async () => {
   await updateRedirectRules();
+  reconcileBookmarksFromStorage();
+
+  // Create context menu item
+  chrome.contextMenus.create({
+    id: "add-to-url-porter",
+    title: "Add This Page to URL Porter",
+    contexts: ["page"],
+  });
+
+  chrome.omnibox.setDefaultSuggestion({
+    description: "Search URL Porter links: %s",
+  });
+});
+
+// Handle context menu click
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === "add-to-url-porter") {
+    const url = encodeURIComponent(tab.url || "");
+    const title = encodeURIComponent(tab.title || "");
+    const addLinkUrl = chrome.runtime.getURL(
+      `pages/addlink/addlink.html?url=${url}&title=${title}`,
+    );
+    chrome.tabs.create({ url: addLinkUrl });
+  }
 });
 
 // Listen for configuration updates
 chrome.runtime.onMessage.addListener(async (request) => {
   if (request.type === "Myevent.updateConfig") {
     await updateRedirectRules();
+    reconcileBookmarksFromStorage();
   }
 });
 
-// Update dynamic redirect rules based on configuration
+// --- Omnibox ---
+
+chrome.omnibox.onInputChanged.addListener(async (text, suggest) => {
+  const raw = await getRawConfig();
+  const query = text.toLowerCase().trim();
+  if (!query) return suggest([]);
+
+  const suggestions = [];
+  for (const item of raw) {
+    const entry = normalizeEntry(item);
+    if (!entry) continue;
+
+    let alias = entry.from;
+    if (alias.startsWith("||")) alias = alias.slice(2);
+    if (alias.endsWith("^")) alias = alias.slice(0, -1);
+
+    if (alias.toLowerCase().includes(query)) {
+      const escapedAlias = escapeXml(alias);
+      const escapedUrl = escapeXml(entry.to);
+      suggestions.push({
+        content: entry.to,
+        description: `<match>${escapedAlias}</match> &rarr; <url>${escapedUrl}</url>`,
+      });
+    }
+  }
+  suggest(suggestions);
+});
+
+chrome.omnibox.onInputEntered.addListener(async (text, disposition) => {
+  // If `text` is already a URL (selected from suggestions), use it directly.
+  // Otherwise, try to find a matching alias.
+  let url = text;
+  if (!text.startsWith("http://") && !text.startsWith("https://")) {
+    const raw = await getRawConfig();
+    const query = text.toLowerCase().trim();
+    for (const item of raw) {
+      const entry = normalizeEntry(item);
+      if (!entry) continue;
+      let alias = entry.from;
+      if (alias.startsWith("||")) alias = alias.slice(2);
+      if (alias.endsWith("^")) alias = alias.slice(0, -1);
+      if (alias.toLowerCase().includes(query)) {
+        url = entry.to;
+        break;
+      }
+    }
+  }
+
+  switch (disposition) {
+    case "newForegroundTab":
+      chrome.tabs.create({ url });
+      break;
+    case "newBackgroundTab":
+      chrome.tabs.create({ url, active: false });
+      break;
+    default:
+      chrome.tabs.update({ url });
+      break;
+  }
+});
+
+// --- Redirect rules ---
+
 async function updateRedirectRules() {
   try {
-    const configs = await getConfig(true);
-
-    if (!configs || configs.length === 0) {
-      console.log("No redirect rules to apply");
-      return;
-    }
-
-    // Build redirect rules from config
-    const rules = configs
-      .filter((config) => config.from && config.to)
-      .map((config, index) => ({
-        id: index + 1,
-        condition: {
-          urlFilter: config.from,
-          resourceTypes: ["main_frame"],
-        },
-        action: {
-          type: "redirect",
-          redirect: {
-            url: config.to,
-          },
-        },
-      }));
-
-    if (rules.length === 0) {
-      console.log("No valid redirect rules found");
-      return;
-    }
-
-    // Get existing rules to remove
     const oldRules = await chrome.declarativeNetRequest.getDynamicRules();
     const removeRuleIds = oldRules.map((rule) => rule.id);
 
-    // Update rules
+    const raw = await getRawConfig();
+    const configs = normalizeEntriesForRedirect(raw);
+
+    const rules = configs.map((config, index) => ({
+      id: index + 1,
+      condition: {
+        urlFilter: config.from,
+        resourceTypes: ["main_frame"],
+      },
+      action: {
+        type: "redirect",
+        redirect: {
+          url: config.to,
+        },
+      },
+    }));
+
     await chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds,
       addRules: rules,
@@ -58,75 +134,31 @@ async function updateRedirectRules() {
   }
 }
 
-// Retrieve configuration from storage
-async function getConfig(shouldTransform = false) {
+// --- Bookmark sync ---
+
+async function reconcileBookmarksFromStorage() {
   try {
-    const result = await chrome.storage.sync.get(["jsonConfig"]);
-    const raw = result.jsonConfig || [];
-
-    if (!Array.isArray(raw)) return [];
-
-    const normalized = raw
-      // Step 1: unified pre-filter (only structurally valid entries)
-      .filter(
-        (item) =>
-          // legacy object
-          (item &&
-            typeof item === "object" &&
-            !Array.isArray(item) &&
-            ("from" in item || "to" in item)) ||
-          // array format
-          (Array.isArray(item) && item.length === 2),
-      )
-
-      // Step 2: normalize shape → always { from, to }
-      .map((item) => {
-        if (Array.isArray(item)) {
-          return {
-            from: String(item[0] ?? "").trim(),
-            to: String(item[1] ?? "").trim(),
-          };
-        }
-
-        return {
-          from: String(item.from ?? "").trim(),
-          to: String(item.to ?? "").trim(),
-        };
-      })
-
-      // Step 3: normalize values
-      .map(({ from, to }) => {
-        let normalizedFrom = from;
-        let normalizedTo = to;
-
-        // normalize `from`
-        if (!normalizedFrom.startsWith("||")) {
-          normalizedFrom = "||" + normalizedFrom;
-        }
-        if (!normalizedFrom.endsWith("^")) {
-          normalizedFrom = normalizedFrom + "^";
-        }
-
-        // normalize `to`
-        if (
-          !normalizedTo.startsWith("http://") &&
-          !normalizedTo.startsWith("https://")
-        ) {
-          normalizedTo = "http://" + normalizedTo;
-        }
-
-        return {
-          from: normalizedFrom,
-          to: normalizedTo,
-        };
-      })
-
-      // Step 4: final hard validation (must have both)
-      .filter((item) => Boolean(item.from) && Boolean(item.to));
-
-    return normalized;
+    const raw = await getRawConfig();
+    await reconcileBookmarks(raw);
+    console.log("Bookmarks reconciled");
   } catch (error) {
-    console.error("Failed to get config:", error);
-    return [];
+    console.error("Failed to reconcile bookmarks:", error);
   }
+}
+
+// --- Helpers ---
+
+function getRawConfig() {
+  return chrome.storage.sync.get(["jsonConfig"]).then((result) => {
+    const raw = result.jsonConfig || [];
+    return Array.isArray(raw) ? raw : [];
+  });
+}
+
+function escapeXml(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }

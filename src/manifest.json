@@ -8,14 +8,16 @@
     "48": "icon.png",
     "128": "icon.png"
   },
-  "permissions": ["storage", "declarativeNetRequest"],
+  "permissions": ["storage", "declarativeNetRequest", "contextMenus", "tabs", "bookmarks"],
+  "omnibox": { "keyword": "go" },
   "host_permissions": ["*://*/*"],
   "background": {
-    "service_worker": "background/background.js"
+    "service_worker": "background/background.js",
+    "type": "module"
   },
   "options_page": "pages/options/options.html",
   "action": {
-    "default_popup": "pages/options/options.html"
+    "default_popup": "pages/addlink/addlink.html"
   },
   "chrome_url_overrides": {
     "newtab": "pages/newtab/newtab.html"

@@ -9,12 +9,17 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "sass": "^1.97.3",
+    "typescript": "^5.9.3",
     "vite": "^6.4.1",
     "vite-plugin-web-extension": "^4.5.0"
   },
   "scripts": {
+    "predev": "npm run build:types",
     "dev": "vite",
-    "build": "vite build",
+    "prebuild": "npm run build:types",
+    "build": "vite build && npm run build:types",
+    "build:types": "tsc",
+    "prebundle": "npm version minor --no-git-tag-version",
     "bundle": "node scripts/bundle.js",
     "package": "npm run build && npm run bundle",
     "package-syle": "VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL=https://synle.github.io/fav/url-porter.json npm run package",
@@ -23,5 +28,15 @@
   },
   "author": "Sy Le",
   "license": "ISC",
-  "description": "This extension lets you configure redirect rules and set a custom homepage."
+  "description": "This extension lets you configure redirect rules and set a custom homepage.",
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.8",
+    "@mui/material": "^7.3.8"
+  },
+  "volta": {
+    "node": "20.19.1"
+  },
+  "version": "1.0.0"
 }

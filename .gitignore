@@ -15,6 +15,7 @@ build
 coverage
 dist
 node_modules
+types
 npm-debug.log*
 public/vs
 upload
