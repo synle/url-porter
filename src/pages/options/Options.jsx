@@ -331,13 +331,15 @@ function OptionsContent() {
         throw new Error("Invalid response format");
       }
 
+      // Close dialog immediately so the UI doesn't appear to hang
+      setSyncDialogOpen(false);
+
       setHomepageUrl((ajaxResponse.homepage || "").trim());
       await setConfig(JSON.stringify(ajaxResponse.configs ?? []));
       await saveHomepageUrl((ajaxResponse.homepage || "").trim());
       chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
       await loadSettings();
 
-      setSyncDialogOpen(false);
       showSnackbar("Settings synced successfully!");
     } catch (err) {
       showSnackbar("Sync failed: " + err.message, "error");
@@ -347,6 +349,9 @@ function OptionsContent() {
   // --- Reset ---
   const handleReset = async () => {
     try {
+      // Close dialog immediately so the UI doesn't appear to hang
+      setResetDialogOpen(false);
+
       const entriesToLog = configEntries.map(normalizeEntry).filter(Boolean);
       await setConfig("[]");
       await saveHomepageUrl("");
@@ -355,7 +360,6 @@ function OptionsContent() {
         await addHistoryEntry(entry.from, entry.to, "deleted");
       }
       await loadSettings();
-      setResetDialogOpen(false);
       setSelected([]);
       showSnackbar("All settings have been reset.");
     } catch (err) {
