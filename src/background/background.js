@@ -44,17 +44,31 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 // --- Message & Storage Listeners ---
 
+/**
+ * Debounce timer for bookmark reconciliation. Both onMessage and
+ * storage.onChanged fire for the same config write, so we coalesce
+ * them into a single reconciliation pass.
+ */
+let reconcileTimer = null;
+function scheduleReconcile() {
+  clearTimeout(reconcileTimer);
+  reconcileTimer = setTimeout(() => reconcileBookmarksFromStorage(), 300);
+}
+
 /** Re-sync rules and bookmarks when UI pages send an update event. */
 chrome.runtime.onMessage.addListener((request) => {
   if (request.type === "Myevent.updateConfig") {
-    updateRedirectRules().then(() => reconcileBookmarksFromStorage());
+    updateRedirectRules().then(scheduleReconcile);
   }
 });
 
-/** Backup listener: also sync when config changes via chrome.storage directly. */
+/**
+ * Backup listener: sync when config changes via chrome.storage directly
+ * (e.g. cross-device sync or external writes).
+ */
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "sync" && changes.jsonConfig) {
-    updateRedirectRules().then(() => reconcileBookmarksFromStorage());
+    updateRedirectRules().then(scheduleReconcile);
   }
 });
 

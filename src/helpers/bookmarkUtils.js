@@ -2,49 +2,21 @@
  * Bookmark synchronization utilities.
  *
  * Maintains a "url-porter" bookmark folder under "Other Bookmarks" that
- * mirrors the current redirect config. Bookmarks are resolved to their
- * final URL (following redirects) so they point to the real destination.
+ * mirrors the current redirect config. Each config entry becomes a bookmark
+ * with the alias as the title and the destination URL as the bookmark URL.
  */
 
-import { normalizeEntry, stripAlias } from "./configUtils.js";
-
-/** Timeout (ms) for HEAD requests when resolving redirect URLs. */
-const RESOLVE_TIMEOUT_MS = 5000;
+import { normalizeEntry, normalizeTo, stripAlias } from "./configUtils.js";
 
 /**
  * Extract a clean bookmark title from a config entry's `from` field.
  * Strips the `||` prefix and `^` suffix used by declarativeNetRequest.
  *
- * @param {import('./configUtils.js').RawConfigEntry} entry
+ * @param {import('./configUtils.js').ConfigEntry} entry - A normalized config entry
  * @returns {string}
  */
 export function bookmarkTitleFromEntry(entry) {
-  const normalized = normalizeEntry(entry);
-  if (!normalized) return "";
-  return stripAlias(normalized.from);
-}
-
-/**
- * Follow redirects to resolve the final URL.
- * Returns the original URL on network error or timeout.
- *
- * @param {string} url
- * @returns {Promise<string>} The resolved URL, or the original on error
- */
-export async function resolveUrl(url) {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), RESOLVE_TIMEOUT_MS);
-    const response = await fetch(url, {
-      method: "HEAD",
-      redirect: "follow",
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    return response.url;
-  } catch {
-    return url;
-  }
+  return stripAlias(entry.from);
 }
 
 /**
@@ -66,6 +38,7 @@ async function findOrCreateFolder() {
 /**
  * Reconcile the "url-porter" bookmark folder with the given config entries.
  * Adds missing bookmarks, updates changed URLs, and removes stale ones.
+ * Uses the config's `to` URL directly (no HTTP resolution) for reliable matching.
  *
  * @param {import('./configUtils.js').RawConfigEntry[]} configEntries
  */
@@ -79,21 +52,14 @@ export async function reconcileBookmarks(configEntries) {
     existingMap.set(child.title, { id: child.id, url: child.url });
   }
 
-  // Build desired state: title → resolvedUrl
+  // Build desired state from config: title → url
   const entries = configEntries.map(normalizeEntry).filter(Boolean);
   const desiredMap = new Map();
-
-  const resolutions = await Promise.all(
-    entries.map(async (entry) => {
-      const title = bookmarkTitleFromEntry(entry);
-      if (!title) return null;
-      const resolvedUrl = await resolveUrl(entry.to);
-      return { title, url: resolvedUrl };
-    }),
-  );
-
-  for (const result of resolutions) {
-    if (result) desiredMap.set(result.title, result.url);
+  for (const entry of entries) {
+    const title = bookmarkTitleFromEntry(entry);
+    if (title) {
+      desiredMap.set(title, normalizeTo(entry.to));
+    }
   }
 
   // Add missing and update changed bookmarks

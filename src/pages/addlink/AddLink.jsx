@@ -30,7 +30,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { ThemeContextProvider } from "../../theme.jsx";
 import { getConfig, setConfig } from "../../helpers/storage.js";
 import { normalizeFrom, normalizeTo, findDuplicateEntry, cleanAlias, cleanUrl } from "../../helpers/configUtils.js";
-import { ALIAS_PLACEHOLDER, ALIAS_HELPER_TEXT, URL_PLACEHOLDER, URL_HELPER_TEXT } from "../../helpers/fieldHelpers.js";
+import { ALIAS_PLACEHOLDER, URL_PLACEHOLDER } from "../../helpers/fieldHelpers.js";
 import { addHistoryEntry } from "../../helpers/historyUtils.js";
 
 function AddLinkContent() {
@@ -203,7 +203,6 @@ function AddLinkContent() {
             onChange={(e) => setLinkFrom(e.target.value)}
             onBlur={handleFromBlur}
             placeholder={ALIAS_PLACEHOLDER}
-            helperText={ALIAS_HELPER_TEXT}
             sx={{ mb: 2 }}
             required
             autoFocus
@@ -217,7 +216,6 @@ function AddLinkContent() {
             onChange={(e) => setLinkTo(e.target.value)}
             onBlur={handleToBlur}
             placeholder={URL_PLACEHOLDER}
-            helperText={URL_HELPER_TEXT}
             sx={{ mb: 2.5 }}
             size="small"
             required
