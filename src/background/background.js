@@ -170,12 +170,15 @@ async function updateRedirectRules() {
 
 /** Load config from storage and reconcile the bookmark folder. */
 async function reconcileBookmarksFromStorage() {
+  console.log("[background] reconcileBookmarksFromStorage: starting...");
   try {
     const raw = await getConfig();
+    console.log("[background] reconcileBookmarksFromStorage: got config with", raw?.length, "entries");
+    console.log("[background] reconcileBookmarksFromStorage: raw config:", JSON.stringify(raw, null, 2));
     await reconcileBookmarks(raw);
-    console.log("Bookmarks reconciled");
+    console.log("[background] reconcileBookmarksFromStorage: bookmarks reconciled successfully");
   } catch (error) {
-    console.error("Failed to reconcile bookmarks:", error);
+    console.error("[background] reconcileBookmarksFromStorage: FAILED:", error, error?.stack);
   }
 }
 

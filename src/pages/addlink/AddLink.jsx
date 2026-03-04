@@ -168,8 +168,9 @@ function AddLinkContent() {
   return (
     <Box
       sx={{
+        minWidth: 650,
+        minHeight: 300,
         width: "100%",
-        maxWidth: 800,
         mx: "auto",
         display: "flex",
         flexDirection: "column",
@@ -182,13 +183,13 @@ function AddLinkContent() {
             Add Link
           </Typography>
           <Box>
-            <IconButton size="small" onClick={openInNewTab} title="Open in New Tab">
+            <IconButton onClick={openInNewTab} title="Open in New Tab">
               <OpenInNewIcon />
             </IconButton>
-            <IconButton size="small" onClick={navigateToOptions} title="Open Settings">
+            <IconButton onClick={navigateToOptions} title="Open Settings">
               <SettingsIcon />
             </IconButton>
-            <IconButton size="small" onClick={handleCancel} title="Close">
+            <IconButton onClick={handleCancel} title="Close">
               <CloseIcon />
             </IconButton>
           </Box>
@@ -206,7 +207,6 @@ function AddLinkContent() {
             sx={{ mb: 2 }}
             required
             autoFocus
-            size="small"
           />
 
           <TextField
@@ -217,7 +217,6 @@ function AddLinkContent() {
             onBlur={handleToBlur}
             placeholder={URL_PLACEHOLDER}
             sx={{ mb: 2.5 }}
-            size="small"
             required
           />
 

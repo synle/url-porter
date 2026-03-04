@@ -45,6 +45,9 @@ import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import HistoryIcon from "@mui/icons-material/History";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import AddLinkIcon from "@mui/icons-material/AddLink";
+import Editor from "react-simple-code-editor";
+import { highlight, languages } from "prismjs/components/prism-core";
+import "prismjs/components/prism-json";
 /**
  * Options page — main settings UI for URL Porter.
  *
@@ -65,6 +68,8 @@ import {
   setSyncUrlToStorage,
   isValidUrl,
   DEFAULT_SYNC_URL,
+  getBookmarkFolderName,
+  setBookmarkFolderName,
 } from "../../helpers/storage.js";
 import { normalizeEntry, normalizeFrom, normalizeTo, findDuplicateEntry, cleanAlias, cleanUrl } from "../../helpers/configUtils.js";
 import { ALIAS_PLACEHOLDER, ALIAS_HELPER_TEXT, URL_PLACEHOLDER, URL_HELPER_TEXT } from "../../helpers/fieldHelpers.js";
@@ -118,6 +123,7 @@ function OptionsContent() {
   // History limits
   const [historyAliasLimitValue, setHistoryAliasLimitValue] = useState(5000);
   const [historyEntryLimitValue, setHistoryEntryLimitValue] = useState(20);
+  const [bookmarkFolderNameValue, setBookmarkFolderNameValue] = useState("url-porter");
 
   const fromInputRef = useRef(null);
 
@@ -139,6 +145,8 @@ function OptionsContent() {
     setHistoryAliasLimitValue(aliasLimit);
     const entryLimit = await getHistoryEntryLimit();
     setHistoryEntryLimitValue(entryLimit);
+    const folderName = await getBookmarkFolderName();
+    setBookmarkFolderNameValue(folderName);
   };
 
   const showSnackbar = (message, severity = "success") => {
@@ -455,7 +463,7 @@ function OptionsContent() {
       <Container maxWidth="lg" sx={{ py: 4 }}>
         {/* Mode Toggle */}
         <Box display="flex" justifyContent="center" mb={3}>
-          <ToggleButtonGroup value={mode} exclusive onChange={handleModeChange} size="small">
+          <ToggleButtonGroup value={mode} exclusive onChange={handleModeChange}>
             <ToggleButton value="clean">
               <ViewListIcon sx={{ mr: 1 }} /> Clean Mode
             </ToggleButton>
@@ -476,13 +484,66 @@ function OptionsContent() {
           sx={{ mb: 3 }}
         />
 
+        {/* Bookmark Folder Name */}
+        <TextField
+          label="Bookmark Folder Name"
+          fullWidth
+          value={bookmarkFolderNameValue}
+          onChange={(e) => setBookmarkFolderNameValue(e.target.value)}
+          onBlur={async () => {
+            const val = bookmarkFolderNameValue.trim() || "url-porter";
+            setBookmarkFolderNameValue(val);
+            try {
+              await setBookmarkFolderName(val);
+              chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
+            } catch (err) {
+              showSnackbar("Failed to save bookmark folder name: " + err, "error");
+            }
+          }}
+          placeholder="url-porter"
+          sx={{ mb: 3 }}
+        />
+
+        {/* History Limits */}
+        <Box display="flex" alignItems="center" gap={2} mb={3} flexWrap="wrap">
+          <Typography variant="body2" color="text.secondary">
+            Max link aliases in history:
+          </Typography>
+          <TextField
+            type="number"
+            value={historyAliasLimitValue}
+            onChange={(e) => setHistoryAliasLimitValue(Number(e.target.value))}
+            onBlur={async () => {
+              const val = Math.max(1, historyAliasLimitValue || 5000);
+              setHistoryAliasLimitValue(val);
+              await setHistoryAliasLimit(val);
+            }}
+            slotProps={{ input: { inputProps: { min: 1 } } }}
+            sx={{ width: 100 }}
+          />
+          <Typography variant="body2" color="text.secondary">
+            Max entries per alias:
+          </Typography>
+          <TextField
+            type="number"
+            value={historyEntryLimitValue}
+            onChange={(e) => setHistoryEntryLimitValue(Number(e.target.value))}
+            onBlur={async () => {
+              const val = Math.max(1, historyEntryLimitValue || 20);
+              setHistoryEntryLimitValue(val);
+              await setHistoryEntryLimit(val);
+            }}
+            slotProps={{ input: { inputProps: { min: 1 } } }}
+            sx={{ width: 100 }}
+          />
+        </Box>
+
         {/* Clean Mode */}
         {mode === "clean" && (
           <Box>
             {/* Search & Actions */}
             <Box display="flex" gap={2} mb={2} alignItems="center" flexWrap="wrap">
               <TextField
-                size="small"
                 placeholder="Search links..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -497,7 +558,7 @@ function OptionsContent() {
                 }}
                 sx={{ flexGrow: 1, minWidth: 200 }}
               />
-              <FormControl size="small" sx={{ minWidth: 140 }}>
+              <FormControl sx={{ minWidth: 140 }}>
                 <InputLabel>Sort by</InputLabel>
                 <Select
                   value={sortBy}
@@ -520,7 +581,7 @@ function OptionsContent() {
 
             {/* Table */}
             <TableContainer component={Paper} sx={{ mb: 3 }}>
-              <Table size="small">
+              <Table>
                 <TableHead>
                   <TableRow>
                     <TableCell padding="checkbox">
@@ -582,7 +643,6 @@ function OptionsContent() {
                         </TableCell>
                         <TableCell align="right">
                           <IconButton
-                            size="small"
                             onClick={() => {
                               setEditIndex(entry._origIndex);
                               setEditFrom(entry.from || "");
@@ -593,7 +653,6 @@ function OptionsContent() {
                             <EditIcon fontSize="small" />
                           </IconButton>
                           <IconButton
-                            size="small"
                             color="error"
                             onClick={() => {
                               setDeleteIndex(entry._origIndex);
@@ -628,64 +687,74 @@ function OptionsContent() {
         {/* Advanced Mode */}
         {mode === "advanced" && (
           <Box>
-            <TextField
-              multiline
-              fullWidth
-              minRows={20}
-              maxRows={30}
-              value={editorContent}
-              onChange={(e) => setEditorContent(e.target.value)}
-              slotProps={{
-                input: {
-                  sx: {
-                    fontFamily: '"Roboto Mono", "Courier New", monospace',
-                    fontSize: 13,
-                    lineHeight: 1.5,
-                  },
+            <Box
+              component="fieldset"
+              sx={(theme) => ({
+                mb: 2,
+                border: 1,
+                borderColor: theme.palette.mode === "light" ? "rgba(0, 0, 0, 0.23)" : "rgba(255, 255, 255, 0.23)",
+                borderRadius: 1,
+                overflow: "auto",
+                maxHeight: "calc(100vh - 450px)",
+                minHeight: 400,
+                p: 0,
+                m: 0,
+                "& .prism-code-editor": {
+                  minHeight: 400,
                 },
-              }}
-              sx={{ mb: 2 }}
-            />
-            <Button variant="contained" startIcon={<SaveIcon />} onClick={handleAdvancedSave} size="large">
-              Save
-            </Button>
+                "&:hover": {
+                  borderColor: theme.palette.mode === "light" ? "rgba(0, 0, 0, 0.87)" : "rgba(255, 255, 255, 0.87)",
+                },
+                "&:focus-within": {
+                  borderColor: theme.palette.primary.main,
+                  borderWidth: 2,
+                },
+                ...(theme.palette.mode === "light"
+                  ? {
+                      "& .token.property": { color: "#905" },
+                      "& .token.string": { color: "#690" },
+                      "& .token.number": { color: "#07a" },
+                      "& .token.boolean": { color: "#07a" },
+                      "& .token.null": { color: "#07a" },
+                      "& .token.punctuation": { color: "#999" },
+                    }
+                  : {
+                      "& .token.property": { color: "#f8c555" },
+                      "& .token.string": { color: "#a6e22e" },
+                      "& .token.number": { color: "#ae81ff" },
+                      "& .token.boolean": { color: "#ae81ff" },
+                      "& .token.null": { color: "#ae81ff" },
+                      "& .token.punctuation": { color: "#ccc" },
+                    }),
+              })}
+            >
+              <Typography
+                component="legend"
+                variant="caption"
+                sx={{ ml: 1, px: 0.5, color: "text.secondary" }}
+              >
+                JSON Config
+              </Typography>
+              <Editor
+                className="prism-code-editor"
+                value={editorContent}
+                onValueChange={(code) => setEditorContent(code)}
+                highlight={(code) => highlight(code, languages.json, "json")}
+                padding={12}
+                style={{
+                  fontFamily: '"Roboto Mono", "Courier New", monospace',
+                  fontSize: 14,
+                  lineHeight: 1.5,
+                }}
+              />
+            </Box>
+            <Box display="flex" justifyContent="flex-end" mt={1}>
+              <Button variant="contained" startIcon={<SaveIcon />} onClick={handleAdvancedSave} size="large">
+                Save
+              </Button>
+            </Box>
           </Box>
         )}
-        {/* History Limits */}
-        <Box display="flex" alignItems="center" gap={2} mt={3} flexWrap="wrap">
-          <Typography variant="body2" color="text.secondary">
-            Max link aliases in history:
-          </Typography>
-          <TextField
-            type="number"
-            size="small"
-            value={historyAliasLimitValue}
-            onChange={(e) => setHistoryAliasLimitValue(Number(e.target.value))}
-            onBlur={async () => {
-              const val = Math.max(1, historyAliasLimitValue || 5000);
-              setHistoryAliasLimitValue(val);
-              await setHistoryAliasLimit(val);
-            }}
-            slotProps={{ input: { inputProps: { min: 1 } } }}
-            sx={{ width: 100 }}
-          />
-          <Typography variant="body2" color="text.secondary">
-            Max entries per alias:
-          </Typography>
-          <TextField
-            type="number"
-            size="small"
-            value={historyEntryLimitValue}
-            onChange={(e) => setHistoryEntryLimitValue(Number(e.target.value))}
-            onBlur={async () => {
-              const val = Math.max(1, historyEntryLimitValue || 20);
-              setHistoryEntryLimitValue(val);
-              await setHistoryEntryLimit(val);
-            }}
-            slotProps={{ input: { inputProps: { min: 1 } } }}
-            sx={{ width: 100 }}
-          />
-        </Box>
       </Container>
 
       {/* Add Link Dialog */}

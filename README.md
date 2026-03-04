@@ -6,9 +6,13 @@ A Chrome extension that lets you configure redirect rules and set a custom homep
 
 - **URL Redirection** - Define rules to automatically redirect URLs based on patterns
 - **Custom New Tab** - Replace Chrome's default new tab page with your own homepage
-- **Add Link Page** - Quickly add new redirect rules from a dedicated page
+- **Add Link Page** - Quickly add new redirect rules from a dedicated popup or page
+- **Bookmark Sync** - Automatically maintains a bookmark folder mirroring your redirect rules (configurable folder name)
+- **History Tracking** - Audit trail of all redirect rule changes with configurable limits
 - **Sync Server** - Optionally sync your configuration from a remote JSON file
-- **Monaco Editor** - Edit your configuration with a full-featured code editor
+- **JSON Editor** - Edit your configuration with syntax-highlighted JSON editor (Prism.js)
+- **Omnibox Integration** - Type "go" in the address bar to search and navigate your redirect rules
+- **Light/Dark Mode** - Automatically adapts to your system theme preference
 
 ## Configuration
 
@@ -22,11 +26,11 @@ The config is a JSON array of redirect rules. Each rule can be:
 ```json
 [
   {
-    "from": "||fav^",
-    "to": "http://synle.github.io/fav/"
+    "from": "fav",
+    "to": "https://synle.github.io/fav/"
   },
   {
-    "from": "||plex^",
+    "from": "plex",
     "to": "https://app.plex.tv/desktop/#!/"
   },
   ["google", "google.com"]
@@ -67,7 +71,7 @@ If no `.env` file exists, it defaults to: `https://synle.github.io/fav/url-porte
 npm run dev
 ```
 
-This starts the Vite dev server with hot reload for rapid development.
+This builds to `dist/` in watch mode, rebuilding on file changes.
 
 ### Build the Extension
 
@@ -84,38 +88,39 @@ The built extension will be output to the `dist` directory.
 3. Click **Load unpacked**
 4. Select the `dist` directory
 
-After making changes, run `npm run build` again and click the reload button on the extension card.
+After making changes, run `npm run build` (or use `npm run dev` for watch mode) and click the reload button on the extension card.
 
 ### Scripts
 
-| Script            | Description                                              |
-| ----------------- | -------------------------------------------------------- |
-| `npm run dev`     | Start Vite dev server with hot reload                    |
-| `npm run build`   | Build the extension for production                       |
-| `npm run bundle`  | Create a zip from the built extension                    |
-| `npm run package` | Build + bundle in one command (creates `url-porter.zip`) |
-| `npm run format`  | Format code with Prettier                                |
+| Script            | Description                                                |
+| ----------------- | ---------------------------------------------------------- |
+| `npm run dev`     | Build to `dist/` in watch mode (rebuilds on file changes)  |
+| `npm run build`   | One-off production build to `dist/` (also generates types) |
+| `npm run bundle`  | Bump minor version + create `url-porter.zip` from `dist/`  |
+| `npm run package` | Build + bundle (full release pipeline)                     |
+| `npm run format`  | Format code with Prettier (140 char width)                 |
 
 ### Project Structure
 
 ```
 src/
-├── background/      # Service worker (redirect logic)
-├── helpers/         # Shared utilities
+├── background/      # Service worker (redirect rules, context menus, omnibox, bookmark sync)
+├── helpers/         # Shared utilities (storage, config normalization, history, bookmarks)
 ├── pages/
-│   ├── addlink/     # Add-link page (quick-add UI)
-│   ├── newtab/      # Custom new tab page
-│   └── options/     # Extension options / config editor
-├── manifest.json    # Chrome extension manifest
-└── theme.jsx        # MUI theme configuration
+│   ├── addlink/     # Browser action popup for quick-adding redirect rules
+│   ├── history/     # Audit trail of redirect rule changes
+│   ├── newtab/      # New tab override (auto-redirects to configured homepage)
+│   └── options/     # Main settings UI (Clean table mode + Advanced JSON editor)
+├── manifest.json    # Chrome extension manifest (Manifest V3)
+└── theme.jsx        # MUI theme (auto light/dark, compact sizing, no animations)
 ```
 
 ### Tech Stack
 
-- **React 19** + **Vite** — build and dev tooling
-- **MUI (Material UI)** — component library and theming
-- **Monaco Editor** — in-browser code editor for config JSON
-- **Sass** — stylesheets
+- **React 19** + **Vite 6** — build and dev tooling
+- **MUI 7 (Material UI)** — component library and theming
+- **react-simple-code-editor** + **Prism.js** — lightweight syntax-highlighted JSON editor
+- **Chrome Manifest V3** — declarativeNetRequest, storage, bookmarks, omnibox APIs
 
 ## Installation
 

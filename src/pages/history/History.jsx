@@ -197,7 +197,6 @@ function HistoryContent() {
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Box display="flex" gap={2} mb={2} alignItems="center">
           <TextField
-            size="small"
             placeholder="Search history..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -220,7 +219,7 @@ function HistoryContent() {
         </Box>
 
         <TableContainer component={Paper}>
-          <Table size="small">
+          <Table>
             <TableHead>
               <TableRow>
                 <TableCell padding="checkbox">
@@ -281,7 +280,7 @@ function HistoryContent() {
                     </TableCell>
                     <TableCell sx={{ whiteSpace: "nowrap" }}>{formatDate(entry.date)}</TableCell>
                     <TableCell align="right">
-                      <IconButton size="small" onClick={() => handleRestore(entry)} title="Restore">
+                      <IconButton onClick={() => handleRestore(entry)} title="Restore">
                         <RestoreIcon fontSize="small" />
                       </IconButton>
                     </TableCell>

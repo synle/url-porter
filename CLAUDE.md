@@ -37,21 +37,25 @@ To test the extension locally during development:
 
 **Extension entry points** (each is a separate Vite input with its own HTML/JSX):
 
-- `src/background/background.js` — Service worker. Manages `chrome.declarativeNetRequest` redirect rules, context menus, and message handling.
-- `src/pages/options/` — Main settings UI with "Clean" (table) and "Advanced" (JSON editor) modes.
+- `src/background/background.js` — Service worker. Manages `chrome.declarativeNetRequest` redirect rules, context menus, omnibox suggestions ("go" keyword), and message handling.
+- `src/pages/options/` — Main settings UI with "Clean" (table) and "Advanced" (syntax-highlighted JSON editor via `react-simple-code-editor` + Prism.js) modes. Also configures homepage URL, bookmark folder name, and history limits.
 - `src/pages/addlink/` — Browser action popup for quick-adding the current page as a redirect rule.
 - `src/pages/newtab/` — New tab override that auto-redirects to a configured homepage.
-- `src/pages/history/` — Audit trail of redirect rule changes.
+- `src/pages/history/` — Audit trail of redirect rule changes with search, restore, and bulk delete.
 
 **Shared helpers** (`src/helpers/`):
 
-- `storage.js` — Chrome storage API wrappers. Config rules use `chrome.storage.sync`; homepage URL, sync URL, and history use `chrome.storage.local`.
+- `storage.js` — Chrome storage API wrappers. Config rules use `chrome.storage.sync`; homepage URL, sync URL, bookmark folder name, and history use `chrome.storage.local`.
 - `configUtils.js` — Normalizes redirect entries for `declarativeNetRequest` format. Only file with TypeScript declarations (emitted to `types/`).
 - `historyUtils.js` — History tracking with configurable limits (5000 aliases, 20 entries per alias).
+- `bookmarkUtils.js` — Bookmark sync. Maintains a configurable bookmark folder (default "url-porter") under Other Bookmarks that mirrors config entries. The folder name is stored in `chrome.storage.local` and editable on the Options page. Key behaviors:
+  - **Never deletes** existing bookmarks — old bookmarks not in config are kept as-is.
+  - **Preserves sort order** — existing bookmarks are updated in-place; new ones are appended to the bottom.
+  - **Resolves short links** — if a `to` URL matches another alias, it expands through the chain until reaching a full URL (e.g. `a` → `aaa` → `https://aaa.com`).
 
-**Data flow**: UI saves config → `storage.js` → sends `"Myevent.updateConfig"` message → `background.js` updates `chrome.declarativeNetRequest.updateDynamicRules()` → history logged.
+**Data flow**: UI saves config → `storage.js` → sends `"Myevent.updateConfig"` message → `background.js` updates `chrome.declarativeNetRequest.updateDynamicRules()` → history logged → bookmark folder reconciled.
 
-**Theme** (`src/theme.jsx`): MUI theme with auto light/dark mode detection.
+**Theme** (`src/theme.jsx`): MUI theme with auto light/dark mode detection, all animations disabled, compact sizing (small defaults for all components), and ripple disabled.
 
 ## Build System Details
 
@@ -68,5 +72,7 @@ Output structure must match paths declared in `manifest.json`. Be careful when m
 
 - ES modules throughout (`"type": "module"` in package.json and manifest.json background)
 - React state management via hooks only (no external state library)
-- URL normalization: `from` fields get `||` prefix and `^` suffix; `to` fields get `https://` if no protocol
-- All UI pages share `src/theme.jsx` for consistent styling
+- URL normalization: `from` fields get `||` prefix and `^` suffix at redirect rule build time (in `normalizeFrom`); `to` fields get `https://` if no protocol
+- All UI pages share `src/theme.jsx` for consistent styling — component sizes default to "small" globally via theme, so avoid setting `size="small"` on individual components
+- Settings that auto-save on blur (homepage URL, bookmark folder name, history limits) send `"Myevent.updateConfig"` message to trigger background reconciliation
+- No Monaco Editor — use `react-simple-code-editor` + Prism.js for the JSON editor (Monaco doesn't work in Chrome extensions)

@@ -27,6 +27,47 @@ const getDesignTokens = (mode) => ({
   shape: {
     borderRadius: 8,
   },
+  transitions: {
+    create: () => "none",
+  },
+  components: {
+    MuiButtonBase: {
+      defaultProps: { disableRipple: true },
+    },
+    MuiButton: {
+      defaultProps: { size: "small" },
+    },
+    MuiTextField: {
+      defaultProps: { size: "small" },
+    },
+    MuiFormControl: {
+      defaultProps: { size: "small" },
+    },
+    MuiTable: {
+      defaultProps: { size: "small" },
+    },
+    MuiToolbar: {
+      defaultProps: { variant: "dense" },
+    },
+    MuiIconButton: {
+      defaultProps: { size: "small" },
+    },
+    MuiFab: {
+      defaultProps: { size: "small" },
+    },
+    MuiCheckbox: {
+      defaultProps: { size: "small" },
+    },
+    MuiSelect: {
+      defaultProps: { size: "small" },
+    },
+    MuiInputLabel: {
+      defaultProps: { size: "small" },
+    },
+    MuiToggleButton: {
+      defaultProps: { size: "small" },
+    },
+  },
 });
 
 export function ThemeContextProvider({ children }) {

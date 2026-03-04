@@ -137,6 +137,33 @@ export function setSyncUrlToStorage(input_value) {
  * @param {string} url
  * @returns {boolean}
  */
+/**
+ * Get the bookmark folder name from local storage.
+ *
+ * @returns {Promise<string>} Folder name or "url-porter"
+ */
+export function getBookmarkFolderName() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("bookmarkFolderName", (result) => {
+      resolve(result.bookmarkFolderName || "url-porter");
+    });
+  });
+}
+
+/**
+ * Save the bookmark folder name to local storage.
+ *
+ * @param {string} input_value - The bookmark folder name to save
+ * @returns {Promise<void>}
+ */
+export function setBookmarkFolderName(input_value) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ bookmarkFolderName: input_value }, () => {
+      resolve();
+    });
+  });
+}
+
 export function isValidUrl(url) {
   try {
     const urlObj = new URL(url);
