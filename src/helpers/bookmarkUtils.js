@@ -5,6 +5,7 @@
  * redirect config. The folder name is configurable (defaults to "url-porter")
  * and stored in chrome.storage.local. Each config entry becomes a bookmark
  * with the alias as the title and the destination URL as the bookmark URL.
+ * Duplicate bookmarks (same title) are cleaned up — the later entry wins.
  */
 
 import { normalizeEntry, normalizeTo, stripAlias } from "./configUtils.js";
@@ -85,7 +86,7 @@ function resolveShortLink(rawTo, aliasToRawUrl, maxDepth = 10) {
 
 /**
  * Reconcile the "url-porter" bookmark folder with the given config entries.
- * - Keeps all existing bookmarks (never deletes old ones).
+ * - Deduplicates existing bookmarks by title (later entry wins, older duplicates removed).
  * - Preserves existing bookmark sort order.
  * - Updates existing bookmarks in-place if the title matches a config entry.
  * - Adds new config entries to the bottom of the folder.
@@ -105,10 +106,30 @@ export async function reconcileBookmarks(configEntries) {
   console.log("[bookmarkUtils] reconcileBookmarks: existing bookmarks count:", children.length);
   console.log("[bookmarkUtils] reconcileBookmarks: existing bookmarks:", JSON.stringify(children, null, 2));
 
-  // Build map of existing bookmarks: title → { id, url }
-  const existingMap = new Map();
+  // Deduplicate existing bookmarks by title.
+  // Later bookmarks (higher index) are the source of truth.
+  // Earlier duplicates get removed.
+  const deduped = new Map(); // title → child node (keeps last seen)
+  const toRemove = []; // duplicate bookmark IDs to delete
   for (const child of children) {
-    existingMap.set(child.title, { id: child.id, url: child.url });
+    if (deduped.has(child.title)) {
+      const older = deduped.get(child.title);
+      console.log("[bookmarkUtils] reconcileBookmarks: DEDUP removing older bookmark:", older.id, "title:", child.title, "url:", older.url, "| keeping newer:", child.id, "url:", child.url);
+      toRemove.push(older.id);
+    }
+    deduped.set(child.title, child);
+  }
+  for (const id of toRemove) {
+    await chrome.bookmarks.remove(id);
+  }
+  if (toRemove.length > 0) {
+    console.log("[bookmarkUtils] reconcileBookmarks: removed", toRemove.length, "duplicate bookmark(s)");
+  }
+
+  // Build map of existing bookmarks (post-dedup): title → { id, url }
+  const existingMap = new Map();
+  for (const [title, child] of deduped) {
+    existingMap.set(title, { id: child.id, url: child.url });
   }
 
   // Normalize config entries

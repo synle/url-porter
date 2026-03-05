@@ -49,7 +49,7 @@ To test the extension locally during development:
 - `configUtils.js` — Normalizes redirect entries for `declarativeNetRequest` format. Only file with TypeScript declarations (emitted to `types/`).
 - `historyUtils.js` — History tracking with configurable limits (5000 aliases, 20 entries per alias).
 - `bookmarkUtils.js` — Bookmark sync. Maintains a configurable bookmark folder (default "url-porter") under Other Bookmarks that mirrors config entries. The folder name is stored in `chrome.storage.local` and editable on the Options page. Key behaviors:
-  - **Never deletes** existing bookmarks — old bookmarks not in config are kept as-is.
+  - **Deduplicates by title** — if multiple bookmarks share the same title, the later (newer) one is kept and older duplicates are removed. Unique bookmarks not in config are never deleted.
   - **Preserves sort order** — existing bookmarks are updated in-place; new ones are appended to the bottom.
   - **Resolves short links** — if a `to` URL matches another alias, it expands through the chain until reaching a full URL (e.g. `a` → `aaa` → `https://aaa.com`).
 
