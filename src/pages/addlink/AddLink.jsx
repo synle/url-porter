@@ -27,17 +27,20 @@ import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
 import SettingsIcon from "@mui/icons-material/Settings";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import SyncIcon from "@mui/icons-material/Sync";
 import { ThemeContextProvider } from "../../theme.jsx";
 import { getConfig, setConfig } from "../../helpers/storage.js";
 import { normalizeFrom, normalizeTo, findDuplicateEntry, cleanAlias, cleanUrl } from "../../helpers/configUtils.js";
 import { ALIAS_PLACEHOLDER, URL_PLACEHOLDER } from "../../helpers/fieldHelpers.js";
 import { addHistoryEntry } from "../../helpers/historyUtils.js";
+import SyncDialog from "../../components/SyncDialog.jsx";
 
 function AddLinkContent() {
   const [linkFrom, setLinkFrom] = useState("");
   const [linkTo, setLinkTo] = useState("");
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   const [duplicateDialog, setDuplicateDialog] = useState({ open: false, index: -1, oldTo: "" });
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const fromInputRef = useRef(null);
 
   useEffect(() => {
@@ -168,8 +171,8 @@ function AddLinkContent() {
   return (
     <Box
       sx={{
-        minWidth: 650,
-        minHeight: 300,
+        minWidth: 700,
+        minHeight: 325,
         width: "100%",
         mx: "auto",
         display: "flex",
@@ -183,6 +186,9 @@ function AddLinkContent() {
             Add Link
           </Typography>
           <Box>
+            <IconButton onClick={() => setSyncDialogOpen(true)} title="Sync Settings">
+              <SyncIcon />
+            </IconButton>
             <IconButton onClick={openInNewTab} title="Open in New Tab">
               <OpenInNewIcon />
             </IconButton>
@@ -273,6 +279,13 @@ function AddLinkContent() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <SyncDialog
+        open={syncDialogOpen}
+        onClose={() => setSyncDialogOpen(false)}
+        onSuccess={() => showSnackbar("Settings synced successfully!")}
+        onError={(msg) => showSnackbar(msg, "error")}
+      />
 
       <Snackbar
         open={snackbar.open}

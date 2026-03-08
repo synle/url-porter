@@ -59,15 +59,12 @@ import "prismjs/components/prism-json";
  */
 
 import { ThemeContextProvider } from "../../theme.jsx";
+import SyncDialog from "../../components/SyncDialog.jsx";
 import {
   getConfig,
   setConfig,
   getHomepageUrl,
   saveHomepageUrl,
-  getSyncUrl,
-  setSyncUrlToStorage,
-  isValidUrl,
-  DEFAULT_SYNC_URL,
   getBookmarkFolderName,
   setBookmarkFolderName,
 } from "../../helpers/storage.js";
@@ -85,8 +82,6 @@ function OptionsContent() {
   // Core state
   const [homepageUrl, setHomepageUrl] = useState("");
   const [configEntries, setConfigEntries] = useState([]);
-  const [syncUrl, setSyncUrl] = useState(DEFAULT_SYNC_URL);
-
   // Mode state
   const [mode, setMode] = useState("clean"); // "clean" | "advanced"
   const [editorContent, setEditorContent] = useState("");
@@ -134,10 +129,8 @@ function OptionsContent() {
   const loadSettings = async () => {
     const config = await getConfig();
     const homepage = await getHomepageUrl();
-    const savedSyncUrl = await getSyncUrl();
     setHomepageUrl(homepage);
     setConfigEntries(Array.isArray(config) ? config : []);
-    setSyncUrl(savedSyncUrl);
     const json = JSON.stringify(Array.isArray(config) ? config : [], null, 2);
     setEditorContent(json);
     setLastSavedEditorContent(json);
@@ -319,39 +312,6 @@ function OptionsContent() {
     setMode(newMode);
     setSelected([]);
     setSearchQuery("");
-  };
-
-  // --- Sync ---
-  const handleSyncSubmit = async () => {
-    if (!isValidUrl(syncUrl)) {
-      showSnackbar("Please enter a valid URL starting with http:// or https://", "error");
-      return;
-    }
-
-    await setSyncUrlToStorage(syncUrl);
-
-    try {
-      const res = await fetch(syncUrl, { method: "GET" });
-      if (!res.ok) throw new Error("Failed to sync settings from server");
-
-      const ajaxResponse = await res.json();
-      if (!("homepage" in ajaxResponse) || !("configs" in ajaxResponse)) {
-        throw new Error("Invalid response format");
-      }
-
-      // Close dialog immediately so the UI doesn't appear to hang
-      setSyncDialogOpen(false);
-
-      setHomepageUrl((ajaxResponse.homepage || "").trim());
-      await setConfig(JSON.stringify(ajaxResponse.configs ?? []));
-      await saveHomepageUrl((ajaxResponse.homepage || "").trim());
-      chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
-      await loadSettings();
-
-      showSnackbar("Settings synced successfully!");
-    } catch (err) {
-      showSnackbar("Sync failed: " + err.message, "error");
-    }
   };
 
   // --- Reset ---
@@ -878,27 +838,16 @@ function OptionsContent() {
         </DialogActions>
       </Dialog>
 
-      {/* Sync Settings Dialog */}
-      <Dialog open={syncDialogOpen} onClose={() => setSyncDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Sync Settings</DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>Enter the URL of your settings configuration file.</DialogContentText>
-          <TextField
-            label="Server URL"
-            type="url"
-            fullWidth
-            value={syncUrl}
-            onChange={(e) => setSyncUrl(e.target.value)}
-            placeholder="https://example.com/config.json"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSyncDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSyncSubmit}>
-            Sync Now
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <SyncDialog
+        open={syncDialogOpen}
+        onClose={() => setSyncDialogOpen(false)}
+        onSuccess={(ajaxResponse) => {
+          setHomepageUrl((ajaxResponse.homepage || "").trim());
+          loadSettings();
+          showSnackbar("Settings synced successfully!");
+        }}
+        onError={(msg) => showSnackbar(msg, "error")}
+      />
 
       {/* Unsaved Changes Dialog */}
       <Dialog open={unsavedDialogOpen} onClose={() => setUnsavedDialogOpen(false)}>
