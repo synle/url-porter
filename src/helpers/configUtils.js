@@ -47,6 +47,7 @@ export function normalizeEntries(entries) {
  */
 export function normalizeFrom(from) {
   let result = String(from ?? "")
+    .replace(/[^\x20-\x7E]/g, "") // Strip invisible/non-ASCII unicode characters
     .trim()
     .toLowerCase();
   if (!result.startsWith("||")) result = "||" + result;

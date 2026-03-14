@@ -140,6 +140,9 @@ async function updateRedirectRules() {
     const oldRules = await chrome.declarativeNetRequest.getDynamicRules();
     const removeRuleIds = oldRules.map((rule) => rule.id);
 
+    // Remove all old rules first
+    await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds, addRules: [] });
+
     const raw = await getConfig();
     const configs = normalizeEntriesForRedirect(raw);
 
@@ -155,12 +158,20 @@ async function updateRedirectRules() {
       },
     }));
 
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds,
-      addRules: rules,
-    });
+    // Add rules one-by-one so a single bad rule doesn't break everything
+    let added = 0;
+    for (const rule of rules) {
+      try {
+        await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: [], addRules: [rule] });
+        added++;
+      } catch (error) {
+        const from = rule.condition.urlFilter;
+        const to = rule.action.redirect.url;
+        console.error(`Skipping bad redirect rule: "${from}" → "${to}" — ${error.message}`);
+      }
+    }
 
-    console.log(`Updated ${rules.length} redirect rule(s)`, rules);
+    console.log(`Updated ${added}/${rules.length} redirect rule(s)`);
   } catch (error) {
     console.error("Failed to update redirect rules:", error);
   }
