@@ -30,7 +30,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import SyncIcon from "@mui/icons-material/Sync";
 import { ThemeContextProvider } from "../../theme.jsx";
 import { getConfig, setConfig } from "../../helpers/storage.js";
-import { normalizeFrom, normalizeTo, findDuplicateEntry, cleanAlias, cleanUrl } from "../../helpers/configUtils.js";
+import { normalizeFrom, normalizeTo, findDuplicateEntry, cleanAlias, cleanUrl, validateAlias } from "../../helpers/configUtils.js";
 import { ALIAS_PLACEHOLDER, URL_PLACEHOLDER } from "../../helpers/fieldHelpers.js";
 import { addHistoryEntry } from "../../helpers/historyUtils.js";
 import SyncDialog from "../../components/SyncDialog.jsx";
@@ -80,8 +80,10 @@ function AddLinkContent() {
   };
 
   const handleSave = async () => {
-    if (!linkFrom.trim()) {
-      showSnackbar("Please enter a link alias.", "error");
+    const aliasError = validateAlias(linkFrom);
+    if (aliasError) {
+      showSnackbar(aliasError, "error");
+      setLinkFrom(cleanAlias(linkFrom));
       return;
     }
     if (!linkTo.trim()) {
@@ -283,7 +285,10 @@ function AddLinkContent() {
       <SyncDialog
         open={syncDialogOpen}
         onClose={() => setSyncDialogOpen(false)}
-        onSuccess={() => showSnackbar("Settings synced successfully!")}
+        onSuccess={() => {
+          showSnackbar("Settings synced successfully!");
+          setTimeout(() => window.close(), 1000);
+        }}
         onError={(msg) => showSnackbar(msg, "error")}
       />
 

@@ -138,7 +138,23 @@ export function stripAlias(alias) {
  * @returns {string} Cleaned alias
  */
 export function cleanAlias(value) {
-  return value.trim().toLowerCase();
+  return value
+    .replace(/[^\x20-\x7E]/g, "") // Strip invisible/non-ASCII unicode characters
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Validate an alias for issues that would break declarativeNetRequest rules.
+ * Returns an error message string if invalid, or null if valid.
+ *
+ * @param {string} value - The alias to validate
+ * @returns {string | null} Error message or null
+ */
+export function validateAlias(value) {
+  if (!value || !value.trim()) return "Please enter a link alias.";
+  if (/[^\x20-\x7E]/.test(value)) return `Alias "${value}" contains invisible or non-ASCII characters. They will be stripped automatically.`;
+  return null;
 }
 
 /**

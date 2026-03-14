@@ -68,7 +68,7 @@ import {
   getBookmarkFolderName,
   setBookmarkFolderName,
 } from "../../helpers/storage.js";
-import { normalizeEntry, normalizeFrom, normalizeTo, findDuplicateEntry, cleanAlias, cleanUrl } from "../../helpers/configUtils.js";
+import { normalizeEntry, normalizeFrom, normalizeTo, findDuplicateEntry, cleanAlias, cleanUrl, validateAlias } from "../../helpers/configUtils.js";
 import { ALIAS_PLACEHOLDER, ALIAS_HELPER_TEXT, URL_PLACEHOLDER, URL_HELPER_TEXT } from "../../helpers/fieldHelpers.js";
 import {
   addHistoryEntry,
@@ -175,7 +175,13 @@ function OptionsContent() {
 
   // --- Clean Mode CRUD ---
   const handleAddLink = async () => {
-    if (!linkFrom.trim() || !linkTo.trim()) return;
+    const aliasError = validateAlias(linkFrom);
+    if (aliasError) {
+      showSnackbar(aliasError, "error");
+      setLinkFrom(cleanAlias(linkFrom));
+      return;
+    }
+    if (!linkTo.trim()) return;
 
     const duplicate = findDuplicateEntry(configEntries, linkFrom);
     if (duplicate) {
@@ -203,6 +209,13 @@ function OptionsContent() {
 
   const handleEditSave = async () => {
     if (editIndex < 0) return;
+
+    const aliasError = validateAlias(editFrom);
+    if (aliasError) {
+      showSnackbar(aliasError, "error");
+      setEditFrom(cleanAlias(editFrom));
+      return;
+    }
 
     const duplicate = findDuplicateEntry(configEntries, editFrom, editIndex);
     if (duplicate) {
