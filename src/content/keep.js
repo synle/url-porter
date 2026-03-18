@@ -105,7 +105,8 @@ function openMarkdownPreview(modal) {
 <meta charset="utf-8">
 <title>Markdown Preview</title>
 <style>
-  body { font-family: "Fira Code", "Courier New", Courier, monospace; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #1e1e1e; color: #d4d4d4; line-height: 1.6; }
+  body { font-family: "Fira Code", "Courier New", Courier, monospace; max-width: 98vw; margin: 2rem auto; padding: 0 20px; background: #1e1e1e; color: #d4d4d4;  }
+  p {margin: 0}
   h1, h2, h3, h4, h5 { color: #f0b132; border-bottom: 1px solid #333; padding-bottom: 4px; }
   a { color: #6cb6ff; }
   code { background: #2d2d2d; padding: 2px 6px; border-radius: 3px; font-size: 14px; }
