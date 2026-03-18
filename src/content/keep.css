@@ -21,3 +21,9 @@
   max-width: 100% !important;
   max-height: calc(100vh - 40px) !important;
 }
+
+/* Preview button */
+.url-porter-preview-btn {
+  margin-right: 8px !important;
+  cursor: pointer !important;
+}
