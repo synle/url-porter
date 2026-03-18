@@ -27,3 +27,8 @@
   margin-right: 8px !important;
   cursor: pointer !important;
 }
+
+img {
+  max-heigth: 90vh;
+  width: auto;
+}
