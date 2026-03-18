@@ -21,5 +21,12 @@
   },
   "chrome_url_overrides": {
     "newtab": "pages/newtab/newtab.html"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://keep.google.com/*"],
+      "css": ["content/keep.css"],
+      "js": ["content/keep.js"]
+    }
+  ]
 }

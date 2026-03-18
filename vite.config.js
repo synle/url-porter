@@ -6,6 +6,8 @@ import react from "@vitejs/plugin-react";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+const isDev = process.argv.includes("--watch");
+
 export default defineConfig({
   build: {
     outDir: "dist",
@@ -41,7 +43,18 @@ export default defineConfig({
     {
       name: "copy-manifest",
       closeBundle() {
-        copyFileSync(resolve(__dirname, "src/manifest.json"), resolve(__dirname, "dist/manifest.json"));
+        const manifestDest = resolve(__dirname, "dist/manifest.json");
+        copyFileSync(resolve(__dirname, "src/manifest.json"), manifestDest);
+        if (isDev) {
+          const manifest = JSON.parse(readFileSync(manifestDest, "utf-8"));
+          manifest.name = "URL Porter (DEV)";
+          writeFileSync(manifestDest, JSON.stringify(manifest, null, 2));
+        }
+        // Copy content scripts
+        const contentDir = resolve(__dirname, "dist/content");
+        mkdirSync(contentDir, { recursive: true });
+        copyFileSync(resolve(__dirname, "src/content/keep.css"), join(contentDir, "keep.css"));
+        copyFileSync(resolve(__dirname, "src/content/keep.js"), join(contentDir, "keep.js"));
       },
     },
     {
