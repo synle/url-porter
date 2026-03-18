@@ -99,30 +99,115 @@ function openMarkdownPreview(modal) {
   }
   console.log(TAG, "opening markdown preview");
   const body = markdownToHtml(md);
-  const html = `<!DOCTYPE html>
+  const html = `
+<!DOCTYPE html>
 <html>
-<head>
-<meta charset="utf-8">
-<title>Markdown Preview</title>
-<style>
-  body { font-family: "Fira Code", "Courier New", Courier, monospace; max-width: 98vw; margin: 2rem auto; padding: 0 20px; background: #1e1e1e; color: #d4d4d4;  }
-  p {margin: 0}
-  h1, h2, h3, h4, h5 { color: #f0b132; border-bottom: 1px solid #333; padding-bottom: 4px; }
-  a { color: #6cb6ff; }
-  code { background: #2d2d2d; padding: 2px 6px; border-radius: 3px; font-size: 14px; }
-  pre { background: #2d2d2d; padding: 16px; border-radius: 6px; overflow-x: auto; }
-  pre code { padding: 0; background: none; }
-  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
-  th, td { border: 1px solid #444; padding: 8px 12px; text-align: left; }
-  th { background: #2d2d2d; }
-  hr { border: none; border-top: 1px solid #444; margin: 24px 0; }
-  blockquote { border-left: 3px solid #444; margin: 0; padding-left: 16px; color: #999; }
-  ul, ol { padding-left: 24px; }
-  li { margin: 4px 0; }
-</style>
-</head>
-<body>${body}</body>
-</html>`;
+  <head>
+    <meta charset="utf-8" />
+    <title>Markdown Preview</title>
+    <style>
+      /* Global Reset & Base Styles */
+      body {
+        font-family: "Fira Code", "Courier New", Courier, monospace;
+        max-width: 90vw;
+        margin: 2rem auto;
+        padding: 0 1.25rem;
+        background: #1e1e1e;
+        color: #d4d4d4;
+        line-height: 1.6; /* Added for better readability */
+      }
+
+      /* Typography */
+      h1,
+      h2,
+      h3,
+      h4,
+      h5 {
+        color: #f0b132;
+        border-bottom: 0.0625rem solid #333;
+        padding-bottom: 0.25rem;
+        margin: 0;
+      }
+
+      p {
+        margin-bottom: 1rem;
+      }
+
+      a {
+        color: #6cb6ff;
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      /* Code Blocks */
+      code {
+        background: #2d2d2d;
+        padding: 0.125rem 0.375rem;
+        border-radius: 0.1875rem;
+        font-size: 0.875rem; /* Equivalent to 14px */
+      }
+
+      pre {
+        background: #2d2d2d;
+        padding: 1rem;
+        border-radius: 0.375rem;
+        overflow-x: auto;
+      }
+
+      pre code {
+        padding: 0;
+        background: none;
+        font-size: 0.9rem;
+      }
+
+      /* Data & Layout Elements */
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1rem 0;
+      }
+
+      th,
+      td {
+        border: 0.0625rem solid #444;
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+      }
+
+      th {
+        background: #2d2d2d;
+      }
+
+      hr {
+        border: none;
+        border-top: 0.0625rem solid #444;
+        margin: 1.5rem 0;
+      }
+
+      blockquote {
+        border-left: 0.1875rem solid #444;
+        margin: 1rem 0;
+        padding-left: 1rem;
+        color: #999;
+      }
+
+      ul,
+      ol {
+        padding-left: 2rem;
+        margin: 0 0 1rem 0;
+      }
+
+      li {
+        margin: 0.5rem 0;
+      }
+    </style>
+  </head>
+  <body>${body}</body>
+</html>
+`;
   const blob = new Blob([html], { type: "text/html" });
   window.open(URL.createObjectURL(blob), "_blank");
 }
