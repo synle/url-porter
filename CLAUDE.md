@@ -22,14 +22,9 @@ The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server
 
 ## Local Development with Chrome
 
-To test the extension locally during development:
-
-1. Run `npm run dev` — this builds to `dist/` and watches for file changes, rebuilding automatically.
-2. Open Chrome and go to `chrome://extensions/`.
-3. Enable **Developer mode** (toggle in the top-right corner).
-4. Click **Load unpacked** and select the `dist/` folder from this project.
-5. The extension is now loaded. You should see it in your extensions list.
-6. As you edit source files, `npm run dev` will rebuild `dist/` automatically. After a rebuild, go back to `chrome://extensions/` and click the **reload** button (circular arrow) on the URL Porter card to pick up changes.
+1. Run `npm run dev` — builds to `dist/` and watches for file changes.
+2. Open Chrome → `chrome://extensions/` → enable **Developer mode** → **Load unpacked** → select the `dist/` folder.
+3. Edit source files — Vite rebuilds automatically and the extension auto-reloads (no manual reload needed).
 
 > **Tip:** Pin the extension to your toolbar (click the puzzle-piece icon → pin URL Porter) for quick access to the Add Link popup.
 

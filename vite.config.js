@@ -45,11 +45,22 @@ export default defineConfig({
       closeBundle() {
         const manifestDest = resolve(__dirname, "dist/manifest.json");
         copyFileSync(resolve(__dirname, "src/manifest.json"), manifestDest);
+        const manifest = JSON.parse(readFileSync(manifestDest, "utf-8"));
+        const pkg = JSON.parse(readFileSync(resolve(__dirname, "package.json"), "utf-8"));
+        manifest.version = pkg.version;
         if (isDev) {
-          const manifest = JSON.parse(readFileSync(manifestDest, "utf-8"));
           manifest.name = "URL Porter (DEV)";
-          writeFileSync(manifestDest, JSON.stringify(manifest, null, 2));
+
+          // Write timestamp file for dev-reload polling
+          writeFileSync(resolve(__dirname, "dist/reload-timestamp.txt"), Date.now().toString());
+
+          // Copy dev-reload script and inject import into background.js
+          copyFileSync(resolve(__dirname, "src/background/dev-reload.js"), resolve(__dirname, "dist/background/dev-reload.js"));
+          const bgPath = resolve(__dirname, "dist/background/background.js");
+          const bgContent = readFileSync(bgPath, "utf-8");
+          writeFileSync(bgPath, `import "./dev-reload.js";\n${bgContent}`);
         }
+        writeFileSync(manifestDest, JSON.stringify(manifest, null, 2));
         // Copy content scripts
         const contentDir = resolve(__dirname, "dist/content");
         mkdirSync(contentDir, { recursive: true });
