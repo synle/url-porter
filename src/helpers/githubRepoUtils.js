@@ -174,8 +174,9 @@ export async function reconcileGitHubRepos() {
 
   if (allRepos.size === 0) return;
 
-  // Find or create the top-level "github repos" subfolder
+  // Find or create the top-level "github repos" subfolder and ensure it's the first child
   const subfolder = await findOrCreateSubfolder(porterFolder.id, SUBFOLDER_NAME);
+  await chrome.bookmarks.move(subfolder.id, { parentId: porterFolder.id, index: 0 });
 
   // Wipe all existing content — clean rebuild
   await clearFolder(subfolder.id);
@@ -196,13 +197,34 @@ export async function reconcileGitHubRepos() {
     byOrg.get(entry.org).push(entry);
   }
 
-  // Create org subfolders (sorted by org name) and add bookmarks
+  // Split orgs into real groups (3+ repos) and misc (< 3 repos)
   const sortedOrgs = [...byOrg.keys()].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-  let added = 0;
+  const miscRepos = [];
+  const realOrgs = [];
   for (const org of sortedOrgs) {
+    if (byOrg.get(org).length >= 3) {
+      realOrgs.push(org);
+    } else {
+      miscRepos.push(...byOrg.get(org));
+    }
+  }
+
+  // Create org subfolders and add bookmarks
+  let added = 0;
+  for (const org of realOrgs) {
     const orgFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: org });
     for (const { repo, url } of byOrg.get(org)) {
       await chrome.bookmarks.create({ parentId: orgFolder.id, title: repo, url });
+      added++;
+    }
+  }
+
+  // Create misc folder for small groups
+  if (miscRepos.length > 0) {
+    miscRepos.sort((a, b) => a.repo.toLowerCase().localeCompare(b.repo.toLowerCase()));
+    const miscFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: "misc" });
+    for (const { repo, url } of miscRepos) {
+      await chrome.bookmarks.create({ parentId: miscFolder.id, title: repo, url });
       added++;
     }
   }
