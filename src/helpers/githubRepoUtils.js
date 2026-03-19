@@ -198,7 +198,11 @@ export async function reconcileGitHubRepos() {
     await chrome.bookmarks.removeTree(oldSubfolder.id);
     console.log("[githubRepoUtils] reconcileGitHubRepos: deleted old folder");
   }
-  const subfolder = await chrome.bookmarks.create({ parentId: porterFolder.id, title: SUBFOLDER_NAME, index: 0 });
+  // Place after "prs" folder
+  const updatedChildren2 = await chrome.bookmarks.getChildren(porterFolder.id);
+  const prsFolder = updatedChildren2.find((c) => !c.url && c.title === "prs");
+  const insertIndex = prsFolder ? updatedChildren2.indexOf(prsFolder) + 1 : 0;
+  const subfolder = await chrome.bookmarks.create({ parentId: porterFolder.id, title: SUBFOLDER_NAME, index: insertIndex });
 
   // Sort all repos by repo name (case-insensitive), then by org
   const sortedRepos = [...allRepos.values()].sort((a, b) => {

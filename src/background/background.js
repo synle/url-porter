@@ -11,6 +11,7 @@
 import { normalizeEntriesForRedirect, normalizeEntry, stripAlias } from "../helpers/configUtils.js";
 import { getConfig } from "../helpers/storage.js";
 import { reconcileBookmarks } from "../helpers/bookmarkUtils.js";
+import { reconcilePrs } from "../helpers/prUtils.js";
 import { reconcileGitHubRepos } from "../helpers/githubRepoUtils.js";
 import { reconcileFigmaMocks } from "../helpers/figmaMockUtils.js";
 import { reconcileJiraTickets } from "../helpers/jiraTicketUtils.js";
@@ -193,6 +194,8 @@ async function reconcileBookmarksFromStorage() {
     console.log("[background] reconcileBookmarksFromStorage: raw config:", JSON.stringify(raw, null, 2));
     await reconcileBookmarks(raw);
     console.log("[background] reconcileBookmarksFromStorage: bookmarks reconciled successfully");
+    await reconcilePrs();
+    console.log("[background] reconcileBookmarksFromStorage: prs reconciled successfully");
     await reconcileGitHubRepos();
     console.log("[background] reconcileBookmarksFromStorage: github repos reconciled successfully");
     await reconcileFigmaMocks();
@@ -222,6 +225,7 @@ chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
   bucketReconcileTimer = setTimeout(async () => {
     console.log("[background] tracked site visited, reconciling bookmark buckets...");
     try {
+      await reconcilePrs();
       await reconcileGitHubRepos();
       await reconcileFigmaMocks();
       await reconcileJiraTickets();
