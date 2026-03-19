@@ -153,7 +153,8 @@ export function cleanAlias(value) {
  */
 export function validateAlias(value) {
   if (!value || !value.trim()) return "Please enter a link alias.";
-  if (/[^\x20-\x7E]/.test(value)) return `Alias "${value}" contains invisible or non-ASCII characters. They will be stripped automatically.`;
+  if (/[^\x20-\x7E]/.test(value))
+    return `Alias "${value}" contains invisible or non-ASCII characters. They will be stripped automatically.`;
   return null;
 }
 

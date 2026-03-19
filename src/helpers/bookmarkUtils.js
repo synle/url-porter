@@ -114,7 +114,18 @@ export async function reconcileBookmarks(configEntries) {
   for (const child of children) {
     if (deduped.has(child.title)) {
       const older = deduped.get(child.title);
-      console.log("[bookmarkUtils] reconcileBookmarks: DEDUP removing older bookmark:", older.id, "title:", child.title, "url:", older.url, "| keeping newer:", child.id, "url:", child.url);
+      console.log(
+        "[bookmarkUtils] reconcileBookmarks: DEDUP removing older bookmark:",
+        older.id,
+        "title:",
+        child.title,
+        "url:",
+        older.url,
+        "| keeping newer:",
+        child.id,
+        "url:",
+        child.url,
+      );
       toRemove.push(older.id);
     }
     deduped.set(child.title, child);
@@ -139,9 +150,12 @@ export async function reconcileBookmarks(configEntries) {
   const droppedEntries = configEntries.filter((_, i) => !allNormalized[i]);
   console.log(
     "[bookmarkUtils] reconcileBookmarks: normalizeEntry results -",
-    "raw config:", configEntries.length,
-    "| valid after normalize:", entries.length,
-    "| dropped (failed normalize):", droppedCount,
+    "raw config:",
+    configEntries.length,
+    "| valid after normalize:",
+    entries.length,
+    "| dropped (failed normalize):",
+    droppedCount,
   );
   if (droppedCount > 0) {
     console.log("[bookmarkUtils] reconcileBookmarks: dropped entries:", JSON.stringify(droppedEntries, null, 2));
@@ -155,7 +169,10 @@ export async function reconcileBookmarks(configEntries) {
       aliasToRawUrl.set(alias, entry.to);
     }
   }
-  console.log("[bookmarkUtils] reconcileBookmarks: alias map for short link resolution:", JSON.stringify([...aliasToRawUrl.entries()], null, 2));
+  console.log(
+    "[bookmarkUtils] reconcileBookmarks: alias map for short link resolution:",
+    JSON.stringify([...aliasToRawUrl.entries()], null, 2),
+  );
 
   // Build desired state: title → fully resolved URL
   console.log("[bookmarkUtils] reconcileBookmarks: resolving short links...");
@@ -177,11 +194,16 @@ export async function reconcileBookmarks(configEntries) {
   const kept = [...existingTitles].filter((t) => !desiredTitles.has(t));
   console.log(
     "[bookmarkUtils] reconcileBookmarks: diff summary -",
-    "desired:", desiredMap.size,
-    "| existing:", existingMap.size,
-    "| overlapping (will update):", overlapping.length,
-    "| new (will add to bottom):", toAdd.length,
-    "| old-only (will keep as-is):", kept.length,
+    "desired:",
+    desiredMap.size,
+    "| existing:",
+    existingMap.size,
+    "| overlapping (will update):",
+    overlapping.length,
+    "| new (will add to bottom):",
+    toAdd.length,
+    "| old-only (will keep as-is):",
+    kept.length,
   );
   if (overlapping.length > 0) {
     console.log("[bookmarkUtils] reconcileBookmarks: overlapping titles:", JSON.stringify(overlapping, null, 2));

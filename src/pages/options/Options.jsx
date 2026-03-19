@@ -68,7 +68,15 @@ import {
   getBookmarkFolderName,
   setBookmarkFolderName,
 } from "../../helpers/storage.js";
-import { normalizeEntry, normalizeFrom, normalizeTo, findDuplicateEntry, cleanAlias, cleanUrl, validateAlias } from "../../helpers/configUtils.js";
+import {
+  normalizeEntry,
+  normalizeFrom,
+  normalizeTo,
+  findDuplicateEntry,
+  cleanAlias,
+  cleanUrl,
+  validateAlias,
+} from "../../helpers/configUtils.js";
 import { ALIAS_PLACEHOLDER, ALIAS_HELPER_TEXT, URL_PLACEHOLDER, URL_HELPER_TEXT } from "../../helpers/fieldHelpers.js";
 import {
   addHistoryEntry,
@@ -701,11 +709,7 @@ function OptionsContent() {
                     }),
               })}
             >
-              <Typography
-                component="legend"
-                variant="caption"
-                sx={{ ml: 1, px: 0.5, color: "text.secondary" }}
-              >
+              <Typography component="legend" variant="caption" sx={{ ml: 1, px: 0.5, color: "text.secondary" }}>
                 JSON Config
               </Typography>
               <Editor

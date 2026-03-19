@@ -11,6 +11,7 @@
 import { normalizeEntriesForRedirect, normalizeEntry, stripAlias } from "../helpers/configUtils.js";
 import { getConfig } from "../helpers/storage.js";
 import { reconcileBookmarks } from "../helpers/bookmarkUtils.js";
+import { reconcileGitHubRepos } from "../helpers/githubRepoUtils.js";
 
 // --- Lifecycle ---
 
@@ -188,6 +189,8 @@ async function reconcileBookmarksFromStorage() {
     console.log("[background] reconcileBookmarksFromStorage: raw config:", JSON.stringify(raw, null, 2));
     await reconcileBookmarks(raw);
     console.log("[background] reconcileBookmarksFromStorage: bookmarks reconciled successfully");
+    await reconcileGitHubRepos();
+    console.log("[background] reconcileBookmarksFromStorage: github repos reconciled successfully");
   } catch (error) {
     console.error("[background] reconcileBookmarksFromStorage: FAILED:", error, error?.stack);
   }
