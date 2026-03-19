@@ -224,7 +224,7 @@ export async function reconcileGitHubRepos() {
   if (miscRepos.length > 0) {
     miscRepos.sort((a, b) => a.org.toLowerCase().localeCompare(b.org.toLowerCase()) || a.repo.toLowerCase().localeCompare(b.repo.toLowerCase()));
     const miscFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: "misc" });
-    for (const { repo, url } of miscRepos) {
+    for (const { org, repo, url } of miscRepos) {
       await chrome.bookmarks.create({ parentId: miscFolder.id, title: `${repo} (${org})`, url });
       added++;
     }
