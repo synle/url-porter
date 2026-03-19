@@ -63,6 +63,10 @@ The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server
 
 Output structure must match paths declared in `manifest.json`. Be careful when modifying build config or adding new pages.
 
+Content scripts (`src/content/`) are **not** Vite inputs — they are copied verbatim by the `copy-manifest` plugin. If adding new content scripts, add a `copyFileSync` call in `vite.config.js` and register them in `src/manifest.json`.
+
+In dev/watch mode (`--watch`), the manifest's `name` is automatically changed to "URL Porter (DEV)" to distinguish from production builds. A dev-reload mechanism (`src/background/dev-reload.js`) is also injected — it polls a timestamp file and calls `chrome.runtime.reload()` on changes. This is dev-only and not included in production builds.
+
 ## Key Conventions
 
 - ES modules throughout (`"type": "module"` in package.json and manifest.json background)
