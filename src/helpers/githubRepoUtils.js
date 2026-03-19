@@ -69,7 +69,7 @@ function parseGitHubRepo(url) {
   return {
     org: toTitleCase(org),
     repo: toTitleCase(repo),
-    url: `https://github.com/${org}/${repo}`,
+    url: `https://github.com/${org.toLowerCase()}/${repo.toLowerCase()}`,
   };
 }
 
