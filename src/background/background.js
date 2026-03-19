@@ -14,6 +14,8 @@ import { reconcileBookmarks } from "../helpers/bookmarkUtils.js";
 import { reconcileGitHubRepos } from "../helpers/githubRepoUtils.js";
 import { reconcileFigmaMocks } from "../helpers/figmaMockUtils.js";
 import { reconcileJiraTickets } from "../helpers/jiraTicketUtils.js";
+import { reconcileGoogleDrive } from "../helpers/googleDriveUtils.js";
+import { reconcileOnedrive } from "../helpers/onedriveUtils.js";
 
 // --- Lifecycle ---
 
@@ -197,6 +199,10 @@ async function reconcileBookmarksFromStorage() {
     console.log("[background] reconcileBookmarksFromStorage: figma mocks reconciled successfully");
     await reconcileJiraTickets();
     console.log("[background] reconcileBookmarksFromStorage: jira tickets reconciled successfully");
+    await reconcileGoogleDrive();
+    console.log("[background] reconcileBookmarksFromStorage: google drive reconciled successfully");
+    await reconcileOnedrive();
+    console.log("[background] reconcileBookmarksFromStorage: onedrive reconciled successfully");
   } catch (error) {
     console.error("[background] reconcileBookmarksFromStorage: FAILED:", error, error?.stack);
   }
@@ -204,7 +210,7 @@ async function reconcileBookmarksFromStorage() {
 
 // --- Auto-reconcile on visiting tracked sites ---
 
-const TRACKED_SITE_PATTERNS = [/github\.com/i, /visualstudio\.com/i, /figma\.com/i, /jira/i, /atlassian/i];
+const TRACKED_SITE_PATTERNS = [/github\.com/i, /visualstudio\.com/i, /figma\.com/i, /jira/i, /atlassian/i, /docs\.google\.com/i, /drive\.google\.com/i, /onedrive\.live\.com/i, /sharepoint\.com/i];
 let bucketReconcileTimer = null;
 
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
@@ -219,6 +225,8 @@ chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
       await reconcileGitHubRepos();
       await reconcileFigmaMocks();
       await reconcileJiraTickets();
+      await reconcileGoogleDrive();
+      await reconcileOnedrive();
     } catch (err) {
       console.error("[background] auto-reconcile failed:", err);
     }
