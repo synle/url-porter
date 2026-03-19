@@ -32,14 +32,14 @@ function toTitleCase(str) {
 }
 
 /**
- * Format a timestamp as yyyy|dd.
+ * Format a timestamp as m/yy (e.g. 3/26).
  */
 function formatDate(ts) {
   if (!ts) return "";
   const d = new Date(ts);
-  const yyyy = d.getFullYear();
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}|${dd}`;
+  const m = d.getMonth() + 1;
+  const yy = String(d.getFullYear()).slice(2);
+  return `${m}/${yy}`;
 }
 
 /**
@@ -94,31 +94,32 @@ function parsePrUrl(url) {
 }
 
 /**
- * Clean a page title to extract just the PR title portion.
- * Strips common suffixes and PR number prefixes.
+ * Clean a page title to extract just the PR description.
+ * Strips PR numbers, repo/org names, "Pull requests", GitHub suffixes, "by user" patterns.
  */
 function cleanPrTitle(pageTitle, prNumber) {
   if (!pageTitle) return "";
-  let detail = pageTitle
-    .replace(/\s*[-·]\s*Pull Request\s*#?\d*.*$/i, "")
-    .replace(/\s*by\s+\S+\s*[-·].*$/i, "")
-    .trim();
-  // Strip leading PR number patterns like "#123 " or "PR #123: "
-  detail = detail.replace(new RegExp(`^(PR\\s*)?#?${prNumber}\\s*[:/-]?\\s*`, "i"), "").trim();
+  let detail = pageTitle;
+  // Strip "Pull requests · org/repo" suffix
+  detail = detail.replace(/\s*[-·]\s*Pull [Rr]equests?\s*[-·].*$/i, "").trim();
+  // Strip trailing "by username · Pull Request #123 · org/repo" pattern
+  detail = detail.replace(/\s*by\s+\S+\s*[-·].*$/i, "").trim();
   // Strip trailing " - GitHub" or similar
   detail = detail.replace(/\s*-\s*GitHub.*$/i, "").trim();
+  // Strip leading PR number patterns like "#123 " or "PR #123: "
+  detail = detail.replace(new RegExp(`^(PR\\s*)?#?${prNumber}\\s*[:/-]?\\s*`, "i"), "").trim();
   return detail;
 }
 
 /**
  * Build the bookmark title.
- * Format: "repo / org | yyyy|dd - #123 - PR Title"
+ * Format: "#1692 - 3/26 - Repo Name / Org Name - PR description"
  */
 function buildTitle(entry) {
   const dateStr = formatDate(entry.visitTime);
-  let title = `${entry.repo} / ${entry.org}`;
-  if (dateStr) title += ` | ${dateStr}`;
-  title += ` - #${entry.prNumber}`;
+  let title = `#${entry.prNumber}`;
+  if (dateStr) title += ` - ${dateStr}`;
+  title += ` - ${entry.repo} / ${entry.org}`;
   if (entry.pageTitle) {
     const detail = cleanPrTitle(entry.pageTitle, entry.prNumber);
     if (detail) title += ` - ${detail}`;
