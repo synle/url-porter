@@ -23,6 +23,16 @@ const AZURE_DEVOPS_REGEX = /^https?:\/\/([^/?#]+)\.visualstudio\.com\/([^/?#]+)\
 const SUBFOLDER_NAME = "github repos";
 
 /**
+ * Convert a string to title case: replace `_`, `-`, `.` with spaces,
+ * then capitalize the first letter of each word.
+ */
+function toTitleCase(str) {
+  return str
+    .replace(/[_\-.]/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
  * Parse a GitHub URL into { org, repo, url } or null.
  */
 function parseGitHubRepo(url) {
@@ -57,8 +67,8 @@ function parseGitHubRepo(url) {
   ];
   if (nonRepoPages.includes(org)) return null;
   return {
-    org,
-    repo,
+    org: toTitleCase(org),
+    repo: toTitleCase(repo),
     url: `https://github.com/${org}/${repo}`,
   };
 }
@@ -78,8 +88,8 @@ function parseAzureDevOpsRepo(url) {
   let repo = match[3];
   if (repo.endsWith(".git")) repo = repo.slice(0, -4);
   return {
-    org: `${instance} ${project}`,
-    repo,
+    org: toTitleCase(`${instance} ${project}`),
+    repo: toTitleCase(repo),
     url: `https://${instance}.visualstudio.com/${project}/_git/${repo}`,
   };
 }

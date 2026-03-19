@@ -1,10 +1,9 @@
 /**
  * New Tab override page.
  *
- * If a homepage URL is configured, loads it in a full-screen iframe
- * so Chrome still treats this as a new tab page (keeping the bookmark
- * bar visible). Otherwise shows a welcome screen with feature highlights
- * and links to the settings and add-link pages.
+ * If a homepage URL is configured, immediately redirects the tab there.
+ * Otherwise shows a welcome screen with feature highlights and links
+ * to the settings and add-link pages.
  */
 
 import { useState, useEffect } from "react";
@@ -18,37 +17,35 @@ import { ThemeContextProvider } from "../../theme.jsx";
 import { getHomepageUrl } from "../../helpers/storage.js";
 
 function NewTabContent() {
-  const [homepageUrl, setHomepageUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
-    getHomepageUrl().then((url) => {
-      setHomepageUrl(url);
-      setIsLoading(false);
-    });
+    redirectToHomepage();
   }, []);
 
-  if (isLoading) {
-    return null;
-  }
+  const redirectToHomepage = async () => {
+    const url = await getHomepageUrl();
 
-  if (homepageUrl) {
-    return (
-      <iframe
-        src={homepageUrl}
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          border: "none",
-          margin: 0,
-          padding: 0,
-        }}
-        allow="fullscreen"
-      />
-    );
+    if (url) {
+      // Find the current tab and navigate it to the homepage URL
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.id) {
+          chrome.tabs.update(tab.id, { url, highlighted: true });
+        }
+      } catch {
+        // Fallback: update whichever tab we're on without specifying ID
+        chrome.tabs.update({ url });
+      }
+    } else {
+      setIsLoading(false);
+      setShowContent(true);
+    }
+  };
+
+  if (isLoading || !showContent) {
+    return null;
   }
 
   const features = [
