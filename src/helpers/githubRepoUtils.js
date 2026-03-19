@@ -1,20 +1,25 @@
 /**
- * GitHub repository bookmark utilities.
+ * Repository bookmark utilities (GitHub + Azure DevOps).
  *
- * Scans browser history and all bookmarks for GitHub URLs, extracts the
+ * Scans browser history and all bookmarks for repo URLs, extracts the
  * org/repo, deduplicates, and maintains a "github repos" folder under
  * the url-porter bookmark folder with org subfolders.
  *
- * Example:
- *   https://github.com/synle/sqlui-native/actions/runs/123?tab=readme →
- *     folder: "github repos > synle"
- *     title:  "sqlui-native"
- *     url:    "https://github.com/synle/sqlui-native"
+ * Supported URL formats:
+ *   GitHub:
+ *     https://github.com/synle/sqlui-native/actions/runs/123?tab=readme →
+ *       org: "synle", repo: "sqlui-native", url: "https://github.com/synle/sqlui-native"
+ *
+ *   Azure DevOps:
+ *     https://lnkd.visualstudio.com/EPE.CICD/_git/TDE-Azure-Migration-Service?path=... →
+ *       org: "lnkd EPE.CICD", repo: "TDE-Azure-Migration-Service",
+ *       url: "https://lnkd.visualstudio.com/EPE.CICD/_git/TDE-Azure-Migration-Service"
  */
 
 import { getBookmarkFolderName, getGithubOrgThreshold } from "./storage.js";
 
 const GITHUB_REPO_REGEX = /^https?:\/\/github\.com\/([^/?#]+)\/([^/?#]+)/;
+const AZURE_DEVOPS_REGEX = /^https?:\/\/([^/?#]+)\.visualstudio\.com\/([^/?#]+)\/_git\/([^/?#]+)/;
 const SUBFOLDER_NAME = "github repos";
 
 /**
@@ -22,15 +27,12 @@ const SUBFOLDER_NAME = "github repos";
  */
 function parseGitHubRepo(url) {
   if (!url) return null;
-  // Strip query string and fragment before parsing
   const cleanUrl = url.split("?")[0].split("#")[0];
   const match = cleanUrl.match(GITHUB_REPO_REGEX);
   if (!match) return null;
   const org = match[1];
   let repo = match[2];
-  // Strip .git suffix if present
   if (repo.endsWith(".git")) repo = repo.slice(0, -4);
-  // Skip GitHub non-repo pages
   const nonRepoPages = [
     "settings",
     "orgs",
@@ -62,18 +64,46 @@ function parseGitHubRepo(url) {
 }
 
 /**
- * Collect GitHub repo URLs from browser history.
+ * Parse an Azure DevOps URL into { org, repo, url } or null.
+ * URL format: https://{instance}.visualstudio.com/{project}/_git/{repo}
+ * org becomes "{instance} {project}", repo is the repo name.
  */
-async function getGitHubReposFromHistory() {
+function parseAzureDevOpsRepo(url) {
+  if (!url) return null;
+  const cleanUrl = url.split("?")[0].split("#")[0];
+  const match = cleanUrl.match(AZURE_DEVOPS_REGEX);
+  if (!match) return null;
+  const instance = match[1];
+  const project = match[2];
+  let repo = match[3];
+  if (repo.endsWith(".git")) repo = repo.slice(0, -4);
+  return {
+    org: `${instance} ${project}`,
+    repo,
+    url: `https://${instance}.visualstudio.com/${project}/_git/${repo}`,
+  };
+}
+
+/**
+ * Try to parse a URL as any supported repo type.
+ */
+function parseRepoUrl(url) {
+  return parseGitHubRepo(url) || parseAzureDevOpsRepo(url);
+}
+
+/**
+ * Collect repo URLs from browser history.
+ */
+async function getReposFromHistory() {
   const repos = new Map();
   try {
-    const historyItems = await chrome.history.search({
-      text: "github.com",
-      maxResults: 10000,
-      startTime: 0,
-    });
-    for (const item of historyItems) {
-      const parsed = parseGitHubRepo(item.url);
+    const [githubItems, azureItems] = await Promise.all([
+      chrome.history.search({ text: "github.com", maxResults: 10000, startTime: 0 }),
+      chrome.history.search({ text: "visualstudio.com", maxResults: 10000, startTime: 0 }),
+    ]);
+    const allItems = [...githubItems, ...azureItems];
+    for (const item of allItems) {
+      const parsed = parseRepoUrl(item.url);
       if (parsed) {
         repos.set(parsed.url, parsed);
       }
@@ -85,16 +115,16 @@ async function getGitHubReposFromHistory() {
 }
 
 /**
- * Recursively walk all bookmarks and extract GitHub repo URLs.
+ * Recursively walk all bookmarks and extract repo URLs.
  */
-async function getGitHubReposFromBookmarks() {
+async function getReposFromBookmarks() {
   const repos = new Map();
   try {
     const tree = await chrome.bookmarks.getTree();
     function walk(nodes) {
       for (const node of nodes) {
         if (node.url) {
-          const parsed = parseGitHubRepo(node.url);
+          const parsed = parseRepoUrl(node.url);
           if (parsed) {
             repos.set(parsed.url, parsed);
           }
@@ -120,32 +150,9 @@ async function findPorterFolder(folderName) {
 }
 
 /**
- * Recursively remove all children of a bookmark folder.
- */
-async function clearFolder(folderId) {
-  const children = await chrome.bookmarks.getChildren(folderId);
-  for (const child of children) {
-    if (child.url) {
-      await chrome.bookmarks.remove(child.id);
-    } else {
-      await chrome.bookmarks.removeTree(child.id);
-    }
-  }
-}
-
-/**
- * Find or create a subfolder by title under a parent.
- */
-async function findOrCreateSubfolder(parentId, title) {
-  const children = await chrome.bookmarks.getChildren(parentId);
-  const existing = children.find((c) => !c.url && c.title === title);
-  if (existing) return existing;
-  return chrome.bookmarks.create({ parentId, title });
-}
-
-/**
  * Reconcile the "github repos" folder with repos found in history and bookmarks.
- * Wipes existing content, deduplicates, sorts by repo name, and groups by org in subfolders.
+ * Deletes the old folder entirely and rebuilds from scratch.
+ * Deduplicates, sorts by repo name, and groups by org in subfolders.
  */
 export async function reconcileGitHubRepos() {
   console.log("[githubRepoUtils] reconcileGitHubRepos: starting...");
@@ -158,7 +165,7 @@ export async function reconcileGitHubRepos() {
   }
 
   // Gather repos from history and bookmarks
-  const [historyRepos, bookmarkRepos] = await Promise.all([getGitHubReposFromHistory(), getGitHubReposFromBookmarks()]);
+  const [historyRepos, bookmarkRepos] = await Promise.all([getReposFromHistory(), getReposFromBookmarks()]);
 
   // Merge (dedup by URL — flatten)
   const allRepos = new Map([...historyRepos, ...bookmarkRepos]);
@@ -174,12 +181,14 @@ export async function reconcileGitHubRepos() {
 
   if (allRepos.size === 0) return;
 
-  // Find or create the top-level "github repos" subfolder and ensure it's the first child
-  const subfolder = await findOrCreateSubfolder(porterFolder.id, SUBFOLDER_NAME);
-  await chrome.bookmarks.move(subfolder.id, { parentId: porterFolder.id, index: 0 });
-
-  // Wipe all existing content — clean rebuild
-  await clearFolder(subfolder.id);
+  // Delete the old "github repos" folder if it exists, then create a fresh one
+  const porterChildren = await chrome.bookmarks.getChildren(porterFolder.id);
+  const oldSubfolder = porterChildren.find((c) => !c.url && c.title === SUBFOLDER_NAME);
+  if (oldSubfolder) {
+    await chrome.bookmarks.removeTree(oldSubfolder.id);
+    console.log("[githubRepoUtils] reconcileGitHubRepos: deleted old folder");
+  }
+  const subfolder = await chrome.bookmarks.create({ parentId: porterFolder.id, title: SUBFOLDER_NAME, index: 0 });
 
   // Sort all repos by repo name (case-insensitive), then by org
   const sortedRepos = [...allRepos.values()].sort((a, b) => {
