@@ -2,18 +2,19 @@
  * GitHub repository bookmark utilities.
  *
  * Scans browser history and all bookmarks for GitHub URLs, extracts the
- * org/repo, deduplicates, and maintains a "github repos" subfolder under
- * the url-porter bookmark folder.
+ * org/repo, deduplicates, and maintains a "github repos" folder under
+ * the url-porter bookmark folder with org subfolders.
  *
  * Example:
- *   https://github.com/synle/sqlui-native/actions/runs/123 →
- *     title: "sqlui-native (github/synle)"
- *     url:   "https://github.com/synle/sqlui-native"
+ *   https://github.com/synle/sqlui-native/actions/runs/123?tab=readme →
+ *     folder: "github repos > synle"
+ *     title:  "sqlui-native"
+ *     url:    "https://github.com/synle/sqlui-native"
  */
 
 import { getBookmarkFolderName } from "./storage.js";
 
-const GITHUB_REPO_REGEX = /^https?:\/\/github\.com\/([^/]+)\/([^/]+)/;
+const GITHUB_REPO_REGEX = /^https?:\/\/github\.com\/([^/?#]+)\/([^/?#]+)/;
 const SUBFOLDER_NAME = "github repos";
 
 /**
@@ -21,13 +22,15 @@ const SUBFOLDER_NAME = "github repos";
  */
 function parseGitHubRepo(url) {
   if (!url) return null;
-  const match = url.match(GITHUB_REPO_REGEX);
+  // Strip query string and fragment before parsing
+  const cleanUrl = url.split("?")[0].split("#")[0];
+  const match = cleanUrl.match(GITHUB_REPO_REGEX);
   if (!match) return null;
   const org = match[1];
   let repo = match[2];
   // Strip .git suffix if present
   if (repo.endsWith(".git")) repo = repo.slice(0, -4);
-  // Skip GitHub pages that aren't repos (e.g. github.com/settings, github.com/orgs)
+  // Skip GitHub non-repo pages
   const nonRepoPages = [
     "settings",
     "orgs",
@@ -48,6 +51,7 @@ function parseGitHubRepo(url) {
     "enterprise",
     "pricing",
     "about",
+    "pages",
   ];
   if (nonRepoPages.includes(org)) return null;
   return {
@@ -108,16 +112,6 @@ async function getGitHubReposFromBookmarks() {
 }
 
 /**
- * Find or create the "github repos" subfolder under the url-porter folder.
- */
-async function findOrCreateSubfolder(parentId) {
-  const children = await chrome.bookmarks.getChildren(parentId);
-  const existing = children.find((c) => !c.url && c.title === SUBFOLDER_NAME);
-  if (existing) return existing;
-  return chrome.bookmarks.create({ parentId, title: SUBFOLDER_NAME });
-}
-
-/**
  * Find the url-porter folder under top-level bookmark folders.
  */
 async function findPorterFolder(folderName) {
@@ -126,8 +120,32 @@ async function findPorterFolder(folderName) {
 }
 
 /**
- * Reconcile the "github repos" subfolder with repos found in history and bookmarks.
- * Deduplicates by URL. Creates bookmarks with title format: "repo (github/org)".
+ * Recursively remove all children of a bookmark folder.
+ */
+async function clearFolder(folderId) {
+  const children = await chrome.bookmarks.getChildren(folderId);
+  for (const child of children) {
+    if (child.url) {
+      await chrome.bookmarks.remove(child.id);
+    } else {
+      await chrome.bookmarks.removeTree(child.id);
+    }
+  }
+}
+
+/**
+ * Find or create a subfolder by title under a parent.
+ */
+async function findOrCreateSubfolder(parentId, title) {
+  const children = await chrome.bookmarks.getChildren(parentId);
+  const existing = children.find((c) => !c.url && c.title === title);
+  if (existing) return existing;
+  return chrome.bookmarks.create({ parentId, title });
+}
+
+/**
+ * Reconcile the "github repos" folder with repos found in history and bookmarks.
+ * Wipes existing content, deduplicates, sorts by repo name, and groups by org in subfolders.
  */
 export async function reconcileGitHubRepos() {
   console.log("[githubRepoUtils] reconcileGitHubRepos: starting...");
@@ -142,7 +160,7 @@ export async function reconcileGitHubRepos() {
   // Gather repos from history and bookmarks
   const [historyRepos, bookmarkRepos] = await Promise.all([getGitHubReposFromHistory(), getGitHubReposFromBookmarks()]);
 
-  // Merge (dedup by URL)
+  // Merge (dedup by URL — flatten)
   const allRepos = new Map([...historyRepos, ...bookmarkRepos]);
   console.log(
     "[githubRepoUtils] reconcileGitHubRepos: found",
@@ -156,32 +174,35 @@ export async function reconcileGitHubRepos() {
 
   if (allRepos.size === 0) return;
 
-  // Find or create subfolder
-  const subfolder = await findOrCreateSubfolder(porterFolder.id);
-  const children = await chrome.bookmarks.getChildren(subfolder.id);
+  // Find or create the top-level "github repos" subfolder
+  const subfolder = await findOrCreateSubfolder(porterFolder.id, SUBFOLDER_NAME);
 
-  // Build map of existing bookmarks: url → node
-  const existingByUrl = new Map();
-  const toRemove = [];
-  for (const child of children) {
-    if (existingByUrl.has(child.url)) {
-      // Duplicate — mark older one for removal
-      toRemove.push(existingByUrl.get(child.url).id);
+  // Wipe all existing content — clean rebuild
+  await clearFolder(subfolder.id);
+
+  // Sort all repos by repo name (case-insensitive), then by org
+  const sortedRepos = [...allRepos.values()].sort((a, b) => {
+    const repoCompare = a.repo.toLowerCase().localeCompare(b.repo.toLowerCase());
+    if (repoCompare !== 0) return repoCompare;
+    return a.org.toLowerCase().localeCompare(b.org.toLowerCase());
+  });
+
+  // Group by org
+  const byOrg = new Map();
+  for (const entry of sortedRepos) {
+    if (!byOrg.has(entry.org)) {
+      byOrg.set(entry.org, []);
     }
-    existingByUrl.set(child.url, child);
+    byOrg.get(entry.org).push(entry);
   }
 
-  // Remove duplicates
-  for (const id of toRemove) {
-    await chrome.bookmarks.remove(id);
-  }
-
-  // Add missing repos
+  // Create org subfolders (sorted by org name) and add bookmarks
+  const sortedOrgs = [...byOrg.keys()].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
   let added = 0;
-  for (const [url, { org, repo }] of allRepos) {
-    if (!existingByUrl.has(url)) {
-      const title = `${repo} (github/${org})`;
-      await chrome.bookmarks.create({ parentId: subfolder.id, title, url });
+  for (const org of sortedOrgs) {
+    const orgFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: org });
+    for (const { repo, url } of byOrg.get(org)) {
+      await chrome.bookmarks.create({ parentId: orgFolder.id, title: repo, url });
       added++;
     }
   }
@@ -189,9 +210,8 @@ export async function reconcileGitHubRepos() {
   console.log(
     "[githubRepoUtils] reconcileGitHubRepos: done. added:",
     added,
-    "existing:",
-    existingByUrl.size - toRemove.length,
-    "dupes removed:",
-    toRemove.length,
+    "across",
+    sortedOrgs.length,
+    "org folders",
   );
 }
