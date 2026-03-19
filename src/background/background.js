@@ -12,6 +12,8 @@ import { normalizeEntriesForRedirect, normalizeEntry, stripAlias } from "../help
 import { getConfig } from "../helpers/storage.js";
 import { reconcileBookmarks } from "../helpers/bookmarkUtils.js";
 import { reconcileGitHubRepos } from "../helpers/githubRepoUtils.js";
+import { reconcileFigmaMocks } from "../helpers/figmaMockUtils.js";
+import { reconcileJiraTickets } from "../helpers/jiraTicketUtils.js";
 
 // --- Lifecycle ---
 
@@ -191,10 +193,37 @@ async function reconcileBookmarksFromStorage() {
     console.log("[background] reconcileBookmarksFromStorage: bookmarks reconciled successfully");
     await reconcileGitHubRepos();
     console.log("[background] reconcileBookmarksFromStorage: github repos reconciled successfully");
+    await reconcileFigmaMocks();
+    console.log("[background] reconcileBookmarksFromStorage: figma mocks reconciled successfully");
+    await reconcileJiraTickets();
+    console.log("[background] reconcileBookmarksFromStorage: jira tickets reconciled successfully");
   } catch (error) {
     console.error("[background] reconcileBookmarksFromStorage: FAILED:", error, error?.stack);
   }
 }
+
+// --- Auto-reconcile on visiting tracked sites ---
+
+const TRACKED_SITE_PATTERNS = [/github\.com/i, /visualstudio\.com/i, /figma\.com/i, /jira/i, /atlassian/i];
+let bucketReconcileTimer = null;
+
+chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
+  if (changeInfo.status !== "complete" || !tab.url) return;
+  const isTracked = TRACKED_SITE_PATTERNS.some((re) => re.test(tab.url));
+  if (!isTracked) return;
+  // Debounce — wait 5s after last tracked navigation to batch rapid browsing
+  clearTimeout(bucketReconcileTimer);
+  bucketReconcileTimer = setTimeout(async () => {
+    console.log("[background] tracked site visited, reconciling bookmark buckets...");
+    try {
+      await reconcileGitHubRepos();
+      await reconcileFigmaMocks();
+      await reconcileJiraTickets();
+    } catch (err) {
+      console.error("[background] auto-reconcile failed:", err);
+    }
+  }, 5000);
+});
 
 // --- Helpers ---
 

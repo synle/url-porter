@@ -37,7 +37,7 @@ function toTitleCase(str) {
  */
 function parseGitHubRepo(url) {
   if (!url) return null;
-  const cleanUrl = url.split("?")[0].split("#")[0];
+  const cleanUrl = url.split("?")[0].split("#")[0].replace(/\/+$/, "");
   const match = cleanUrl.match(GITHUB_REPO_REGEX);
   if (!match) return null;
   const org = match[1];
@@ -80,7 +80,7 @@ function parseGitHubRepo(url) {
  */
 function parseAzureDevOpsRepo(url) {
   if (!url) return null;
-  const cleanUrl = url.split("?")[0].split("#")[0];
+  const cleanUrl = url.split("?")[0].split("#")[0].replace(/\/+$/, "");
   const match = cleanUrl.match(AZURE_DEVOPS_REGEX);
   if (!match) return null;
   const instance = match[1];
