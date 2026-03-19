@@ -27,6 +27,10 @@
       "matches": ["https://keep.google.com/*"],
       "css": ["content/keep.css"],
       "js": ["content/keep.js"]
+    },
+    {
+      "matches": ["https://synle.github.io/fav/*"],
+      "js": ["content/fav.js"]
     }
   ]
 }

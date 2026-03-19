@@ -66,6 +66,7 @@ export default defineConfig({
         mkdirSync(contentDir, { recursive: true });
         copyFileSync(resolve(__dirname, "src/content/keep.css"), join(contentDir, "keep.css"));
         copyFileSync(resolve(__dirname, "src/content/keep.js"), join(contentDir, "keep.js"));
+        copyFileSync(resolve(__dirname, "src/content/fav.js"), join(contentDir, "fav.js"));
       },
     },
     {

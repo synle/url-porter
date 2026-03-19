@@ -62,11 +62,54 @@ function scheduleReconcile() {
 }
 
 /** Re-sync rules and bookmarks when UI pages send an update event. */
-chrome.runtime.onMessage.addListener((request) => {
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.type === "Myevent.updateConfig") {
     updateRedirectRules().then(scheduleReconcile);
   }
+  if (request.type === "Myevent.getBookmarks") {
+    getNestedBookmarks().then(sendResponse);
+    return true; // keep channel open for async response
+  }
 });
+
+/**
+ * Collect all bookmarks from nested subfolders of the url-porter folder.
+ * Skips root-level bookmarks (only returns items inside subfolders).
+ * Returns a flat array of { url, title }.
+ */
+async function getNestedBookmarks() {
+  try {
+    const folderName = (await import("../helpers/storage.js")).getBookmarkFolderName;
+    const name = await folderName();
+    const results = await chrome.bookmarks.search({ title: name });
+    const porterFolder = results.find((node) => !node.url && (node.parentId === "1" || node.parentId === "2"));
+    if (!porterFolder) return [];
+
+    const children = await chrome.bookmarks.getChildren(porterFolder.id);
+    const bookmarks = [];
+
+    for (const child of children) {
+      // Only process subfolders (skip root-level bookmarks)
+      if (child.url) continue;
+      await walkFolder(child, bookmarks);
+    }
+    return bookmarks;
+  } catch (err) {
+    console.error("[background] getNestedBookmarks failed:", err);
+    return [];
+  }
+}
+
+async function walkFolder(node, out) {
+  const children = await chrome.bookmarks.getChildren(node.id);
+  for (const child of children) {
+    if (child.url) {
+      out.push({ url: child.url, title: child.title });
+    } else {
+      await walkFolder(child, out);
+    }
+  }
+}
 
 /**
  * Backup listener: sync when config changes via chrome.storage directly
