@@ -12,7 +12,7 @@
  *     url:    "https://github.com/synle/sqlui-native"
  */
 
-import { getBookmarkFolderName } from "./storage.js";
+import { getBookmarkFolderName, getGithubOrgThreshold } from "./storage.js";
 
 const GITHUB_REPO_REGEX = /^https?:\/\/github\.com\/([^/?#]+)\/([^/?#]+)/;
 const SUBFOLDER_NAME = "github repos";
@@ -197,12 +197,13 @@ export async function reconcileGitHubRepos() {
     byOrg.get(entry.org).push(entry);
   }
 
-  // Split orgs into real groups (3+ repos) and misc (< 3 repos)
+  // Split orgs into real groups (threshold+ repos) and misc (< threshold repos)
+  const orgThreshold = await getGithubOrgThreshold();
   const sortedOrgs = [...byOrg.keys()].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
   const miscRepos = [];
   const realOrgs = [];
   for (const org of sortedOrgs) {
-    if (byOrg.get(org).length >= 3) {
+    if (byOrg.get(org).length >= orgThreshold) {
       realOrgs.push(org);
     } else {
       miscRepos.push(...byOrg.get(org));
@@ -221,10 +222,10 @@ export async function reconcileGitHubRepos() {
 
   // Create misc folder for small groups
   if (miscRepos.length > 0) {
-    miscRepos.sort((a, b) => a.repo.toLowerCase().localeCompare(b.repo.toLowerCase()));
+    miscRepos.sort((a, b) => a.org.toLowerCase().localeCompare(b.org.toLowerCase()) || a.repo.toLowerCase().localeCompare(b.repo.toLowerCase()));
     const miscFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: "misc" });
     for (const { repo, url } of miscRepos) {
-      await chrome.bookmarks.create({ parentId: miscFolder.id, title: repo, url });
+      await chrome.bookmarks.create({ parentId: miscFolder.id, title: `${repo} (${org})`, url });
       added++;
     }
   }

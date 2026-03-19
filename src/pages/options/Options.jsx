@@ -67,6 +67,8 @@ import {
   saveHomepageUrl,
   getBookmarkFolderName,
   setBookmarkFolderName,
+  getGithubOrgThreshold,
+  setGithubOrgThreshold,
 } from "../../helpers/storage.js";
 import {
   normalizeEntry,
@@ -127,6 +129,7 @@ function OptionsContent() {
   const [historyAliasLimitValue, setHistoryAliasLimitValue] = useState(5000);
   const [historyEntryLimitValue, setHistoryEntryLimitValue] = useState(20);
   const [bookmarkFolderNameValue, setBookmarkFolderNameValue] = useState("url-porter");
+  const [githubOrgThresholdValue, setGithubOrgThresholdValue] = useState(3);
 
   const fromInputRef = useRef(null);
 
@@ -148,6 +151,8 @@ function OptionsContent() {
     setHistoryEntryLimitValue(entryLimit);
     const folderName = await getBookmarkFolderName();
     setBookmarkFolderNameValue(folderName);
+    const orgThreshold = await getGithubOrgThreshold();
+    setGithubOrgThresholdValue(orgThreshold);
   };
 
   const showSnackbar = (message, severity = "success") => {
@@ -513,6 +518,22 @@ function OptionsContent() {
               const val = Math.max(1, historyEntryLimitValue || 20);
               setHistoryEntryLimitValue(val);
               await setHistoryEntryLimit(val);
+            }}
+            slotProps={{ input: { inputProps: { min: 1 } } }}
+            sx={{ width: 100 }}
+          />
+          <Typography variant="body2" color="text.secondary">
+            GitHub org folder threshold:
+          </Typography>
+          <TextField
+            type="number"
+            value={githubOrgThresholdValue}
+            onChange={(e) => setGithubOrgThresholdValue(Number(e.target.value))}
+            onBlur={async () => {
+              const val = Math.max(1, githubOrgThresholdValue || 3);
+              setGithubOrgThresholdValue(val);
+              await setGithubOrgThreshold(val);
+              chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
             }}
             slotProps={{ input: { inputProps: { min: 1 } } }}
             sx={{ width: 100 }}

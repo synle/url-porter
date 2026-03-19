@@ -164,6 +164,34 @@ export function setBookmarkFolderName(input_value) {
   });
 }
 
+/**
+ * Get the GitHub org grouping threshold from local storage.
+ * Orgs with at least this many repos get their own subfolder; others go to "misc".
+ *
+ * @returns {Promise<number>} Threshold (default 3)
+ */
+export function getGithubOrgThreshold() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("githubOrgThreshold", (result) => {
+      resolve(result.githubOrgThreshold || 3);
+    });
+  });
+}
+
+/**
+ * Save the GitHub org grouping threshold to local storage.
+ *
+ * @param {number} input_value - The threshold to save
+ * @returns {Promise<void>}
+ */
+export function setGithubOrgThreshold(input_value) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ githubOrgThreshold: input_value }, () => {
+      resolve();
+    });
+  });
+}
+
 export function isValidUrl(url) {
   try {
     const urlObj = new URL(url);
