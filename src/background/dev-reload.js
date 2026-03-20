@@ -7,6 +7,7 @@
 const POLL_INTERVAL = 1000;
 let lastTimestamp = null;
 
+/** Poll the reload-timestamp file and trigger a reload if it changed. */
 async function checkForUpdates() {
   try {
     const url = chrome.runtime.getURL("reload-timestamp.txt");

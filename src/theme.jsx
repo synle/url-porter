@@ -6,6 +6,12 @@
 import { useMemo } from "react";
 import { createTheme, ThemeProvider, CssBaseline, useMediaQuery } from "@mui/material";
 
+/**
+ * Generate MUI theme design tokens for the given color mode.
+ *
+ * @param {"light" | "dark"} mode - The color scheme mode
+ * @returns {object} MUI theme configuration object
+ */
 const getDesignTokens = (mode) => ({
   palette: {
     mode,
@@ -70,6 +76,13 @@ const getDesignTokens = (mode) => ({
   },
 });
 
+/**
+ * Theme provider component with automatic light/dark mode detection.
+ *
+ * @param {object} props
+ * @param {React.ReactNode} props.children - Child components to wrap
+ * @returns {React.ReactElement}
+ */
 export function ThemeContextProvider({ children }) {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const mode = prefersDarkMode ? "dark" : "light";

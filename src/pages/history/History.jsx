@@ -51,6 +51,7 @@ const ACTION_COLORS = {
   deleted: "error",
 };
 
+/** React component that renders the history audit trail UI. */
 function HistoryContent() {
   const [entries, setEntries] = useState([]);
   const [selected, setSelected] = useState([]);
@@ -63,6 +64,7 @@ function HistoryContent() {
     loadHistory();
   }, []);
 
+  /** Loads all history entries from storage and updates state. */
   const loadHistory = async () => {
     const history = await getHistoryAsFlat();
     setEntries(history);
@@ -77,11 +79,20 @@ function HistoryContent() {
     );
   }, [entries, searchQuery]);
 
+  /**
+   * Displays a snackbar notification.
+   * @param {string} message - The message to display.
+   * @param {string} severity - The alert severity level.
+   */
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
   };
 
-  // Restore entries into config without triggering history audit
+  /**
+   * Restores entries into the active config without triggering history audit.
+   * @param {Array} entriesToRestore - The history entries to restore.
+   * @returns {Promise<boolean>} Whether the restore succeeded.
+   */
   const restoreEntries = async (entriesToRestore) => {
     try {
       const configs = await getConfig();
@@ -105,11 +116,13 @@ function HistoryContent() {
     }
   };
 
+  /** Handles restoring a single history entry back into the config. */
   const handleRestore = async (entry) => {
     const ok = await restoreEntries([entry]);
     if (ok) showSnackbar("Link restored!");
   };
 
+  /** Restores all currently selected history entries back into the config. */
   const handleRestoreSelected = async () => {
     const entriesToRestore = selected.map((i) => filteredEntries[i]);
     const ok = await restoreEntries(entriesToRestore);
@@ -119,6 +132,7 @@ function HistoryContent() {
     }
   };
 
+  /** Restores all history entries back into the config. */
   const handleRestoreAll = async () => {
     const ok = await restoreEntries(entries);
     if (ok) {
@@ -127,6 +141,7 @@ function HistoryContent() {
     }
   };
 
+  /** Clears all history entries from storage and resets state. */
   const handleClearHistory = async () => {
     await clearHistory();
     setEntries([]);
@@ -135,10 +150,16 @@ function HistoryContent() {
     showSnackbar("History cleared!");
   };
 
+  /** Navigates to the Options settings page. */
   const navigateToOptions = () => {
     window.location.href = chrome.runtime.getURL("pages/options/options.html");
   };
 
+  /**
+   * Formats an ISO date string into a locale-specific representation.
+   * @param {string} iso - The ISO date string to format.
+   * @returns {string} The formatted date string, or the original value on failure.
+   */
   const formatDate = (iso) => {
     try {
       return new Date(iso).toLocaleString();
@@ -147,10 +168,12 @@ function HistoryContent() {
     }
   };
 
+  /** Toggles selection state of a history entry by its index. */
   const toggleSelect = (index) => {
     setSelected((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]));
   };
 
+  /** Toggles selection of all visible (filtered) history entries. */
   const toggleSelectAll = () => {
     const allIndices = filteredEntries.map((_, i) => i);
     const allSelected = allIndices.every((i) => selected.includes(i));
@@ -342,6 +365,7 @@ function HistoryContent() {
   );
 }
 
+/** Exported History page wrapper with theme provider. */
 export default function History() {
   return (
     <ThemeContextProvider>

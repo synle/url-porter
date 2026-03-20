@@ -16,6 +16,7 @@ import AddLinkIcon from "@mui/icons-material/AddLink";
 import { ThemeContextProvider } from "../../theme.jsx";
 import { getHomepageUrl } from "../../helpers/storage.js";
 
+/** React component that handles new tab redirection or displays a welcome screen. */
 function NewTabContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
@@ -24,6 +25,7 @@ function NewTabContent() {
     redirectToHomepage();
   }, []);
 
+  /** Redirects the current tab to the configured homepage URL, or shows fallback content. */
   const redirectToHomepage = async () => {
     const url = await getHomepageUrl();
 
@@ -115,6 +117,7 @@ function NewTabContent() {
   );
 }
 
+/** Exported New Tab page wrapper with theme provider. */
 export default function NewTab() {
   return (
     <ThemeContextProvider>

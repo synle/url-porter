@@ -35,6 +35,7 @@ import { ALIAS_PLACEHOLDER, URL_PLACEHOLDER } from "../../helpers/fieldHelpers.j
 import { addHistoryEntry } from "../../helpers/historyUtils.js";
 import SyncDialog from "../../components/SyncDialog.jsx";
 
+/** React component that renders the Add Link form UI. */
 function AddLinkContent() {
   const [linkFrom, setLinkFrom] = useState("");
   const [linkTo, setLinkTo] = useState("");
@@ -47,6 +48,7 @@ function AddLinkContent() {
     detectContextAndPrefill();
   }, []);
 
+  /** Detects the opening context (query params or active tab) and prefills the form fields. */
   const detectContextAndPrefill = async () => {
     // Check for URL passed via query param (from context menu).
     // Values are URI-encoded by the background script's context menu handler.
@@ -79,6 +81,7 @@ function AddLinkContent() {
     setTimeout(() => fromInputRef.current?.focus(), 100);
   };
 
+  /** Validates the form inputs and saves the new link, or prompts on duplicate. */
   const handleSave = async () => {
     const aliasError = validateAlias(linkFrom);
     if (aliasError) {
@@ -106,6 +109,10 @@ function AddLinkContent() {
     }
   };
 
+  /**
+   * Appends a new link entry to the config and persists it.
+   * @param {Array} configs - The current config array to append to.
+   */
   const saveNewLink = async (configs) => {
     const from = normalizeFrom(linkFrom.trim());
     const to = normalizeTo(linkTo.trim());
@@ -118,6 +125,7 @@ function AddLinkContent() {
     setTimeout(() => window.close(), 1000);
   };
 
+  /** Updates an existing duplicate link entry with the new URL. */
   const handleUpdateExisting = async () => {
     try {
       const configs = await getConfig();
@@ -139,32 +147,46 @@ function AddLinkContent() {
     }
   };
 
+  /** Closes the popup window. */
   const handleCancel = () => {
     window.close();
   };
 
+  /** Opens the Options settings page in a new tab. */
   const navigateToOptions = () => {
     chrome.tabs.create({ url: chrome.runtime.getURL("pages/options/options.html") });
   };
 
+  /** Opens the Add Link page in a new browser tab. */
   const openInNewTab = () => {
     chrome.tabs.create({ url: chrome.runtime.getURL("pages/addlink/addlink.html") });
   };
 
+  /**
+   * Displays a snackbar notification.
+   * @param {string} message - The message to display.
+   * @param {string} severity - The alert severity level.
+   */
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
   };
 
+  /** Cleans the alias field value on blur. */
   const handleFromBlur = () => {
     setLinkFrom(cleanAlias(linkFrom));
   };
 
+  /** Cleans the URL field value on blur. */
   const handleToBlur = () => {
     if (linkTo.trim()) {
       setLinkTo(cleanUrl(linkTo));
     }
   };
 
+  /**
+   * Handles form submission by preventing default and triggering save.
+   * @param {Event} e - The form submit event.
+   */
   const handleSubmit = (e) => {
     e.preventDefault();
     handleSave();
@@ -311,6 +333,7 @@ function AddLinkContent() {
   );
 }
 
+/** Exported Add Link page wrapper with theme provider. */
 export default function AddLink() {
   return (
     <ThemeContextProvider>

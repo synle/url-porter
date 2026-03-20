@@ -88,6 +88,7 @@ import {
   setHistoryEntryLimit,
 } from "../../helpers/historyUtils.js";
 
+/** React component for the main options page content, including clean and advanced modes. */
 function OptionsContent() {
   // Core state
   const [homepageUrl, setHomepageUrl] = useState("");
@@ -137,6 +138,7 @@ function OptionsContent() {
     loadSettings();
   }, []);
 
+  /** Loads all settings (config, homepage, history limits, bookmark folder) from storage into state. */
   const loadSettings = async () => {
     const config = await getConfig();
     const homepage = await getHomepageUrl();
@@ -155,10 +157,20 @@ function OptionsContent() {
     setGithubOrgThresholdValue(orgThreshold);
   };
 
+  /**
+   * Displays a snackbar notification.
+   * @param {string} message - The message to display.
+   * @param {string} [severity="success"] - MUI alert severity ("success", "error", etc.).
+   */
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
   };
 
+  /**
+   * Persists config entries to storage, notifies the background service worker, and refreshes state.
+   * @param {Array<{from: string, to: string}>} entries - The config entries to save.
+   * @returns {Promise<boolean>} Whether the save succeeded.
+   */
   const saveAndNotify = async (entries) => {
     try {
       await setConfig(JSON.stringify(entries));
@@ -176,7 +188,7 @@ function OptionsContent() {
     }
   };
 
-  // Homepage autosave on blur
+  /** Auto-saves the homepage URL to storage on input blur. */
   const handleHomepageBlur = async () => {
     try {
       await saveHomepageUrl(homepageUrl.trim());
@@ -186,7 +198,7 @@ function OptionsContent() {
     }
   };
 
-  // --- Clean Mode CRUD ---
+  /** Validates and adds a new redirect link in clean mode, checking for duplicates. */
   const handleAddLink = async () => {
     const aliasError = validateAlias(linkFrom);
     if (aliasError) {
@@ -220,6 +232,7 @@ function OptionsContent() {
     }
   };
 
+  /** Saves an edited link after validating the alias and checking for duplicates. */
   const handleEditSave = async () => {
     if (editIndex < 0) return;
 
@@ -251,6 +264,7 @@ function OptionsContent() {
     }
   };
 
+  /** Deletes a single link after confirmation and logs it to history. */
   const handleDeleteConfirm = async () => {
     if (deleteIndex < 0) return;
     const deletedEntry = configEntries[deleteIndex];
@@ -264,6 +278,7 @@ function OptionsContent() {
     }
   };
 
+  /** Deletes all currently selected links and logs each deletion to history. */
   const handleMassDelete = async () => {
     const deletedEntries = configEntries.filter((_, i) => selected.includes(i));
     const newEntries = configEntries.filter((_, i) => !selected.includes(i));
@@ -279,7 +294,7 @@ function OptionsContent() {
     }
   };
 
-  // --- Duplicate resolution ---
+  /** Resolves a duplicate alias by updating the existing entry's URL to the new value. */
   const handleDuplicateUpdate = async () => {
     const { index, context } = duplicateDialog;
     const from = context === "edit" ? editFrom.trim() : linkFrom.trim();
@@ -304,7 +319,7 @@ function OptionsContent() {
     }
   };
 
-  // --- Advanced Mode ---
+  /** Saves the raw JSON config from the advanced mode editor to storage. */
   const handleAdvancedSave = async () => {
     try {
       await setConfig(editorContent);
@@ -317,7 +332,11 @@ function OptionsContent() {
     }
   };
 
-  // --- Mode switching ---
+  /**
+   * Handles the toggle button group change for switching between clean and advanced modes.
+   * @param {Event} _ - Unused event parameter.
+   * @param {string} newMode - The mode to switch to ("clean" or "advanced").
+   */
   const handleModeChange = (_, newMode) => {
     if (!newMode || newMode === mode) return;
 
@@ -329,6 +348,10 @@ function OptionsContent() {
     switchMode(newMode);
   };
 
+  /**
+   * Switches the UI mode, resyncing editor content if entering advanced mode.
+   * @param {string} newMode - The mode to switch to ("clean" or "advanced").
+   */
   const switchMode = (newMode) => {
     if (newMode === "advanced") {
       const json = JSON.stringify(configEntries, null, 2);
@@ -340,7 +363,7 @@ function OptionsContent() {
     setSearchQuery("");
   };
 
-  // --- Reset ---
+  /** Resets all settings to defaults, clears config and homepage, and logs deletions to history. */
   const handleReset = async () => {
     try {
       // Close dialog immediately so the UI doesn't appear to hang
@@ -384,6 +407,10 @@ function OptionsContent() {
     return entries;
   }, [configEntries, searchQuery, sortBy, sortDir]);
 
+  /**
+   * Toggles the sort direction for a column, or sets a new sort column.
+   * @param {string} field - The field to sort by ("from" or "to").
+   */
   const handleSort = (field) => {
     if (sortBy === field) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -393,10 +420,15 @@ function OptionsContent() {
     }
   };
 
+  /**
+   * Toggles selection state of a single table row.
+   * @param {number} origIndex - The original index of the entry in configEntries.
+   */
   const toggleSelect = (origIndex) => {
     setSelected((prev) => (prev.includes(origIndex) ? prev.filter((i) => i !== origIndex) : [...prev, origIndex]));
   };
 
+  /** Toggles selection of all currently visible (filtered) entries. */
   const toggleSelectAll = () => {
     const visibleIndices = filteredEntries.map((e) => e._origIndex);
     const allSelected = visibleIndices.every((i) => selected.includes(i));
@@ -407,6 +439,11 @@ function OptionsContent() {
     }
   };
 
+  /**
+   * Returns an arrow indicator string for the currently sorted column.
+   * @param {string} field - The field to check ("from" or "to").
+   * @returns {string} An up/down arrow if this field is the active sort, otherwise empty string.
+   */
   const sortIndicator = (field) => {
     if (sortBy !== field) return "";
     return sortDir === "asc" ? " \u2191" : " \u2193";
@@ -1006,6 +1043,7 @@ function OptionsContent() {
   );
 }
 
+/** Exported wrapper component that provides the MUI theme context around OptionsContent. */
 export default function Options() {
   return (
     <ThemeContextProvider>

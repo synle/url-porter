@@ -2,6 +2,16 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, TextField, Button } from "@mui/material";
 import { getSyncUrl, setSyncUrlToStorage, setConfig, saveHomepageUrl, isValidUrl, DEFAULT_SYNC_URL } from "../helpers/storage.js";
 
+/**
+ * Dialog component for syncing settings from a remote server URL.
+ *
+ * @param {object} props
+ * @param {boolean} props.open - Whether the dialog is visible
+ * @param {() => void} props.onClose - Callback to close the dialog
+ * @param {(response: object) => void} props.onSuccess - Callback on successful sync
+ * @param {(message: string) => void} props.onError - Callback on sync failure
+ * @returns {React.ReactElement}
+ */
 export default function SyncDialog({ open, onClose, onSuccess, onError }) {
   const [syncUrl, setSyncUrl] = useState(DEFAULT_SYNC_URL);
 
@@ -11,6 +21,7 @@ export default function SyncDialog({ open, onClose, onSuccess, onError }) {
     }
   }, [open]);
 
+  /** Validate the URL, fetch remote config, and apply it to local storage. */
   const handleSyncSubmit = async () => {
     if (!isValidUrl(syncUrl)) {
       onError("Please enter a valid URL starting with http:// or https://");
