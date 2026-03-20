@@ -17,6 +17,7 @@
  */
 
 import { getBookmarkFolderName } from "./storage.js";
+import { sanitizeBookmarkTitle } from "./configUtils.js";
 
 const FIGMA_MOCK_REGEX = /^https?:\/\/(?:www\.)?figma\.com\/(design|file|proto|board)\/([^/?#]+)\/([^/?#]+)/;
 const SUBFOLDER_NAME = "figma mocks";
@@ -160,7 +161,8 @@ export async function reconcileFigmaMocks() {
 
   // Create bookmarks
   let added = 0;
-  for (const { title, url } of sortedMocks) {
+  for (const { title: rawTitle, url } of sortedMocks) {
+    const title = sanitizeBookmarkTitle(rawTitle);
     await chrome.bookmarks.create({ parentId: subfolder.id, title, url });
     added++;
   }

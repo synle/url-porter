@@ -172,6 +172,17 @@ export function cleanUrl(value) {
   return result;
 }
 
+/**
+ * Strip leading `#` characters (and any following space) from a bookmark title.
+ * Prevents titles like "#1692 - ..." from being misinterpreted as markdown headers.
+ *
+ * @param {string} title
+ * @returns {string}
+ */
+export function sanitizeBookmarkTitle(title) {
+  return String(title ?? "").replace(/^#+\s*/, "");
+}
+
 export function findDuplicateEntry(entries, alias, skipIndex = -1) {
   if (!Array.isArray(entries) || !alias) return null;
 

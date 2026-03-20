@@ -17,6 +17,7 @@
  */
 
 import { getBookmarkFolderName } from "./storage.js";
+import { sanitizeBookmarkTitle } from "./configUtils.js";
 
 const SUBFOLDER_NAME = "onedrive";
 
@@ -250,7 +251,7 @@ export async function reconcileOnedrive() {
 
   let added = 0;
   for (const entry of sorted) {
-    const title = entry.title || entry.dedupeKey;
+    const title = sanitizeBookmarkTitle(entry.title || entry.dedupeKey);
     await chrome.bookmarks.create({ parentId: subfolder.id, title, url: entry.url });
     added++;
   }

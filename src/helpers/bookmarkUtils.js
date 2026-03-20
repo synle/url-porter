@@ -8,7 +8,7 @@
  * Duplicate bookmarks (same title) are cleaned up — the later entry wins.
  */
 
-import { normalizeEntry, normalizeTo, stripAlias } from "./configUtils.js";
+import { normalizeEntry, normalizeTo, stripAlias, sanitizeBookmarkTitle } from "./configUtils.js";
 import { getBookmarkFolderName } from "./storage.js";
 
 /**
@@ -232,7 +232,7 @@ export async function reconcileBookmarks(configEntries) {
   for (const [title, url] of desiredMap) {
     if (!existingMap.has(title)) {
       console.log("[bookmarkUtils] reconcileBookmarks: ADDING new bookmark to bottom:", title, "→", url);
-      await chrome.bookmarks.create({ parentId: folder.id, title, url });
+      await chrome.bookmarks.create({ parentId: folder.id, title: sanitizeBookmarkTitle(title), url });
     }
   }
 

@@ -15,6 +15,7 @@
  */
 
 import { getBookmarkFolderName } from "./storage.js";
+import { sanitizeBookmarkTitle } from "./configUtils.js";
 
 const DOCS_REGEX = /^https?:\/\/docs\.google\.com\/(document|spreadsheets|presentation|forms)\/d\/([^/?#]+)/;
 const DRIVE_FILE_REGEX = /^https?:\/\/drive\.google\.com\/file\/d\/([^/?#]+)/;
@@ -222,7 +223,7 @@ export async function reconcileGoogleDrive() {
 
   let added = 0;
   for (const entry of sorted) {
-    const title = entry.title || entry.docId;
+    const title = sanitizeBookmarkTitle(entry.title || entry.docId);
     await chrome.bookmarks.create({ parentId: subfolder.id, title, url: entry.url });
     added++;
   }

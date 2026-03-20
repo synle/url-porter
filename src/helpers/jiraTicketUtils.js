@@ -12,6 +12,7 @@
  */
 
 import { getBookmarkFolderName, getGithubOrgThreshold } from "./storage.js";
+import { sanitizeBookmarkTitle } from "./configUtils.js";
 
 const ATLASSIAN_REGEX = /^https?:\/\/[^/]*\.atlassian\.net\/browse\/([A-Z][A-Z0-9]+-\d+)/i;
 const JIRA_HOST_REGEX = /^https?:\/\/jira[^/]*\/browse\/([A-Z][A-Z0-9]+-\d+)/i;
@@ -256,7 +257,7 @@ export async function reconcileJiraTickets() {
       return numB - numA;
     });
     for (const entry of tickets) {
-      const title = buildTitle(entry.ticketKey, formatDate(entry.visitTime), entry.pageTitle);
+      const title = sanitizeBookmarkTitle(buildTitle(entry.ticketKey, formatDate(entry.visitTime), entry.pageTitle));
       await chrome.bookmarks.create({ parentId: projectFolder.id, title, url: entry.url });
       added++;
     }
@@ -267,7 +268,7 @@ export async function reconcileJiraTickets() {
     miscTickets.sort((a, b) => a.project.localeCompare(b.project) || b.ticketKey.localeCompare(a.ticketKey));
     const miscFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: "misc" });
     for (const entry of miscTickets) {
-      const title = buildTitle(entry.ticketKey, formatDate(entry.visitTime), entry.pageTitle);
+      const title = sanitizeBookmarkTitle(buildTitle(entry.ticketKey, formatDate(entry.visitTime), entry.pageTitle));
       await chrome.bookmarks.create({ parentId: miscFolder.id, title, url: entry.url });
       added++;
     }

@@ -17,6 +17,7 @@
  */
 
 import { getBookmarkFolderName, getGithubOrgThreshold } from "./storage.js";
+import { sanitizeBookmarkTitle } from "./configUtils.js";
 
 const GITHUB_REPO_REGEX = /^https?:\/\/github\.com\/([^/?#]+)\/([^/?#]+)/;
 const AZURE_DEVOPS_REGEX = /^https?:\/\/([^/?#]+)\.visualstudio\.com\/([^/?#]+)\/_git\/([^/?#]+)/;
@@ -238,7 +239,7 @@ export async function reconcileGitHubRepos() {
   for (const org of realOrgs) {
     const orgFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: org });
     for (const { repo, url } of byOrg.get(org)) {
-      await chrome.bookmarks.create({ parentId: orgFolder.id, title: repo, url });
+      await chrome.bookmarks.create({ parentId: orgFolder.id, title: sanitizeBookmarkTitle(repo), url });
       added++;
     }
   }
@@ -248,7 +249,7 @@ export async function reconcileGitHubRepos() {
     miscRepos.sort((a, b) => a.org.toLowerCase().localeCompare(b.org.toLowerCase()) || a.repo.toLowerCase().localeCompare(b.repo.toLowerCase()));
     const miscFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: "misc" });
     for (const { org, repo, url } of miscRepos) {
-      await chrome.bookmarks.create({ parentId: miscFolder.id, title: `${repo} (${org})`, url });
+      await chrome.bookmarks.create({ parentId: miscFolder.id, title: sanitizeBookmarkTitle(`${repo} (${org})`), url });
       added++;
     }
   }

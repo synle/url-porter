@@ -16,6 +16,7 @@
  */
 
 import { getBookmarkFolderName } from "./storage.js";
+import { sanitizeBookmarkTitle } from "./configUtils.js";
 
 const GITHUB_PR_REGEX = /^https?:\/\/github\.com\/([^/?#]+)\/([^/?#]+)\/pull\/(\d+)/;
 const AZURE_PR_REGEX = /^https?:\/\/([^/?#]+)\.visualstudio\.com\/([^/?#]+)\/_git\/([^/?#]+)\/pullrequest\/(\d+)/;
@@ -117,7 +118,7 @@ function cleanPrTitle(pageTitle, prNumber) {
  */
 function buildTitle(entry) {
   const dateStr = formatDate(entry.visitTime);
-  let title = `#${entry.prNumber}`;
+  let title = `${entry.prNumber}`;
   if (dateStr) title += ` - ${dateStr}`;
   title += ` - ${entry.repo} / ${entry.org}`;
   if (entry.pageTitle) {
@@ -259,7 +260,7 @@ export async function reconcilePrs() {
 
   let added = 0;
   for (const entry of sorted) {
-    const title = buildTitle(entry);
+    const title = sanitizeBookmarkTitle(buildTitle(entry));
     await chrome.bookmarks.create({ parentId: subfolder.id, title, url: entry.url });
     added++;
   }
