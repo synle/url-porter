@@ -177,22 +177,32 @@ async function extractStatusesFromOldBookmarks(children) {
 }
 
 /**
+ * Truncate a string to maxLen characters, appending "..." if truncated.
+ * @param {string} str
+ * @param {number} maxLen
+ * @returns {string}
+ */
+function truncate(str, maxLen) {
+  if (!str || str.length <= maxLen) return str || "";
+  return str.slice(0, maxLen).trimEnd() + "...";
+}
+
+/**
  * Build the bookmark title.
- * Format: "[status] #1692 - 3/26 - Repo Name / Org Name - PR description"
+ * Format: "[status] 1692 PR description up... RepoName/OrgName"
  * @param {object} entry
  * @param {string | null} status - PR status for icon prefix
  * @returns {string}
  */
 function buildTitle(entry, status) {
   const prefix = status && STATUS_ICONS[status] ? STATUS_ICONS[status] : "";
-  const dateStr = formatDate(entry.visitTime);
   let title = `${entry.prNumber}`;
-  if (dateStr) title += ` - ${dateStr}`;
-  title += ` - ${entry.repo} / ${entry.org}`;
   if (entry.pageTitle) {
     const detail = cleanPrTitle(entry.pageTitle, entry.prNumber);
-    if (detail) title += ` - ${detail}`;
+    if (detail) title += ` ${truncate(detail, 20)}`;
   }
+  const repoOrg = `${entry.repo}/${entry.org}`.replace(/ /g, "");
+  title += ` ${repoOrg}`;
   return prefix + title;
 }
 

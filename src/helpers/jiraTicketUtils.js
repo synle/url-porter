@@ -71,18 +71,16 @@ function parseJiraTicket(url) {
 }
 
 /**
- * Build the bookmark title from ticket key, date, optional page title, and status.
- * Format: "[status] INFOSEC-101219 - 2025-03 - [Rotate Secrets for]: golinks-dev ..."
+ * Build the bookmark title from ticket key, optional page title, and status.
+ * Format: "[status] INFOSEC-101219 - [Rotate Secrets for]: golinks-dev ..."
  * @param {string} ticketKey
- * @param {string} dateStr
  * @param {string} pageTitle
  * @param {string | null} status - Jira ticket status for icon prefix
  * @returns {string}
  */
-function buildTitle(ticketKey, dateStr, pageTitle, status) {
+function buildTitle(ticketKey, pageTitle, status) {
   const prefix = status && STATUS_ICONS[status] ? STATUS_ICONS[status] : "";
   let title = ticketKey;
-  if (dateStr) title += ` - ${dateStr}`;
   if (pageTitle) {
     // Strip leading ticket key and surrounding brackets/dashes from page title
     let detail = pageTitle.replace(new RegExp(`^\\[?${ticketKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\]?\\s*[-:]?\\s*`, "i"), "").trim();
@@ -330,7 +328,9 @@ export async function reconcileJiraTickets() {
     });
     for (const entry of tickets) {
       const status = storedStatuses[entry.url] || oldBookmarkStatuses[entry.url] || null;
-      const title = sanitizeBookmarkTitle(buildTitle(entry.ticketKey, formatDate(entry.visitTime), entry.pageTitle, status));
+      // Inside a project folder, drop the project prefix (e.g. "96899" instead of "DEPEND-96899")
+      const ticketNumber = entry.ticketKey.split("-")[1];
+      const title = sanitizeBookmarkTitle(buildTitle(ticketNumber, entry.pageTitle, status));
       await chrome.bookmarks.create({ parentId: projectFolder.id, title, url: entry.url });
       added++;
     }
@@ -342,7 +342,7 @@ export async function reconcileJiraTickets() {
     const miscFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: "misc" });
     for (const entry of miscTickets) {
       const status = storedStatuses[entry.url] || oldBookmarkStatuses[entry.url] || null;
-      const title = sanitizeBookmarkTitle(buildTitle(entry.ticketKey, formatDate(entry.visitTime), entry.pageTitle, status));
+      const title = sanitizeBookmarkTitle(buildTitle(entry.ticketKey, entry.pageTitle, status));
       await chrome.bookmarks.create({ parentId: miscFolder.id, title, url: entry.url });
       added++;
     }

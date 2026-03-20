@@ -134,8 +134,9 @@ describe("jiraTicketUtils — feedback loop prevention", () => {
 
     expect(secondTitle).toBe(firstTitle);
 
+    // No date should appear in the title
     const dateMatches = secondTitle.match(/\d{4}-\d{2}/g);
-    expect(dateMatches?.length).toBe(1);
+    expect(dateMatches).toBeNull();
   });
 
   it("should strip vendor JIRA suffix from page titles", async () => {
@@ -163,7 +164,7 @@ describe("jiraTicketUtils — feedback loop prevention", () => {
     expect(title).not.toMatch(/JIRA/i);
     expect(title).not.toMatch(/Globex/i);
     expect(title).toContain("API rate limiter not respecting burst config");
-    expect(title).toMatch(/^PLUTO-4401 - \d{4}-\d{2} - API rate limiter not respecting burst config$/);
+    expect(title).toMatch(/^PLUTO-4401 - API rate limiter not respecting burst config$/);
   });
 
   it("should not pick up bookmarks from inside the url-porter folder", async () => {
@@ -172,7 +173,7 @@ describe("jiraTicketUtils — feedback loop prevention", () => {
     const projectFolder = addMockFolder(jiraSubfolder.id, "ORBIT");
     addMockBookmark(
       projectFolder.id,
-      "ORBIT-592 - 2025-09 - Deploy pipeline stuck on canary stage",
+      "ORBIT-592 - Deploy pipeline stuck on canary stage",
       "https://jira.initech.example.com/browse/ORBIT-592",
       new Date("2025-09-14").getTime(),
     );
@@ -226,7 +227,7 @@ describe("jiraTicketUtils — feedback loop prevention", () => {
     const projectFolder = addMockFolder(jiraSubfolder.id, "FALCON");
     addMockBookmark(
       projectFolder.id,
-      "\u2705 FALCON-2001 - 2025-09 - Previously closed ticket",
+      "\u2705 FALCON-2001 - Previously closed ticket",
       "https://jira.acme-corp.example.com:8443/browse/FALCON-2001",
       new Date("2025-09-14").getTime(),
     );

@@ -151,7 +151,7 @@ describe("prUtils — PR status icons", () => {
     const bm = findCreatedPrBookmark("https://github.com/acme/widget/pull/42");
     expect(bm).toBeDefined();
     // No status prefix — title should start with the PR number
-    expect(bm.title).toMatch(/^42 - /);
+    expect(bm.title).toMatch(/^42 /);
     expect(bm.title).not.toMatch(/^\[/);
   });
 
@@ -180,7 +180,7 @@ describe("prUtils — PR status icons", () => {
 
     const bm = findCreatedPrBookmark("https://github.com/acme/widget/pull/42");
     expect(bm).toBeDefined();
-    expect(bm.title).toMatch(/^\u2705 42 - /);
+    expect(bm.title).toMatch(/^\u2705 42 /);
   });
 
   it("should show \u274C prefix for closed/abandoned PRs", async () => {
@@ -207,7 +207,7 @@ describe("prUtils — PR status icons", () => {
 
     const bm = findCreatedPrBookmark("https://github.com/acme/widget/pull/99");
     expect(bm).toBeDefined();
-    expect(bm.title).toMatch(/^\u274C 99 - /);
+    expect(bm.title).toMatch(/^\u274C 99 /);
   });
 
   it("should show \uD83D\uDD35 prefix for open/in-progress PRs", async () => {
@@ -234,7 +234,7 @@ describe("prUtils — PR status icons", () => {
 
     const bm = findCreatedPrBookmark("https://github.com/acme/widget/pull/77");
     expect(bm).toBeDefined();
-    expect(bm.title).toMatch(/^\uD83D\uDD35 77 - /);
+    expect(bm.title).toMatch(/^\uD83D\uDD35 77 /);
   });
 
   it("should preserve old bookmark status when PR is not re-visited (no stored status)", async () => {
@@ -244,7 +244,7 @@ describe("prUtils — PR status icons", () => {
     // Old bookmark already had \u2705 prefix from a previous reconciliation
     addMockBookmark(
       prsFolder.id,
-      "\u2705 42 - 3/26 - Widget / Acme - Fix rendering bug",
+      "\u2705 42 Fix rendering bug Widget/Acme",
       "https://github.com/acme/widget/pull/42",
       new Date("2026-03-15").getTime(),
     );
@@ -270,7 +270,7 @@ describe("prUtils — PR status icons", () => {
     const bm = findCreatedPrBookmark("https://github.com/acme/widget/pull/42");
     expect(bm).toBeDefined();
     // Should preserve the \u2705 prefix from the old bookmark
-    expect(bm.title).toMatch(/^\u2705 42 - /);
+    expect(bm.title).toMatch(/^\u2705 42 /);
   });
 
   it("should let stored status override old bookmark status", async () => {
@@ -280,7 +280,7 @@ describe("prUtils — PR status icons", () => {
     // Old bookmark had \uD83D\uDD35 (open) prefix
     addMockBookmark(
       prsFolder.id,
-      "\uD83D\uDD35 42 - 3/26 - Widget / Acme - Fix rendering bug",
+      "\uD83D\uDD35 42 Fix rendering bug Widget/Acme",
       "https://github.com/acme/widget/pull/42",
       new Date("2026-03-15").getTime(),
     );
@@ -308,7 +308,7 @@ describe("prUtils — PR status icons", () => {
     const bm = findCreatedPrBookmark("https://github.com/acme/widget/pull/42");
     expect(bm).toBeDefined();
     // Stored "merged" should override old bookmark's "open"
-    expect(bm.title).toMatch(/^\u2705 42 - /);
+    expect(bm.title).toMatch(/^\u2705 42 /);
     expect(bm.title).not.toMatch(/^\uD83D\uDD35/);
   });
 
@@ -336,7 +336,7 @@ describe("prUtils — PR status icons", () => {
 
     const bm = findCreatedPrBookmark("https://globex.visualstudio.com/phoenix/_git/api-server/pullrequest/1234");
     expect(bm).toBeDefined();
-    expect(bm.title).toMatch(/^\u274C 1234 - /);
+    expect(bm.title).toMatch(/^\u274C 1234 /);
   });
 
   it("should handle *.githubprivate.com PR URLs with status", async () => {
@@ -363,9 +363,8 @@ describe("prUtils — PR status icons", () => {
 
     const bm = findCreatedPrBookmark("https://acme.githubprivate.com/teamx/service-api/pull/200");
     expect(bm).toBeDefined();
-    expect(bm.title).toMatch(/^\uD83D\uDD35 200 - /);
-    expect(bm.title).toContain("Service Api");
-    expect(bm.title).toContain("Teamx");
+    expect(bm.title).toMatch(/^\uD83D\uDD35 200 /);
+    expect(bm.title).toContain("ServiceApi/Teamx");
   });
 
   it("should handle *.ghe.com PR URLs with status", async () => {
@@ -392,9 +391,8 @@ describe("prUtils — PR status icons", () => {
 
     const bm = findCreatedPrBookmark("https://globex.ghe.com/multiproduct/tde-tool-backend/pull/306");
     expect(bm).toBeDefined();
-    expect(bm.title).toMatch(/^\u2705 306 - /);
-    expect(bm.title).toContain("Tde Tool Backend");
-    expect(bm.title).toContain("Multiproduct");
+    expect(bm.title).toMatch(/^\u2705 306 /);
+    expect(bm.title).toContain("TdeToolBackend/Multiproduct");
   });
 
   it("should handle dev.azure.com PR URLs with status", async () => {
@@ -421,9 +419,8 @@ describe("prUtils — PR status icons", () => {
 
     const bm = findCreatedPrBookmark("https://dev.azure.com/initech/alpha/_git/backend/pullrequest/567");
     expect(bm).toBeDefined();
-    expect(bm.title).toMatch(/^\u2705 567 - /);
-    expect(bm.title).toContain("Backend");
-    expect(bm.title).toContain("Initech Alpha");
+    expect(bm.title).toMatch(/^\u2705 567 /);
+    expect(bm.title).toContain("Backend/InitechAlpha");
   });
 
   it("should dedupe dev.azure.com and visualstudio.com PRs from same org/project/repo", async () => {
@@ -483,7 +480,7 @@ describe("prUtils — PR status icons", () => {
     const bm = findCreatedPrBookmark("https://github.com/acme/widget/pull/42");
     expect(bm).toBeDefined();
     // Should have exactly one \u2705 prefix, not \u2705 \u2705
-    expect(bm.title).toMatch(/^\u2705 42 - /);
+    expect(bm.title).toMatch(/^\u2705 42 /);
     expect(bm.title).not.toMatch(/^\u2705 \u2705/);
   });
 
@@ -519,6 +516,6 @@ describe("prUtils — PR status icons", () => {
     expect(bm20.title).toMatch(/^\u274C/);
     expect(bm30.title).toMatch(/^\uD83D\uDD35/);
     // PR 40 has no status — no prefix
-    expect(bm40.title).toMatch(/^40 - /);
+    expect(bm40.title).toMatch(/^40 /);
   });
 });
