@@ -1,6 +1,12 @@
-/* Dynamically find and tag the note modal so CSS can style it */
+/** Content script for Google Keep — finds note modals and injects a markdown preview button. */
 const TAG = "[url-porter]";
 
+/**
+ * Convert a markdown string to HTML.
+ *
+ * @param {string} md - Raw markdown text
+ * @returns {string} HTML string
+ */
 function markdownToHtml(md) {
   let html = md;
 
@@ -84,6 +90,12 @@ function markdownToHtml(md) {
   return html;
 }
 
+/**
+ * Extract the text content from a Keep note modal, stripping metadata.
+ *
+ * @param {HTMLElement} modal - The modal DOM element
+ * @returns {string} The cleaned note text
+ */
 function getNoteContent(modal) {
   let text = modal.innerText || "";
   // Strip trailing metadata (Edited date, button labels, etc.)
@@ -91,6 +103,11 @@ function getNoteContent(modal) {
   return text;
 }
 
+/**
+ * Open a new browser tab with a rendered HTML preview of the note's markdown.
+ *
+ * @param {HTMLElement} modal - The modal DOM element containing the note
+ */
 function openMarkdownPreview(modal) {
   const md = getNoteContent(modal);
   if (!md) {
@@ -212,6 +229,11 @@ function openMarkdownPreview(modal) {
   window.open(URL.createObjectURL(blob), "_blank");
 }
 
+/**
+ * Inject a "Preview" button into a Keep note modal next to the Close button.
+ *
+ * @param {HTMLElement} modal - The modal DOM element
+ */
 function injectPreviewButton(modal) {
   if (modal.querySelector(".url-porter-preview-btn")) return;
   const closeBtn = Array.from(modal.querySelectorAll('[role="button"]')).find((b) => b.textContent.trim() === "Close");
@@ -230,6 +252,7 @@ function injectPreviewButton(modal) {
   console.log(TAG, "injected preview button");
 }
 
+/** Scan the DOM for fixed-position modals and inject preview buttons into them. */
 function scan() {
   console.log(TAG, "scanning for modals");
   for (const el of document.body.children) {
@@ -252,6 +275,11 @@ function scan() {
 }
 
 let scanTimer;
+/**
+ * Debounce a DOM scan for modals.
+ *
+ * @param {string} source - Label describing what triggered the scan
+ */
 function scheduleScan(source) {
   console.log(TAG, source + ", scanning in 0.5s");
   clearTimeout(scanTimer);

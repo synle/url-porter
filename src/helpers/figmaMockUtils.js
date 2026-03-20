@@ -25,6 +25,8 @@ const SUBFOLDER_NAME = "figma mocks";
 /**
  * Convert a string to title case: replace `_`, `-`, `.` with spaces,
  * then capitalize the first letter of each word.
+ * @param {string} str
+ * @returns {string}
  */
 function toTitleCase(str) {
   return str.replace(/[_\-.]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -34,6 +36,8 @@ function toTitleCase(str) {
  * Parse a Figma URL into { title, url } or null.
  * Strips query strings, hash fragments, and trailing slashes.
  * Ignores figma.site URLs entirely.
+ * @param {string} url
+ * @returns {{title: string, url: string, dedupeKey: string} | null}
  */
 function parseFigmaMock(url) {
   if (!url) return null;
@@ -55,6 +59,7 @@ function parseFigmaMock(url) {
 
 /**
  * Collect Figma URLs from browser history.
+ * @returns {Promise<Map<string, object>>}
  */
 async function getFigmaFromHistory() {
   const mocks = new Map();
@@ -75,6 +80,8 @@ async function getFigmaFromHistory() {
 /**
  * Recursively walk all bookmarks and extract Figma URLs.
  * Skips bookmarks inside the url-porter folder to avoid feedback loops.
+ * @param {string} porterFolderId
+ * @returns {Promise<Map<string, object>>}
  */
 async function getFigmaFromBookmarks(porterFolderId) {
   const mocks = new Map();
@@ -103,6 +110,8 @@ async function getFigmaFromBookmarks(porterFolderId) {
 
 /**
  * Find the url-porter folder under top-level bookmark folders.
+ * @param {string} folderName
+ * @returns {Promise<chrome.bookmarks.BookmarkTreeNode | undefined>}
  */
 async function findPorterFolder(folderName) {
   const results = await chrome.bookmarks.search({ title: folderName });

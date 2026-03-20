@@ -132,12 +132,6 @@ export function setSyncUrlToStorage(input_value) {
 }
 
 /**
- * Validate that a string is a well-formed http(s) URL.
- *
- * @param {string} url
- * @returns {boolean}
- */
-/**
  * Get the bookmark folder name from local storage.
  *
  * @returns {Promise<string>} Folder name or "url-porter"
@@ -192,6 +186,12 @@ export function setGithubOrgThreshold(input_value) {
   });
 }
 
+/**
+ * Validate that a string is a well-formed http(s) URL.
+ *
+ * @param {string} url - The URL string to validate
+ * @returns {boolean} True if the string is a valid http or https URL
+ */
 export function isValidUrl(url) {
   try {
     const urlObj = new URL(url);

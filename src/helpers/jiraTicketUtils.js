@@ -20,6 +20,8 @@ const SUBFOLDER_NAME = "jira tickets";
 
 /**
  * Extract the project prefix from a ticket key (e.g. "INFOSEC" from "INFOSEC-101219").
+ * @param {string} ticketKey
+ * @returns {string}
  */
 function getProject(ticketKey) {
   return ticketKey.split("-")[0].toUpperCase();
@@ -27,6 +29,8 @@ function getProject(ticketKey) {
 
 /**
  * Format a timestamp as yyyy-MM.
+ * @param {number} ts
+ * @returns {string}
  */
 function formatDate(ts) {
   if (!ts) return "";
@@ -39,6 +43,8 @@ function formatDate(ts) {
 /**
  * Parse a Jira URL into { ticketKey, url } or null.
  * Strips query strings, hash fragments, and trailing slashes.
+ * @param {string} url
+ * @returns {{ticketKey: string, project: string, url: string} | null}
  */
 function parseJiraTicket(url) {
   if (!url) return null;
@@ -59,6 +65,10 @@ function parseJiraTicket(url) {
 /**
  * Build the bookmark title from ticket key, date, and optional page title.
  * Format: "INFOSEC-101219 | 2025-03 - [Rotate Secrets for]: golinks-dev ..."
+ * @param {string} ticketKey
+ * @param {string} dateStr
+ * @param {string} pageTitle
+ * @returns {string}
  */
 function buildTitle(ticketKey, dateStr, pageTitle) {
   let title = ticketKey;
@@ -75,6 +85,7 @@ function buildTitle(ticketKey, dateStr, pageTitle) {
 
 /**
  * Collect Jira tickets from browser history.
+ * @returns {Promise<Map<string, object>>}
  */
 async function getTicketsFromHistory() {
   const tickets = new Map();
@@ -108,6 +119,8 @@ async function getTicketsFromHistory() {
  * Recursively walk all bookmarks and extract Jira ticket URLs.
  * Skips bookmarks inside the url-porter folder to avoid a feedback loop
  * where previously-built titles get re-parsed and accumulate dates.
+ * @param {string} porterFolderId
+ * @returns {Promise<Map<string, object>>}
  */
 async function getTicketsFromBookmarks(porterFolderId) {
   const tickets = new Map();
@@ -147,6 +160,8 @@ async function getTicketsFromBookmarks(porterFolderId) {
 
 /**
  * Find the url-porter folder under top-level bookmark folders.
+ * @param {string} folderName
+ * @returns {Promise<chrome.bookmarks.BookmarkTreeNode | undefined>}
  */
 async function findPorterFolder(folderName) {
   const results = await chrome.bookmarks.search({ title: folderName });

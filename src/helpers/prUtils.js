@@ -25,6 +25,8 @@ const SUBFOLDER_NAME = "prs";
 /**
  * Convert a string to title case: replace `_`, `-`, `.` with spaces,
  * then capitalize the first letter of each word.
+ * @param {string} str
+ * @returns {string}
  */
 function toTitleCase(str) {
   return str.replace(/[_\-.]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -32,6 +34,8 @@ function toTitleCase(str) {
 
 /**
  * Format a timestamp as m/yy (e.g. 3/26).
+ * @param {number} ts
+ * @returns {string}
  */
 function formatDate(ts) {
   if (!ts) return "";
@@ -43,6 +47,8 @@ function formatDate(ts) {
 
 /**
  * Parse a GitHub PR URL into { org, repo, prNumber, url } or null.
+ * @param {string} url
+ * @returns {{org: string, repo: string, prNumber: string, url: string, dedupeKey: string} | null}
  */
 function parseGitHubPr(url) {
   if (!url) return null;
@@ -65,6 +71,8 @@ function parseGitHubPr(url) {
 /**
  * Parse an Azure DevOps PR URL into { org, repo, prNumber, url } or null.
  * org becomes "{instance} {project}".
+ * @param {string} url
+ * @returns {{org: string, repo: string, prNumber: string, url: string, dedupeKey: string} | null}
  */
 function parseAzureDevOpsPr(url) {
   if (!url) return null;
@@ -87,6 +95,8 @@ function parseAzureDevOpsPr(url) {
 
 /**
  * Try to parse a URL as any supported PR type.
+ * @param {string} url
+ * @returns {{org: string, repo: string, prNumber: string, url: string, dedupeKey: string} | null}
  */
 function parsePrUrl(url) {
   return parseGitHubPr(url) || parseAzureDevOpsPr(url);
@@ -95,6 +105,9 @@ function parsePrUrl(url) {
 /**
  * Clean a page title to extract just the PR description.
  * Strips PR numbers, repo/org names, "Pull requests", GitHub suffixes, "by user" patterns.
+ * @param {string} pageTitle
+ * @param {string} prNumber
+ * @returns {string}
  */
 function cleanPrTitle(pageTitle, prNumber) {
   if (!pageTitle) return "";
@@ -113,6 +126,8 @@ function cleanPrTitle(pageTitle, prNumber) {
 /**
  * Build the bookmark title.
  * Format: "#1692 - 3/26 - Repo Name / Org Name - PR description"
+ * @param {object} entry
+ * @returns {string}
  */
 function buildTitle(entry) {
   const dateStr = formatDate(entry.visitTime);
@@ -128,6 +143,7 @@ function buildTitle(entry) {
 
 /**
  * Collect PR URLs from browser history.
+ * @returns {Promise<Map<string, object>>}
  */
 async function getPrsFromHistory() {
   const prs = new Map();
@@ -159,6 +175,8 @@ async function getPrsFromHistory() {
  * Recursively walk all bookmarks and extract PR URLs.
  * Skips bookmarks inside the url-porter folder to avoid a feedback loop
  * where previously-built titles get re-parsed and accumulate data.
+ * @param {string} porterFolderId
+ * @returns {Promise<Map<string, object>>}
  */
 async function getPrsFromBookmarks(porterFolderId) {
   const prs = new Map();
@@ -193,6 +211,8 @@ async function getPrsFromBookmarks(porterFolderId) {
 
 /**
  * Find the url-porter folder under top-level bookmark folders.
+ * @param {string} folderName
+ * @returns {Promise<chrome.bookmarks.BookmarkTreeNode | undefined>}
  */
 async function findPorterFolder(folderName) {
   const results = await chrome.bookmarks.search({ title: folderName });

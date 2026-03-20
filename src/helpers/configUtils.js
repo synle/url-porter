@@ -110,15 +110,6 @@ export function normalizeEntriesForRedirect(entries) {
  */
 
 /**
- * Find an existing entry whose `from` field matches the given alias
- * (case-insensitive, after normalizing both sides with `normalizeFrom`).
- *
- * @param {RawConfigEntry[]} entries - The current config entries (any format)
- * @param {string} alias - The alias to check (raw user input, will be normalized)
- * @param {number} [skipIndex=-1] - Index to skip (for edit mode, so the entry being edited is not matched)
- * @returns {DuplicateResult | null} The duplicate entry and its index, or null if no duplicate
- */
-/**
  * Strip the `||` prefix and `^` suffix from an alias to get the bare keyword.
  *
  * @param {string} alias - The raw alias (may or may not have delimiters)
@@ -189,6 +180,15 @@ export function sanitizeBookmarkTitle(title) {
     .trim();
 }
 
+/**
+ * Find an existing entry whose `from` field matches the given alias
+ * (case-insensitive, after normalizing both sides with `normalizeFrom`).
+ *
+ * @param {RawConfigEntry[]} entries - The current config entries (any format)
+ * @param {string} alias - The alias to check (raw user input, will be normalized)
+ * @param {number} [skipIndex=-1] - Index to skip (for edit mode, so the entry being edited is not matched)
+ * @returns {DuplicateResult | null} The duplicate entry and its index, or null if no duplicate
+ */
 export function findDuplicateEntry(entries, alias, skipIndex = -1) {
   if (!Array.isArray(entries) || !alias) return null;
 

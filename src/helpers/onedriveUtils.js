@@ -35,6 +35,8 @@ const ONEDRIVE_PERSONAL_REGEX = /^https?:\/\/[^/]*-my\.sharepoint\.com\/personal
 /**
  * Parse a OneDrive/SharePoint URL into { dedupeKey, url } or null.
  * Strips query strings, hash fragments, and trailing slashes for the canonical URL.
+ * @param {string} rawUrl
+ * @returns {{dedupeKey: string, url: string} | null}
  */
 function parseOnedriveUrl(rawUrl) {
   if (!rawUrl) return null;
@@ -92,6 +94,8 @@ function parseOnedriveUrl(rawUrl) {
 /**
  * Clean up a page title for use as a bookmark title.
  * Strips common suffixes like "- OneDrive", "- SharePoint", etc.
+ * @param {string} pageTitle
+ * @returns {string}
  */
 function cleanTitle(pageTitle) {
   if (!pageTitle) return "";
@@ -103,6 +107,7 @@ function cleanTitle(pageTitle) {
 
 /**
  * Collect OneDrive/SharePoint URLs from browser history.
+ * @returns {Promise<Map<string, object>>}
  */
 async function getDocsFromHistory() {
   const docs = new Map();
@@ -133,6 +138,8 @@ async function getDocsFromHistory() {
 /**
  * Recursively walk all bookmarks and extract OneDrive/SharePoint URLs.
  * Skips bookmarks inside the url-porter folder to avoid feedback loops.
+ * @param {string} porterFolderId
+ * @returns {Promise<Map<string, object>>}
  */
 async function getDocsFromBookmarks(porterFolderId) {
   const docs = new Map();
@@ -167,6 +174,8 @@ async function getDocsFromBookmarks(porterFolderId) {
 
 /**
  * Find the url-porter folder under top-level bookmark folders.
+ * @param {string} folderName
+ * @returns {Promise<chrome.bookmarks.BookmarkTreeNode | undefined>}
  */
 async function findPorterFolder(folderName) {
   const results = await chrome.bookmarks.search({ title: folderName });

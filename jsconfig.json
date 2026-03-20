@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "checkJs": true,
+    "module": "es2020",
+    "moduleResolution": "bundler",
+    "target": "es2020",
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*.js", "src/**/*.jsx"],
+  "exclude": ["node_modules", "dist", "types"]
+}

@@ -26,6 +26,8 @@ const SUBFOLDER_NAME = "github repos";
 /**
  * Convert a string to title case: replace `_`, `-`, `.` with spaces,
  * then capitalize the first letter of each word.
+ * @param {string} str
+ * @returns {string}
  */
 function toTitleCase(str) {
   return str.replace(/[_\-.]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -33,6 +35,8 @@ function toTitleCase(str) {
 
 /**
  * Parse a GitHub URL into { org, repo, url } or null.
+ * @param {string} url
+ * @returns {{org: string, repo: string, url: string} | null}
  */
 function parseGitHubRepo(url) {
   if (!url) return null;
@@ -76,6 +80,8 @@ function parseGitHubRepo(url) {
  * Parse an Azure DevOps URL into { org, repo, url } or null.
  * URL format: https://{instance}.visualstudio.com/{project}/_git/{repo}
  * org becomes "{instance} {project}", repo is the repo name.
+ * @param {string} url
+ * @returns {{org: string, repo: string, url: string} | null}
  */
 function parseAzureDevOpsRepo(url) {
   if (!url) return null;
@@ -95,6 +101,8 @@ function parseAzureDevOpsRepo(url) {
 
 /**
  * Try to parse a URL as any supported repo type.
+ * @param {string} url
+ * @returns {{org: string, repo: string, url: string} | null}
  */
 function parseRepoUrl(url) {
   return parseGitHubRepo(url) || parseAzureDevOpsRepo(url);
@@ -102,6 +110,7 @@ function parseRepoUrl(url) {
 
 /**
  * Collect repo URLs from browser history.
+ * @returns {Promise<Map<string, object>>}
  */
 async function getReposFromHistory() {
   const repos = new Map();
@@ -126,6 +135,8 @@ async function getReposFromHistory() {
 /**
  * Recursively walk all bookmarks and extract repo URLs.
  * Skips bookmarks inside the url-porter folder to avoid feedback loops.
+ * @param {string} porterFolderId
+ * @returns {Promise<Map<string, object>>}
  */
 async function getReposFromBookmarks(porterFolderId) {
   const repos = new Map();
@@ -154,6 +165,8 @@ async function getReposFromBookmarks(porterFolderId) {
 
 /**
  * Find the url-porter folder under top-level bookmark folders.
+ * @param {string} folderName
+ * @returns {Promise<chrome.bookmarks.BookmarkTreeNode | undefined>}
  */
 async function findPorterFolder(folderName) {
   const results = await chrome.bookmarks.search({ title: folderName });

@@ -26,6 +26,7 @@ export function bookmarkTitleFromEntry(entry) {
  * Find or create the "url-porter" bookmark folder under "Other Bookmarks".
  * Chrome uses well-known folder IDs: "1" = Bookmarks Bar, "2" = Other Bookmarks.
  *
+ * @param {string} folderName - The bookmark folder name to find or create
  * @returns {Promise<chrome.bookmarks.BookmarkTreeNode>}
  */
 async function findOrCreateFolder(folderName) {

@@ -25,6 +25,8 @@ const SUBFOLDER_NAME = "google drive";
 /**
  * Parse a Google Drive/Docs URL into { docId, url, type } or null.
  * Strips query strings, hash fragments, and trailing slashes.
+ * @param {string} url
+ * @returns {{docId: string, url: string, type: string} | null}
  */
 function parseGoogleDriveUrl(url) {
   if (!url) return null;
@@ -69,6 +71,8 @@ function parseGoogleDriveUrl(url) {
 /**
  * Clean up a page title for use as a bookmark title.
  * Strips common suffixes like "- Google Docs", "- Google Sheets", etc.
+ * @param {string} pageTitle
+ * @returns {string}
  */
 function cleanTitle(pageTitle) {
   if (!pageTitle) return "";
@@ -77,6 +81,7 @@ function cleanTitle(pageTitle) {
 
 /**
  * Collect Google Drive URLs from browser history.
+ * @returns {Promise<Map<string, object>>}
  */
 async function getDocsFromHistory() {
   const docs = new Map();
@@ -107,6 +112,8 @@ async function getDocsFromHistory() {
 /**
  * Recursively walk all bookmarks and extract Google Drive URLs.
  * Skips bookmarks inside the url-porter folder to avoid feedback loops.
+ * @param {string} porterFolderId
+ * @returns {Promise<Map<string, object>>}
  */
 async function getDocsFromBookmarks(porterFolderId) {
   const docs = new Map();
@@ -141,6 +148,8 @@ async function getDocsFromBookmarks(porterFolderId) {
 
 /**
  * Find the url-porter folder under top-level bookmark folders.
+ * @param {string} folderName
+ * @returns {Promise<chrome.bookmarks.BookmarkTreeNode | undefined>}
  */
 async function findPorterFolder(folderName) {
   const results = await chrome.bookmarks.search({ title: folderName });

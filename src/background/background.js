@@ -99,6 +99,13 @@ async function getNestedBookmarks() {
   }
 }
 
+/**
+ * Recursively collect all bookmarks from a folder and its subfolders.
+ *
+ * @param {chrome.bookmarks.BookmarkTreeNode} node - The folder node to walk
+ * @param {Array<{url: string, title: string}>} out - Accumulator array for results
+ * @returns {Promise<void>}
+ */
 async function walkFolder(node, out) {
   const children = await chrome.bookmarks.getChildren(node.id);
   for (const child of children) {

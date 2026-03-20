@@ -71,13 +71,13 @@ Content scripts (`src/content/`) are **not** Vite inputs — they are copied ver
 
 In dev/watch mode (`--watch`), the manifest's `name` is automatically changed to "URL Porter (DEV)" to distinguish from production builds. A dev-reload mechanism (`src/background/dev-reload.js`) is also injected — it polls a timestamp file and calls `chrome.runtime.reload()` on changes. This is dev-only and not included in production builds.
 
-## Quality Checklist
+## Quality Checklist (mandatory, non-negotiable)
 
 After every change, you MUST:
 
 1. **Run `npm test`** — all tests must pass before considering a change complete
 2. **Run `npm run format`** — format all code with Prettier
-3. **Add JSDoc** — all exported functions and non-trivial internal functions must have JSDoc comments with `@param` and `@returns` annotations
+3. **Verify JSDoc** — JSDoc is mandatory for ALL functions (exported and internal). Every function must have a `/** */` block with `@param` and `@returns` annotations. Before finishing any task, scan changed files to confirm JSDoc is present on every function.
 
 ## Key Conventions
 
