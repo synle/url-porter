@@ -31,6 +31,14 @@
     {
       "matches": ["https://synle.github.io/fav/*"],
       "js": ["content/fav.js"]
+    },
+    {
+      "matches": ["https://github.com/*/pull/*", "https://*.githubprivate.com/*/pull/*", "https://*.ghe.com/*/pull/*"],
+      "js": ["content/pr-status-github.js"]
+    },
+    {
+      "matches": ["https://*.visualstudio.com/*/pullrequest/*", "https://dev.azure.com/*/pullrequest/*"],
+      "js": ["content/pr-status-azure.js"]
     }
   ]
 }

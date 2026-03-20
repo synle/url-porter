@@ -9,7 +9,7 @@
  */
 
 import { normalizeEntriesForRedirect, normalizeEntry, stripAlias } from "../helpers/configUtils.js";
-import { getConfig, getBookmarkFolderName } from "../helpers/storage.js";
+import { getConfig, getBookmarkFolderName, setPrStatus } from "../helpers/storage.js";
 import { reconcileBookmarks } from "../helpers/bookmarkUtils.js";
 import { reconcilePrs } from "../helpers/prUtils.js";
 import { reconcileGitHubRepos } from "../helpers/githubRepoUtils.js";
@@ -65,6 +65,12 @@ function scheduleReconcile() {
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.type === "Myevent.updateConfig") {
     updateRedirectRules().then(scheduleReconcile);
+  }
+  if (request.type === "Myevent.prStatus") {
+    setPrStatus(request.url, request.status).then(() => {
+      console.log("[background] stored PR status:", request.status, "for", request.url);
+      scheduleReconcile();
+    });
   }
   if (request.type === "Myevent.getBookmarks") {
     getNestedBookmarks().then(sendResponse);
@@ -264,7 +270,10 @@ async function reconcileBookmarksFromStorage() {
 
 const TRACKED_SITE_PATTERNS = [
   /github\.com/i,
+  /githubprivate\.com/i,
+  /ghe\.com/i,
   /visualstudio\.com/i,
+  /dev\.azure\.com/i,
   /figma\.com/i,
   /jira/i,
   /atlassian/i,

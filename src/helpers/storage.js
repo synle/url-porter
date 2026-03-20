@@ -200,3 +200,35 @@ export function isValidUrl(url) {
     return false;
   }
 }
+
+/**
+ * Get all stored PR statuses from local storage.
+ * Returns an object keyed by canonical PR URL with status values.
+ *
+ * @returns {Promise<Object<string, "merged" | "closed" | "open">>}
+ */
+export function getPrStatuses() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("prStatuses", (result) => {
+      resolve(result.prStatuses || {});
+    });
+  });
+}
+
+/**
+ * Save a single PR status to local storage.
+ * Merges with existing statuses.
+ *
+ * @param {string} url - Canonical PR URL
+ * @param {"merged" | "closed" | "open"} status - The PR status
+ * @returns {Promise<void>}
+ */
+export async function setPrStatus(url, status) {
+  const existing = await getPrStatuses();
+  existing[url] = status;
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ prStatuses: existing }, () => {
+      resolve();
+    });
+  });
+}

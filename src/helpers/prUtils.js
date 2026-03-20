@@ -6,21 +6,32 @@
  * Flat list sorted by date (newest first).
  *
  * Supported URL formats:
- *   GitHub:
+ *   GitHub (including GitHub Enterprise at *.githubprivate.com and *.ghe.com):
  *     https://github.com/{org}/{repo}/pull/{number}
  *     https://github.com/{org}/{repo}/pull/{number}/files
  *     https://github.com/{org}/{repo}/pull/{number}/commits
+ *     https://{instance}.githubprivate.com/{org}/{repo}/pull/{number}
+ *     https://{instance}.ghe.com/{org}/{repo}/pull/{number}
  *
  *   Azure DevOps:
  *     https://{instance}.visualstudio.com/{project}/_git/{repo}/pullrequest/{number}
+ *     https://dev.azure.com/{org}/{project}/_git/{repo}/pullrequest/{number}
  */
 
-import { getBookmarkFolderName } from "./storage.js";
+import { getBookmarkFolderName, getPrStatuses } from "./storage.js";
 import { sanitizeBookmarkTitle } from "./configUtils.js";
 
-const GITHUB_PR_REGEX = /^https?:\/\/github\.com\/([^/?#]+)\/([^/?#]+)\/pull\/(\d+)/;
+const GITHUB_PR_REGEX = /^https?:\/\/(github\.com|[^/?#]+\.githubprivate\.com|[^/?#]+\.ghe\.com)\/([^/?#]+)\/([^/?#]+)\/pull\/(\d+)/;
 const AZURE_PR_REGEX = /^https?:\/\/([^/?#]+)\.visualstudio\.com\/([^/?#]+)\/_git\/([^/?#]+)\/pullrequest\/(\d+)/;
+const AZURE_DEV_PR_REGEX = /^https?:\/\/dev\.azure\.com\/([^/?#]+)\/([^/?#]+)\/_git\/([^/?#]+)\/pullrequest\/(\d+)/;
 const SUBFOLDER_NAME = "prs";
+
+/** @type {Object<string, string>} Status emoji prefixes for bookmark titles. */
+const STATUS_ICONS = {
+  merged: "\u2705 ", // ✅
+  closed: "\u274C ", // ❌
+  open: "\uD83D\uDD35 ", // 🔵
+};
 
 /**
  * Convert a string to title case: replace `_`, `-`, `.` with spaces,
@@ -47,6 +58,7 @@ function formatDate(ts) {
 
 /**
  * Parse a GitHub PR URL into { org, repo, prNumber, url } or null.
+ * Supports github.com and *.githubprivate.com (GitHub Enterprise).
  * @param {string} url
  * @returns {{org: string, repo: string, prNumber: string, url: string, dedupeKey: string} | null}
  */
@@ -55,35 +67,42 @@ function parseGitHubPr(url) {
   const cleanUrl = url.split("?")[0].split("#")[0].replace(/\/+$/, "");
   const match = cleanUrl.match(GITHUB_PR_REGEX);
   if (!match) return null;
-  const org = match[1];
-  const repo = match[2];
-  const prNumber = match[3];
-  const canonicalUrl = `https://github.com/${org}/${repo}/pull/${prNumber}`;
+  const host = match[1];
+  const org = match[2];
+  const repo = match[3];
+  const prNumber = match[4];
+  const canonicalUrl = `https://${host}/${org}/${repo}/pull/${prNumber}`;
   return {
     org: toTitleCase(org),
     repo: toTitleCase(repo),
     prNumber,
     url: canonicalUrl,
-    dedupeKey: `github:${org.toLowerCase()}/${repo.toLowerCase()}/${prNumber}`,
+    dedupeKey: `github:${host.toLowerCase()}/${org.toLowerCase()}/${repo.toLowerCase()}/${prNumber}`,
   };
 }
 
 /**
  * Parse an Azure DevOps PR URL into { org, repo, prNumber, url } or null.
- * org becomes "{instance} {project}".
+ * Supports both {instance}.visualstudio.com and dev.azure.com/{org} formats.
+ * org becomes "{instance} {project}" or "{org} {project}".
  * @param {string} url
  * @returns {{org: string, repo: string, prNumber: string, url: string, dedupeKey: string} | null}
  */
 function parseAzureDevOpsPr(url) {
   if (!url) return null;
   const cleanUrl = url.split("?")[0].split("#")[0].replace(/\/+$/, "");
-  const match = cleanUrl.match(AZURE_PR_REGEX);
+  const vsMatch = cleanUrl.match(AZURE_PR_REGEX);
+  const devMatch = cleanUrl.match(AZURE_DEV_PR_REGEX);
+  const match = vsMatch || devMatch;
   if (!match) return null;
   const instance = match[1];
   const project = match[2];
   const repo = match[3];
   const prNumber = match[4];
-  const canonicalUrl = `https://${instance}.visualstudio.com/${project}/_git/${repo}/pullrequest/${prNumber}`;
+  // Use the original URL format for the canonical URL
+  const canonicalUrl = devMatch
+    ? `https://dev.azure.com/${instance}/${project}/_git/${repo}/pullrequest/${prNumber}`
+    : `https://${instance}.visualstudio.com/${project}/_git/${repo}/pullrequest/${prNumber}`;
   return {
     org: toTitleCase(`${instance} ${project}`),
     repo: toTitleCase(repo),
@@ -124,12 +143,48 @@ function cleanPrTitle(pageTitle, prNumber) {
 }
 
 /**
+ * Extract PR status from an existing bookmark title by checking for icon prefix.
+ * @param {string} title
+ * @returns {"merged" | "closed" | "open" | null}
+ */
+function extractStatusFromTitle(title) {
+  if (!title) return null;
+  if (title.startsWith("\u2705 ")) return "merged";
+  if (title.startsWith("\u274C ")) return "closed";
+  if (title.startsWith("\uD83D\uDD35 ")) return "open";
+  return null;
+}
+
+/**
+ * Extract status-by-URL map from existing bookmarks in the old subfolder.
+ * @param {chrome.bookmarks.BookmarkTreeNode[]} children - Children of the porter folder
+ * @returns {Promise<Object<string, "merged" | "closed" | "open">>}
+ */
+async function extractStatusesFromOldBookmarks(children) {
+  const statuses = {};
+  const oldSubfolder = children.find((c) => !c.url && c.title === SUBFOLDER_NAME);
+  if (!oldSubfolder) return statuses;
+
+  const bookmarks = await chrome.bookmarks.getChildren(oldSubfolder.id);
+  for (const bm of bookmarks) {
+    if (!bm.url) continue;
+    const status = extractStatusFromTitle(bm.title);
+    if (status) {
+      statuses[bm.url] = status;
+    }
+  }
+  return statuses;
+}
+
+/**
  * Build the bookmark title.
- * Format: "#1692 - 3/26 - Repo Name / Org Name - PR description"
+ * Format: "[status] #1692 - 3/26 - Repo Name / Org Name - PR description"
  * @param {object} entry
+ * @param {string | null} status - PR status for icon prefix
  * @returns {string}
  */
-function buildTitle(entry) {
+function buildTitle(entry, status) {
+  const prefix = status && STATUS_ICONS[status] ? STATUS_ICONS[status] : "";
   const dateStr = formatDate(entry.visitTime);
   let title = `${entry.prNumber}`;
   if (dateStr) title += ` - ${dateStr}`;
@@ -138,7 +193,7 @@ function buildTitle(entry) {
     const detail = cleanPrTitle(entry.pageTitle, entry.prNumber);
     if (detail) title += ` - ${detail}`;
   }
-  return title;
+  return prefix + title;
 }
 
 /**
@@ -148,11 +203,13 @@ function buildTitle(entry) {
 async function getPrsFromHistory() {
   const prs = new Map();
   try {
-    const [githubItems, azureItems] = await Promise.all([
+    const [githubItems, ghPrivateItems, gheItems, azureItems] = await Promise.all([
       chrome.history.search({ text: "github.com/pull", maxResults: 10000, startTime: 0 }),
+      chrome.history.search({ text: "githubprivate.com/pull", maxResults: 10000, startTime: 0 }),
+      chrome.history.search({ text: "ghe.com/pull", maxResults: 10000, startTime: 0 }),
       chrome.history.search({ text: "pullrequest", maxResults: 10000, startTime: 0 }),
     ]);
-    for (const item of [...githubItems, ...azureItems]) {
+    for (const item of [...githubItems, ...ghPrivateItems, ...gheItems, ...azureItems]) {
       const parsed = parsePrUrl(item.url);
       if (!parsed) continue;
       const existing = prs.get(parsed.dedupeKey);
@@ -257,8 +314,14 @@ export async function reconcilePrs() {
 
   if (allPrs.size === 0) return;
 
-  // Delete old folder
+  // Extract statuses from old bookmarks before deleting
   const porterChildren = await chrome.bookmarks.getChildren(porterFolder.id);
+  const oldBookmarkStatuses = await extractStatusesFromOldBookmarks(porterChildren);
+
+  // Get stored statuses from content script reports
+  const storedStatuses = await getPrStatuses();
+
+  // Delete old folder
   const oldSubfolder = porterChildren.find((c) => !c.url && c.title === SUBFOLDER_NAME);
   if (oldSubfolder) {
     await chrome.bookmarks.removeTree(oldSubfolder.id);
@@ -273,7 +336,9 @@ export async function reconcilePrs() {
 
   let added = 0;
   for (const entry of sorted) {
-    const title = sanitizeBookmarkTitle(buildTitle(entry));
+    // Stored status (from content script) takes priority, then old bookmark status
+    const status = storedStatuses[entry.url] || oldBookmarkStatuses[entry.url] || null;
+    const title = sanitizeBookmarkTitle(buildTitle(entry, status));
     await chrome.bookmarks.create({ parentId: subfolder.id, title, url: entry.url });
     added++;
   }
