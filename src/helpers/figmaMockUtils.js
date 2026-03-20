@@ -76,13 +76,15 @@ async function getFigmaFromHistory() {
 
 /**
  * Recursively walk all bookmarks and extract Figma URLs.
+ * Skips bookmarks inside the url-porter folder to avoid feedback loops.
  */
-async function getFigmaFromBookmarks() {
+async function getFigmaFromBookmarks(porterFolderId) {
   const mocks = new Map();
   try {
     const tree = await chrome.bookmarks.getTree();
     function walk(nodes) {
       for (const node of nodes) {
+        if (node.id === porterFolderId) continue;
         if (node.url) {
           const parsed = parseFigmaMock(node.url);
           if (parsed) {
@@ -125,7 +127,7 @@ export async function reconcileFigmaMocks() {
   }
 
   // Gather mocks from history and bookmarks
-  const [historyMocks, bookmarkMocks] = await Promise.all([getFigmaFromHistory(), getFigmaFromBookmarks()]);
+  const [historyMocks, bookmarkMocks] = await Promise.all([getFigmaFromHistory(), getFigmaFromBookmarks(porterFolder.id)]);
 
   // Merge (dedup by file ID)
   const allMocks = new Map([...historyMocks, ...bookmarkMocks]);

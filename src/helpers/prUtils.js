@@ -159,13 +159,16 @@ async function getPrsFromHistory() {
 
 /**
  * Recursively walk all bookmarks and extract PR URLs.
+ * Skips bookmarks inside the url-porter folder to avoid a feedback loop
+ * where previously-built titles get re-parsed and accumulate data.
  */
-async function getPrsFromBookmarks() {
+async function getPrsFromBookmarks(porterFolderId) {
   const prs = new Map();
   try {
     const tree = await chrome.bookmarks.getTree();
     function walk(nodes) {
       for (const node of nodes) {
+        if (node.id === porterFolderId) continue;
         if (node.url) {
           const parsed = parsePrUrl(node.url);
           if (parsed) {
@@ -212,7 +215,7 @@ export async function reconcilePrs() {
     return;
   }
 
-  const [historyPrs, bookmarkPrs] = await Promise.all([getPrsFromHistory(), getPrsFromBookmarks()]);
+  const [historyPrs, bookmarkPrs] = await Promise.all([getPrsFromHistory(), getPrsFromBookmarks(porterFolder.id)]);
 
   // Merge — prefer richer page title, keep most recent visitTime
   const allPrs = new Map();

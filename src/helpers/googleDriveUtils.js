@@ -108,13 +108,15 @@ async function getDocsFromHistory() {
 
 /**
  * Recursively walk all bookmarks and extract Google Drive URLs.
+ * Skips bookmarks inside the url-porter folder to avoid feedback loops.
  */
-async function getDocsFromBookmarks() {
+async function getDocsFromBookmarks(porterFolderId) {
   const docs = new Map();
   try {
     const tree = await chrome.bookmarks.getTree();
     function walk(nodes) {
       for (const node of nodes) {
+        if (node.id === porterFolderId) continue;
         if (node.url) {
           const parsed = parseGoogleDriveUrl(node.url);
           if (parsed) {
@@ -160,7 +162,7 @@ export async function reconcileGoogleDrive() {
     return;
   }
 
-  const [historyDocs, bookmarkDocs] = await Promise.all([getDocsFromHistory(), getDocsFromBookmarks()]);
+  const [historyDocs, bookmarkDocs] = await Promise.all([getDocsFromHistory(), getDocsFromBookmarks(porterFolder.id)]);
 
   // Merge — history wins for visitTime, prefer richer title
   const allDocs = new Map();

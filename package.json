@@ -11,7 +11,8 @@
     "sass": "^1.97.3",
     "typescript": "^5.9.3",
     "vite": "^6.4.1",
-    "vite-plugin-web-extension": "^4.5.0"
+    "vite-plugin-web-extension": "^4.5.0",
+    "vitest": "^4.1.0"
   },
   "scripts": {
     "dev": "npm run build:types && vite build --watch",
@@ -20,6 +21,7 @@
     "bundle": "npm version minor --no-git-tag-version && node scripts/bundle.js",
     "package": "npm run build && npm run bundle",
     "package-syle": "VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL=https://synle.github.io/fav/url-porter.json npm run package",
+    "test": "vitest run",
     "format": "prettier --write --print-width 140 --ignore-unknown --no-error-on-unmatched-pattern --cache '**/*.{js,jsx,ts,tsx,mjs,cjs,json,html,css,scss,less,md,yml,yaml,graphql,vue,xml}'"
   },
   "author": "Sy Le",

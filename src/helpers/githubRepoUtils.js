@@ -127,13 +127,15 @@ async function getReposFromHistory() {
 
 /**
  * Recursively walk all bookmarks and extract repo URLs.
+ * Skips bookmarks inside the url-porter folder to avoid feedback loops.
  */
-async function getReposFromBookmarks() {
+async function getReposFromBookmarks(porterFolderId) {
   const repos = new Map();
   try {
     const tree = await chrome.bookmarks.getTree();
     function walk(nodes) {
       for (const node of nodes) {
+        if (node.id === porterFolderId) continue;
         if (node.url) {
           const parsed = parseRepoUrl(node.url);
           if (parsed) {
@@ -176,7 +178,7 @@ export async function reconcileGitHubRepos() {
   }
 
   // Gather repos from history and bookmarks
-  const [historyRepos, bookmarkRepos] = await Promise.all([getReposFromHistory(), getReposFromBookmarks()]);
+  const [historyRepos, bookmarkRepos] = await Promise.all([getReposFromHistory(), getReposFromBookmarks(porterFolder.id)]);
 
   // Merge (dedup by URL — flatten)
   const allRepos = new Map([...historyRepos, ...bookmarkRepos]);

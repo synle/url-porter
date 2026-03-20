@@ -16,7 +16,7 @@ npm run package      # build + bundle (full release pipeline)
 npm run format       # Prettier (140 char width)
 ```
 
-There is no test suite. Node version is pinned to 20.19.1 via Volta.
+Tests use Vitest: `npm test` runs all tests. Test files live alongside source in `__tests__/` directories. Chrome APIs are mocked via `vi.stubGlobal`. Node version is pinned to 20.19.1 via Volta.
 
 The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server endpoint at build time.
 
@@ -47,6 +47,10 @@ The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server
   - **Deduplicates by title** — if multiple bookmarks share the same title, the later (newer) one is kept and older duplicates are removed. Unique bookmarks not in config are never deleted.
   - **Preserves sort order** — existing bookmarks are updated in-place; new ones are appended to the bottom.
   - **Resolves short links** — if a `to` URL matches another alias, it expands through the chain until reaching a full URL (e.g. `a` → `aaa` → `https://aaa.com`).
+
+**Bookmark bucket reconcilers** (`src/helpers/{prUtils,githubRepoUtils,figmaMockUtils,jiraTicketUtils,googleDriveUtils,onedriveUtils}.js`):
+
+Each reconciler scans browser history and bookmarks, then rebuilds a subfolder under the url-porter folder (e.g. "jira tickets", "prs", "github repos"). Key design rule: **all bookmark walkers must skip the url-porter folder** (by accepting `porterFolderId` and `continue`-ing when `node.id` matches) to prevent a feedback loop where previously-built bookmark titles get re-parsed and accumulate data (e.g. dates appending on each reconciliation cycle).
 
 **Data flow**: UI saves config → `storage.js` → sends `"Myevent.updateConfig"` message → `background.js` updates `chrome.declarativeNetRequest.updateDynamicRules()` → history logged → bookmark folder reconciled.
 

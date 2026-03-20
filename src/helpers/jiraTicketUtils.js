@@ -68,8 +68,8 @@ function buildTitle(ticketKey, dateStr, pageTitle) {
     let detail = pageTitle
       .replace(new RegExp(`^\\[?${ticketKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\]?\\s*[-:]?\\s*`, "i"), "")
       .trim();
-    // Strip common Jira suffixes like "- Jira" or "- JIRA Service Management"
-    detail = detail.replace(/\s*-\s*Jira.*$/i, "").trim();
+    // Strip common Jira suffixes like "- Jira", "- LinkedIn JIRA", "- JIRA Service Management"
+    detail = detail.replace(/\s*-\s*(?:[\w\s]*\s)?Jira\b.*$/i, "").trim();
     if (detail) title += ` - ${detail}`;
   }
   return title;
@@ -108,14 +108,20 @@ async function getTicketsFromHistory() {
 
 /**
  * Recursively walk all bookmarks and extract Jira ticket URLs.
+ * Skips bookmarks inside the url-porter folder to avoid a feedback loop
+ * where previously-built titles get re-parsed and accumulate dates.
  */
-async function getTicketsFromBookmarks() {
+async function getTicketsFromBookmarks(porterFolderId) {
   const tickets = new Map();
   try {
     const tree = await chrome.bookmarks.getTree();
-    function walk(nodes) {
+    function walk(nodes, insidePorter) {
       for (const node of nodes) {
-        if (node.url) {
+        if (node.id === porterFolderId) {
+          // Skip the entire url-porter folder to prevent feedback loop
+          continue;
+        }
+        if (node.url && !insidePorter) {
           const parsed = parseJiraTicket(node.url);
           if (parsed) {
             const existing = tickets.get(parsed.ticketKey);
@@ -130,11 +136,11 @@ async function getTicketsFromBookmarks() {
           }
         }
         if (node.children) {
-          walk(node.children);
+          walk(node.children, insidePorter || node.id === porterFolderId);
         }
       }
     }
-    walk(tree);
+    walk(tree, false);
   } catch (err) {
     console.error("[jiraTicketUtils] failed to walk bookmarks:", err);
   }
@@ -164,10 +170,10 @@ export async function reconcileJiraTickets() {
     return;
   }
 
-  // Gather tickets from history and bookmarks
+  // Gather tickets from history and bookmarks (skip url-porter folder to avoid feedback loop)
   const [historyTickets, bookmarkTickets] = await Promise.all([
     getTicketsFromHistory(),
-    getTicketsFromBookmarks(),
+    getTicketsFromBookmarks(porterFolder.id),
   ]);
 
   // Merge — bookmark data wins for date if present, but prefer history for page title
