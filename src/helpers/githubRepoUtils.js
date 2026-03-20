@@ -28,9 +28,7 @@ const SUBFOLDER_NAME = "github repos";
  * then capitalize the first letter of each word.
  */
 function toTitleCase(str) {
-  return str
-    .replace(/[_\-.]/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return str.replace(/[_\-.]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /**
@@ -248,7 +246,9 @@ export async function reconcileGitHubRepos() {
 
   // Create misc folder for small groups
   if (miscRepos.length > 0) {
-    miscRepos.sort((a, b) => a.org.toLowerCase().localeCompare(b.org.toLowerCase()) || a.repo.toLowerCase().localeCompare(b.repo.toLowerCase()));
+    miscRepos.sort(
+      (a, b) => a.org.toLowerCase().localeCompare(b.org.toLowerCase()) || a.repo.toLowerCase().localeCompare(b.repo.toLowerCase()),
+    );
     const miscFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: "misc" });
     for (const { org, repo, url } of miscRepos) {
       await chrome.bookmarks.create({ parentId: miscFolder.id, title: sanitizeBookmarkTitle(`${repo} (${org})`), url });
@@ -256,11 +256,5 @@ export async function reconcileGitHubRepos() {
     }
   }
 
-  console.log(
-    "[githubRepoUtils] reconcileGitHubRepos: done. added:",
-    added,
-    "across",
-    sortedOrgs.length,
-    "org folders",
-  );
+  console.log("[githubRepoUtils] reconcileGitHubRepos: done. added:", added, "across", sortedOrgs.length, "org folders");
 }

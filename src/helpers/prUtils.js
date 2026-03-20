@@ -27,9 +27,7 @@ const SUBFOLDER_NAME = "prs";
  * then capitalize the first letter of each word.
  */
 function toTitleCase(str) {
-  return str
-    .replace(/[_\-.]/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return str.replace(/[_\-.]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /**
@@ -235,15 +233,7 @@ export async function reconcilePrs() {
     }
   }
 
-  console.log(
-    "[prUtils] reconcilePrs: found",
-    allPrs.size,
-    "unique PRs (history:",
-    historyPrs.size,
-    "bookmarks:",
-    bookmarkPrs.size,
-    ")",
-  );
+  console.log("[prUtils] reconcilePrs: found", allPrs.size, "unique PRs (history:", historyPrs.size, "bookmarks:", bookmarkPrs.size, ")");
 
   if (allPrs.size === 0) return;
 

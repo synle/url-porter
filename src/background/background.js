@@ -255,7 +255,17 @@ async function reconcileBookmarksFromStorage() {
 
 // --- Auto-reconcile on visiting tracked sites ---
 
-const TRACKED_SITE_PATTERNS = [/github\.com/i, /visualstudio\.com/i, /figma\.com/i, /jira/i, /atlassian/i, /docs\.google\.com/i, /drive\.google\.com/i, /onedrive\.live\.com/i, /sharepoint\.com/i];
+const TRACKED_SITE_PATTERNS = [
+  /github\.com/i,
+  /visualstudio\.com/i,
+  /figma\.com/i,
+  /jira/i,
+  /atlassian/i,
+  /docs\.google\.com/i,
+  /drive\.google\.com/i,
+  /onedrive\.live\.com/i,
+  /sharepoint\.com/i,
+];
 let bucketReconcileTimer = null;
 
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {

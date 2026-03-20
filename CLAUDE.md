@@ -16,7 +16,7 @@ npm run package      # build + bundle (full release pipeline)
 npm run format       # Prettier (140 char width)
 ```
 
-Tests use Vitest: `npm test` runs all tests. Test files live alongside source in `__tests__/` directories. Chrome APIs are mocked via `vi.stubGlobal`. Node version is pinned to 20.19.1 via Volta.
+Tests use Vitest: `npm test` runs all tests. Test files live in the `tests/` directory at the project root. Chrome APIs are mocked via `vi.stubGlobal`. Node version is pinned to 20.19.1 via Volta.
 
 The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server endpoint at build time.
 
@@ -70,6 +70,14 @@ Output structure must match paths declared in `manifest.json`. Be careful when m
 Content scripts (`src/content/`) are **not** Vite inputs — they are copied verbatim by the `copy-manifest` plugin. If adding new content scripts, add a `copyFileSync` call in `vite.config.js` and register them in `src/manifest.json`.
 
 In dev/watch mode (`--watch`), the manifest's `name` is automatically changed to "URL Porter (DEV)" to distinguish from production builds. A dev-reload mechanism (`src/background/dev-reload.js`) is also injected — it polls a timestamp file and calls `chrome.runtime.reload()` on changes. This is dev-only and not included in production builds.
+
+## Quality Checklist
+
+After every change, you MUST:
+
+1. **Run `npm test`** — all tests must pass before considering a change complete
+2. **Run `npm run format`** — format all code with Prettier
+3. **Add JSDoc** — all exported functions and non-trivial internal functions must have JSDoc comments with `@param` and `@returns` annotations
 
 ## Key Conventions
 

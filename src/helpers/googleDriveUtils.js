@@ -72,9 +72,7 @@ function parseGoogleDriveUrl(url) {
  */
 function cleanTitle(pageTitle) {
   if (!pageTitle) return "";
-  return pageTitle
-    .replace(/\s*-\s*Google (Docs|Sheets|Slides|Forms|Drive).*$/i, "")
-    .trim();
+  return pageTitle.replace(/\s*-\s*Google (Docs|Sheets|Slides|Forms|Drive).*$/i, "").trim();
 }
 
 /**

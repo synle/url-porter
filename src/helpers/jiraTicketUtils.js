@@ -65,9 +65,7 @@ function buildTitle(ticketKey, dateStr, pageTitle) {
   if (dateStr) title += ` - ${dateStr}`;
   if (pageTitle) {
     // Strip leading ticket key and surrounding brackets/dashes from page title
-    let detail = pageTitle
-      .replace(new RegExp(`^\\[?${ticketKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\]?\\s*[-:]?\\s*`, "i"), "")
-      .trim();
+    let detail = pageTitle.replace(new RegExp(`^\\[?${ticketKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\]?\\s*[-:]?\\s*`, "i"), "").trim();
     // Strip common Jira suffixes like "- Jira", "- LinkedIn JIRA", "- JIRA Service Management"
     detail = detail.replace(/\s*-\s*(?:[\w\s]*\s)?Jira\b.*$/i, "").trim();
     if (detail) title += ` - ${detail}`;
@@ -171,10 +169,7 @@ export async function reconcileJiraTickets() {
   }
 
   // Gather tickets from history and bookmarks (skip url-porter folder to avoid feedback loop)
-  const [historyTickets, bookmarkTickets] = await Promise.all([
-    getTicketsFromHistory(),
-    getTicketsFromBookmarks(porterFolder.id),
-  ]);
+  const [historyTickets, bookmarkTickets] = await Promise.all([getTicketsFromHistory(), getTicketsFromBookmarks(porterFolder.id)]);
 
   // Merge — bookmark data wins for date if present, but prefer history for page title
   const allTickets = new Map();
@@ -280,11 +275,5 @@ export async function reconcileJiraTickets() {
     }
   }
 
-  console.log(
-    "[jiraTicketUtils] reconcileJiraTickets: done. added:",
-    added,
-    "across",
-    sortedProjects.length,
-    "projects",
-  );
+  console.log("[jiraTicketUtils] reconcileJiraTickets: done. added:", added, "across", sortedProjects.length, "projects");
 }

@@ -27,9 +27,7 @@ const SUBFOLDER_NAME = "figma mocks";
  * then capitalize the first letter of each word.
  */
 function toTitleCase(str) {
-  return str
-    .replace(/[_\-.]/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return str.replace(/[_\-.]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /**
