@@ -9,7 +9,7 @@
  */
 
 import { normalizeEntriesForRedirect, normalizeEntry, stripAlias } from "../helpers/configUtils.js";
-import { getConfig } from "../helpers/storage.js";
+import { getConfig, getBookmarkFolderName } from "../helpers/storage.js";
 import { reconcileBookmarks } from "../helpers/bookmarkUtils.js";
 import { reconcilePrs } from "../helpers/prUtils.js";
 import { reconcileGitHubRepos } from "../helpers/githubRepoUtils.js";
@@ -79,8 +79,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
  */
 async function getNestedBookmarks() {
   try {
-    const folderName = (await import("../helpers/storage.js")).getBookmarkFolderName;
-    const name = await folderName();
+    const name = await getBookmarkFolderName();
     const results = await chrome.bookmarks.search({ title: name });
     const porterFolder = results.find((node) => !node.url && (node.parentId === "1" || node.parentId === "2"));
     if (!porterFolder) return [];
