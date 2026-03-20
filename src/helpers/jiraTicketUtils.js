@@ -62,7 +62,7 @@ function parseJiraTicket(url) {
  */
 function buildTitle(ticketKey, dateStr, pageTitle) {
   let title = ticketKey;
-  if (dateStr) title += ` | ${dateStr}`;
+  if (dateStr) title += ` - ${dateStr}`;
   if (pageTitle) {
     // Strip leading ticket key and surrounding brackets/dashes from page title
     let detail = pageTitle
