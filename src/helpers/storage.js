@@ -232,3 +232,35 @@ export async function setPrStatus(url, status) {
     });
   });
 }
+
+/**
+ * Get all stored Jira ticket statuses from local storage.
+ * Returns an object keyed by canonical ticket URL with status values.
+ *
+ * @returns {Promise<Object<string, "in_progress" | "closed" | "not_started" | "blocked">>}
+ */
+export function getJiraStatuses() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("jiraStatuses", (result) => {
+      resolve(result.jiraStatuses || {});
+    });
+  });
+}
+
+/**
+ * Save a single Jira ticket status to local storage.
+ * Merges with existing statuses.
+ *
+ * @param {string} url - Canonical Jira ticket URL
+ * @param {"in_progress" | "closed" | "not_started" | "blocked"} status - The ticket status
+ * @returns {Promise<void>}
+ */
+export async function setJiraStatus(url, status) {
+  const existing = await getJiraStatuses();
+  existing[url] = status;
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ jiraStatuses: existing }, () => {
+      resolve();
+    });
+  });
+}

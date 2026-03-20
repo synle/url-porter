@@ -11,12 +11,20 @@
  *   (any host starting with "jira" or ending with ".atlassian.net" with /browse/KEY-123)
  */
 
-import { getBookmarkFolderName, getGithubOrgThreshold } from "./storage.js";
+import { getBookmarkFolderName, getGithubOrgThreshold, getJiraStatuses } from "./storage.js";
 import { sanitizeBookmarkTitle } from "./configUtils.js";
 
 const ATLASSIAN_REGEX = /^https?:\/\/[^/]*\.atlassian\.net\/browse\/([A-Z][A-Z0-9]+-\d+)/i;
 const JIRA_HOST_REGEX = /^https?:\/\/jira[^/]*\/browse\/([A-Z][A-Z0-9]+-\d+)/i;
 const SUBFOLDER_NAME = "jira tickets";
+
+/** @type {Object<string, string>} Status emoji prefixes for bookmark titles. */
+const STATUS_ICONS = {
+  in_progress: "\uD83D\uDD35 ", // 🔵
+  closed: "\u2705 ", // ✅
+  not_started: "\u26AA ", // ⚪
+  blocked: "\u274C ", // ❌
+};
 
 /**
  * Extract the project prefix from a ticket key (e.g. "INFOSEC" from "INFOSEC-101219").
@@ -63,14 +71,16 @@ function parseJiraTicket(url) {
 }
 
 /**
- * Build the bookmark title from ticket key, date, and optional page title.
- * Format: "INFOSEC-101219 | 2025-03 - [Rotate Secrets for]: golinks-dev ..."
+ * Build the bookmark title from ticket key, date, optional page title, and status.
+ * Format: "[status] INFOSEC-101219 - 2025-03 - [Rotate Secrets for]: golinks-dev ..."
  * @param {string} ticketKey
  * @param {string} dateStr
  * @param {string} pageTitle
+ * @param {string | null} status - Jira ticket status for icon prefix
  * @returns {string}
  */
-function buildTitle(ticketKey, dateStr, pageTitle) {
+function buildTitle(ticketKey, dateStr, pageTitle, status) {
+  const prefix = status && STATUS_ICONS[status] ? STATUS_ICONS[status] : "";
   let title = ticketKey;
   if (dateStr) title += ` - ${dateStr}`;
   if (pageTitle) {
@@ -80,7 +90,47 @@ function buildTitle(ticketKey, dateStr, pageTitle) {
     detail = detail.replace(/\s*-\s*(?:[\w\s]*\s)?Jira\b.*$/i, "").trim();
     if (detail) title += ` - ${detail}`;
   }
-  return title;
+  return prefix + title;
+}
+
+/**
+ * Extract Jira ticket status from an existing bookmark title by checking for icon prefix.
+ * @param {string} title
+ * @returns {"in_progress" | "closed" | "not_started" | "blocked" | null}
+ */
+function extractStatusFromTitle(title) {
+  if (!title) return null;
+  if (title.startsWith("\uD83D\uDD35 ")) return "in_progress";
+  if (title.startsWith("\u2705 ")) return "closed";
+  if (title.startsWith("\u26AA ")) return "not_started";
+  if (title.startsWith("\u274C ")) return "blocked";
+  return null;
+}
+
+/**
+ * Extract status-by-URL map from existing bookmarks in the old jira tickets subfolder.
+ * Walks into project subfolders and the misc folder.
+ * @param {chrome.bookmarks.BookmarkTreeNode[]} children - Children of the porter folder
+ * @returns {Promise<Object<string, "in_progress" | "closed" | "not_started" | "blocked">>}
+ */
+async function extractStatusesFromOldBookmarks(children) {
+  const statuses = {};
+  const oldSubfolder = children.find((c) => !c.url && c.title === SUBFOLDER_NAME);
+  if (!oldSubfolder) return statuses;
+
+  const projectFolders = await chrome.bookmarks.getChildren(oldSubfolder.id);
+  for (const folder of projectFolders) {
+    if (folder.url) continue;
+    const bookmarks = await chrome.bookmarks.getChildren(folder.id);
+    for (const bm of bookmarks) {
+      if (!bm.url) continue;
+      const status = extractStatusFromTitle(bm.title);
+      if (status) {
+        statuses[bm.url] = status;
+      }
+    }
+  }
+  return statuses;
 }
 
 /**
@@ -217,8 +267,14 @@ export async function reconcileJiraTickets() {
 
   if (allTickets.size === 0) return;
 
-  // Delete the old folder if it exists
+  // Extract statuses from old bookmarks before deleting
   const porterChildren = await chrome.bookmarks.getChildren(porterFolder.id);
+  const oldBookmarkStatuses = await extractStatusesFromOldBookmarks(porterChildren);
+
+  // Get stored statuses from content script reports
+  const storedStatuses = await getJiraStatuses();
+
+  // Delete the old folder if it exists
   const oldSubfolder = porterChildren.find((c) => !c.url && c.title === SUBFOLDER_NAME);
   if (oldSubfolder) {
     await chrome.bookmarks.removeTree(oldSubfolder.id);
@@ -273,7 +329,8 @@ export async function reconcileJiraTickets() {
       return numB - numA;
     });
     for (const entry of tickets) {
-      const title = sanitizeBookmarkTitle(buildTitle(entry.ticketKey, formatDate(entry.visitTime), entry.pageTitle));
+      const status = storedStatuses[entry.url] || oldBookmarkStatuses[entry.url] || null;
+      const title = sanitizeBookmarkTitle(buildTitle(entry.ticketKey, formatDate(entry.visitTime), entry.pageTitle, status));
       await chrome.bookmarks.create({ parentId: projectFolder.id, title, url: entry.url });
       added++;
     }
@@ -284,7 +341,8 @@ export async function reconcileJiraTickets() {
     miscTickets.sort((a, b) => a.project.localeCompare(b.project) || b.ticketKey.localeCompare(a.ticketKey));
     const miscFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: "misc" });
     for (const entry of miscTickets) {
-      const title = sanitizeBookmarkTitle(buildTitle(entry.ticketKey, formatDate(entry.visitTime), entry.pageTitle));
+      const status = storedStatuses[entry.url] || oldBookmarkStatuses[entry.url] || null;
+      const title = sanitizeBookmarkTitle(buildTitle(entry.ticketKey, formatDate(entry.visitTime), entry.pageTitle, status));
       await chrome.bookmarks.create({ parentId: miscFolder.id, title, url: entry.url });
       added++;
     }

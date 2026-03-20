@@ -69,6 +69,7 @@ export default defineConfig({
         copyFileSync(resolve(__dirname, "src/content/fav.js"), join(contentDir, "fav.js"));
         copyFileSync(resolve(__dirname, "src/content/pr-status-github.js"), join(contentDir, "pr-status-github.js"));
         copyFileSync(resolve(__dirname, "src/content/pr-status-azure.js"), join(contentDir, "pr-status-azure.js"));
+        copyFileSync(resolve(__dirname, "src/content/jira-status.js"), join(contentDir, "jira-status.js"));
       },
     },
     {

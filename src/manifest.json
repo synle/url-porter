@@ -39,6 +39,10 @@
     {
       "matches": ["https://*.visualstudio.com/*/pullrequest/*", "https://dev.azure.com/*/pullrequest/*"],
       "js": ["content/pr-status-azure.js"]
+    },
+    {
+      "matches": ["https://*.atlassian.net/browse/*", "https://jira.*/browse/*", "https://jira*.*/browse/*"],
+      "js": ["content/jira-status.js"]
     }
   ]
 }

@@ -79,6 +79,17 @@ After every change, you MUST:
 2. **Run `npm run format`** — format all code with Prettier
 3. **Verify JSDoc** — JSDoc is mandatory for ALL functions (exported and internal). Every function must have a `/** */` block with `@param` and `@returns` annotations. Before finishing any task, scan changed files to confirm JSDoc is present on every function.
 
+## Status Emoji Convention
+
+These 4 emojis are the standard status icons used in bookmark title prefixes across reconcilers (PRs, Jira tickets). Reuse them for any future status tracking:
+
+| Emoji | Unicode | Name | Meaning |
+|-------|---------|------|---------|
+| 🔵 | `\uD83D\uDD35` | LARGE BLUE CIRCLE | In progress / active / open |
+| ✅ | `\u2705` | WHITE HEAVY CHECK MARK | Done / closed / resolved / merged |
+| ⚪ | `\u26AA` | MEDIUM WHITE CIRCLE | Not started / to do / backlog |
+| ❌ | `\u274C` | CROSS MARK | Blocked / abandoned / failed |
+
 ## Key Conventions
 
 - ES modules throughout (`"type": "module"` in package.json and manifest.json background)

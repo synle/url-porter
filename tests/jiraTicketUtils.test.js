@@ -14,6 +14,7 @@ let nextBookmarkId = 100;
 const storageData = {
   bookmarkFolderName: "url-porter",
   githubOrgThreshold: 3,
+  jiraStatuses: {},
 };
 
 const chrome = {
@@ -184,5 +185,96 @@ describe("jiraTicketUtils — feedback loop prevention", () => {
 
     const bookmarksAfter = mockBookmarks.filter((b) => b.url?.includes("ORBIT-592")).length;
     expect(bookmarksAfter).toBe(bookmarksBefore);
+  });
+
+  it("should prefix bookmark titles with status icons from stored statuses", async () => {
+    addMockFolder("2", "url-porter");
+
+    storageData.jiraStatuses = {
+      "https://jira.acme-corp.example.com:8443/browse/FALCON-1001": "in_progress",
+      "https://jira.acme-corp.example.com:8443/browse/FALCON-1002": "closed",
+      "https://jira.acme-corp.example.com:8443/browse/FALCON-1003": "not_started",
+      "https://jira.acme-corp.example.com:8443/browse/FALCON-1004": "blocked",
+    };
+
+    chrome.history.search.mockImplementation(async ({ text }) => {
+      if (text === "jira") {
+        return [
+          { url: "https://jira.acme-corp.example.com:8443/browse/FALCON-1001", title: "In progress ticket", lastVisitTime: Date.now() },
+          { url: "https://jira.acme-corp.example.com:8443/browse/FALCON-1002", title: "Done ticket", lastVisitTime: Date.now() },
+          { url: "https://jira.acme-corp.example.com:8443/browse/FALCON-1003", title: "Todo ticket", lastVisitTime: Date.now() },
+          { url: "https://jira.acme-corp.example.com:8443/browse/FALCON-1004", title: "Blocked ticket", lastVisitTime: Date.now() },
+        ];
+      }
+      return [];
+    });
+
+    await reconcileJiraTickets();
+
+    const created = mockBookmarks.filter((b) => b.url?.includes("FALCON-100") && b.parentId !== "1");
+    const titles = Object.fromEntries(created.map((b) => [b.url.match(/FALCON-\d+/)[0], b.title]));
+
+    expect(titles["FALCON-1001"]).toMatch(/^\uD83D\uDD35 /); // 🔵 in_progress
+    expect(titles["FALCON-1002"]).toMatch(/^\u2705 /); // ✅ closed
+    expect(titles["FALCON-1003"]).toMatch(/^\u26AA /); // ⚪ not_started
+    expect(titles["FALCON-1004"]).toMatch(/^\u274C /); // ❌ blocked
+  });
+
+  it("should preserve status icons from old bookmarks when no stored status exists", async () => {
+    const porterFolder = addMockFolder("2", "url-porter");
+    const jiraSubfolder = addMockFolder(porterFolder.id, "jira tickets");
+    const projectFolder = addMockFolder(jiraSubfolder.id, "FALCON");
+    addMockBookmark(
+      projectFolder.id,
+      "\u2705 FALCON-2001 - 2025-09 - Previously closed ticket",
+      "https://jira.acme-corp.example.com:8443/browse/FALCON-2001",
+      new Date("2025-09-14").getTime(),
+    );
+
+    storageData.jiraStatuses = {};
+
+    chrome.history.search.mockImplementation(async ({ text }) => {
+      if (text === "jira") {
+        return [
+          {
+            url: "https://jira.acme-corp.example.com:8443/browse/FALCON-2001",
+            title: "Previously closed ticket",
+            lastVisitTime: new Date("2025-09-14").getTime(),
+          },
+        ];
+      }
+      return [];
+    });
+
+    await reconcileJiraTickets();
+
+    const created = mockBookmarks.filter((b) => b.url?.includes("FALCON-2001") && b.parentId !== "1" && b.parentId !== projectFolder.id);
+    expect(created.length).toBeGreaterThan(0);
+    expect(created[created.length - 1].title).toMatch(/^\u2705 /); // ✅ preserved from old bookmark
+  });
+
+  it("should not add status prefix when no status is known", async () => {
+    addMockFolder("2", "url-porter");
+    storageData.jiraStatuses = {};
+
+    chrome.history.search.mockImplementation(async ({ text }) => {
+      if (text === "jira") {
+        return [
+          {
+            url: "https://jira.acme-corp.example.com:8443/browse/FALCON-3001",
+            title: "No status ticket",
+            lastVisitTime: Date.now(),
+          },
+        ];
+      }
+      return [];
+    });
+
+    await reconcileJiraTickets();
+
+    const created = mockBookmarks.filter((b) => b.url?.includes("FALCON-3001") && b.parentId !== "1");
+    expect(created.length).toBeGreaterThan(0);
+    const title = created[created.length - 1].title;
+    expect(title).toMatch(/^FALCON-3001/); // no emoji prefix
   });
 });

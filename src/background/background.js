@@ -9,7 +9,7 @@
  */
 
 import { normalizeEntriesForRedirect, normalizeEntry, stripAlias } from "../helpers/configUtils.js";
-import { getConfig, getBookmarkFolderName, setPrStatus } from "../helpers/storage.js";
+import { getConfig, getBookmarkFolderName, setPrStatus, setJiraStatus } from "../helpers/storage.js";
 import { reconcileBookmarks } from "../helpers/bookmarkUtils.js";
 import { reconcilePrs } from "../helpers/prUtils.js";
 import { reconcileGitHubRepos } from "../helpers/githubRepoUtils.js";
@@ -69,6 +69,12 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.type === "Myevent.prStatus") {
     setPrStatus(request.url, request.status).then(() => {
       console.log("[background] stored PR status:", request.status, "for", request.url);
+      scheduleReconcile();
+    });
+  }
+  if (request.type === "Myevent.jiraStatus") {
+    setJiraStatus(request.url, request.status).then(() => {
+      console.log("[background] stored Jira status:", request.status, "for", request.url);
       scheduleReconcile();
     });
   }
