@@ -83,12 +83,12 @@ After every change, you MUST:
 
 These 4 emojis are the standard status icons used in bookmark title prefixes across reconcilers (PRs, Jira tickets). Reuse them for any future status tracking:
 
-| Emoji | Unicode | Name | Meaning |
-|-------|---------|------|---------|
-| 🔵 | `\uD83D\uDD35` | LARGE BLUE CIRCLE | In progress / active / open |
-| ✅ | `\u2705` | WHITE HEAVY CHECK MARK | Done / closed / resolved / merged |
-| ⚪ | `\u26AA` | MEDIUM WHITE CIRCLE | Not started / to do / backlog |
-| ❌ | `\u274C` | CROSS MARK | Blocked / abandoned / failed |
+| Emoji | Unicode        | Name                   | Meaning                           |
+| ----- | -------------- | ---------------------- | --------------------------------- |
+| 🔵    | `\uD83D\uDD35` | LARGE BLUE CIRCLE      | In progress / active / open       |
+| ✅    | `\u2705`       | WHITE HEAVY CHECK MARK | Done / closed / resolved / merged |
+| ⚪    | `\u26AA`       | MEDIUM WHITE CIRCLE    | Not started / to do / backlog     |
+| ❌    | `\u274C`       | CROSS MARK             | Blocked / abandoned / failed      |
 
 ## Key Conventions
 

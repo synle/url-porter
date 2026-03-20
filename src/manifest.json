@@ -41,7 +41,7 @@
       "js": ["content/pr-status-azure.js"]
     },
     {
-      "matches": ["https://*.atlassian.net/browse/*", "https://jira.*/browse/*", "https://jira*.*/browse/*"],
+      "matches": ["https://*.atlassian.net/browse/*"],
       "js": ["content/jira-status.js"]
     }
   ]
