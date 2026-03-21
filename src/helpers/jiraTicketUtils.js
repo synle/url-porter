@@ -84,6 +84,8 @@ function buildTitle(ticketKey, pageTitle, status) {
   if (pageTitle) {
     // Strip leading ticket key and surrounding brackets/dashes from page title
     let detail = pageTitle.replace(new RegExp(`^\\[?${ticketKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\]?\\s*[-:]?\\s*`, "i"), "").trim();
+    // Also strip any remaining [PROJECT-NUMBER] bracket pattern (e.g. when ticketKey is just the number)
+    detail = detail.replace(/^\[?[A-Z][A-Z0-9]+-\d+\]?\s*[-:]?\s*/i, "").trim();
     // Strip common Jira suffixes like "- Jira", "- LinkedIn JIRA", "- JIRA Service Management"
     detail = detail.replace(/\s*-\s*(?:[\w\s]*\s)?Jira\b.*$/i, "").trim();
     if (detail) title += ` - ${detail}`;

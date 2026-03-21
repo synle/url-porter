@@ -55,7 +55,13 @@ function detectStatus() {
       text.includes("cancelled") ||
       text.includes("canceled") ||
       text.includes("declined") ||
-      text.includes("duplicate")
+      text.includes("duplicate") ||
+      text.includes("dev complete") ||
+      text.includes("complete") ||
+      text === "fixed" ||
+      text.includes("verified") ||
+      text.includes("released") ||
+      text.includes("deployed")
     )
       return "closed";
 
