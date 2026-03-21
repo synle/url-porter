@@ -13,6 +13,7 @@ npm run dev          # Build to dist/ in watch mode (rebuilds on file changes)
 npm run build        # One-off production build → dist/ (also generates types/)
 npm run bundle       # Bump minor version + create url-porter.zip from dist/
 npm run package      # build + bundle (full release pipeline)
+npm run lint         # ESLint — catches undefined references, missing imports
 npm run format       # Prettier (140 char width)
 ```
 
@@ -76,8 +77,10 @@ In dev/watch mode (`--watch`), the manifest's `name` is automatically changed to
 After every change, you MUST:
 
 1. **Run `npm test`** — all tests must pass before considering a change complete
-2. **Run `npm run format`** — format all code with Prettier
-3. **Verify JSDoc** — JSDoc is mandatory for ALL functions (exported and internal). Every function must have a `/** */` block with `@param` and `@returns` annotations. Before finishing any task, scan changed files to confirm JSDoc is present on every function.
+2. **Run `npm run lint`** — ESLint must pass with no errors (catches undefined references, missing imports, etc.)
+3. **Run `npm run build`** — production build must succeed without errors
+4. **Run `npm run format`** — format all code with Prettier
+5. **Verify JSDoc** — JSDoc is mandatory for ALL functions (exported and internal). Every function must have a `/** */` block with `@param` and `@returns` annotations. Before finishing any task, scan changed files to confirm JSDoc is present on every function.
 
 ## Status Emoji Convention
 
