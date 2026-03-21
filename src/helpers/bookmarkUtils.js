@@ -132,7 +132,7 @@ export async function reconcileBookmarks(configEntries) {
     deduped.set(child.title, child);
   }
   for (const id of toRemove) {
-    await chrome.bookmarks.remove(id);
+    await chrome.bookmarks.removeTree(id);
   }
   if (toRemove.length > 0) {
     console.log("[bookmarkUtils] reconcileBookmarks: removed", toRemove.length, "duplicate bookmark(s)");
