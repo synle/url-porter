@@ -446,6 +446,48 @@ function OptionsContent() {
     input.click();
   };
 
+  /**
+   * Runs broken link detection on all config entries.
+   * Sends HEAD requests to each URL and flags 4xx/5xx or network errors.
+   */
+  const handleCheckLinks = async () => {
+    if (linkCheckRunning) return;
+    setLinkCheckRunning(true);
+    setBrokenLinks({});
+    setLinkCheckProgress({ checked: 0, total: configEntries.length });
+    try {
+      const results = await checkBrokenLinks(configEntries, (checked, total) => {
+        setLinkCheckProgress({ checked, total });
+      });
+      const brokenMap = {};
+      for (const r of results) {
+        brokenMap[r.index] = r.error;
+      }
+      setBrokenLinks(brokenMap);
+      if (results.length === 0) {
+        showSnackbar("All links are healthy!");
+      } else {
+        showSnackbar(`Found ${results.length} broken link(s).`, "warning");
+      }
+    } catch (err) {
+      showSnackbar("Link check failed: " + err.message, "error");
+    } finally {
+      setLinkCheckRunning(false);
+    }
+  };
+
+  /**
+   * Analyzes the current config for duplicates, redirect chains, and overlapping aliases.
+   * Opens the health dialog with the results.
+   */
+  const handleConfigHealth = () => {
+    const duplicates = findDuplicateAliases(configEntries);
+    const chains = findRedirectChains(configEntries);
+    const overlaps = findOverlappingAliases(configEntries);
+    setHealthResults({ duplicates, chains, overlaps });
+    setHealthDialogOpen(true);
+  };
+
   // --- Filtering & sorting ---
   const filteredEntries = useMemo(() => {
     let entries = configEntries
@@ -544,6 +586,17 @@ function OptionsContent() {
           </Button>
           <Button color="inherit" startIcon={<FileUploadIcon />} onClick={handleImport}>
             Import
+          </Button>
+          <Button
+            color="inherit"
+            startIcon={linkCheckRunning ? <CircularProgress size={18} color="inherit" /> : <LinkOffIcon />}
+            onClick={handleCheckLinks}
+            disabled={linkCheckRunning}
+          >
+            {linkCheckRunning ? `${linkCheckProgress.checked}/${linkCheckProgress.total}` : "Check Links"}
+          </Button>
+          <Button color="inherit" startIcon={<HealthAndSafetyIcon />} onClick={handleConfigHealth}>
+            Config Health
           </Button>
           <Button color="inherit" startIcon={<DeleteForeverIcon />} onClick={() => setResetDialogOpen(true)}>
             Reset All
@@ -1094,99 +1147,6 @@ function OptionsContent() {
           <Button onClick={() => setDuplicateDialog({ open: false, index: -1, oldTo: "", context: "" })}>Cancel</Button>
           <Button variant="contained" onClick={handleDuplicateUpdate}>
             Update Existing Link
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Config Health Dialog */}
-      <Dialog open={healthDialogOpen} onClose={() => setHealthDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Config Health</DialogTitle>
-        <DialogContent>
-          {healthResults &&
-            healthResults.duplicates.length === 0 &&
-            healthResults.chains.length === 0 &&
-            healthResults.overlaps.length === 0 && (
-              <Alert severity="success" sx={{ mb: 2 }}>
-                No issues found! Your config is clean.
-              </Alert>
-            )}
-
-          {healthResults?.duplicates.length > 0 && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
-                <ContentCopyIcon fontSize="small" color="error" />
-                Duplicate Aliases ({healthResults.duplicates.length})
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Multiple entries share the same alias. Only one redirect can be active per alias.
-              </Typography>
-              <List dense>
-                {healthResults.duplicates.map((group) => (
-                  <ListItem key={group.alias} sx={{ flexDirection: "column", alignItems: "flex-start" }}>
-                    <ListItemText
-                      primary={<Chip label={group.alias} variant="outlined" />}
-                      secondary={group.entries.map((e) => `→ ${e.to}`).join(" | ")}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </Box>
-          )}
-
-          {healthResults?.chains.length > 0 && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
-                <CallSplitIcon fontSize="small" color="warning" />
-                Redirect Chains ({healthResults.chains.length})
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                These entries redirect to another alias instead of a final URL. The bookmark reconciler resolves these, but the browser
-                redirect may require two hops.
-              </Typography>
-              <List dense>
-                {healthResults.chains.map((chain) => (
-                  <ListItem key={chain.index}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <CallSplitIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText primary={chain.chain.join(" → ")} secondary={`Entry #${chain.index + 1}`} />
-                  </ListItem>
-                ))}
-              </List>
-            </Box>
-          )}
-
-          {healthResults?.overlaps.length > 0 && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
-                <CompareArrowsIcon fontSize="small" color="info" />
-                Overlapping Aliases ({healthResults.overlaps.length})
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                One alias is a substring of another, which could cause unexpected URL matching.
-              </Typography>
-              <List dense>
-                {healthResults.overlaps.map((pair, i) => (
-                  <ListItem key={i}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <CompareArrowsIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <>
-                          <Chip label={pair.aliasA} variant="outlined" /> is contained in <Chip label={pair.aliasB} variant="outlined" />
-                        </>
-                      }
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button variant="contained" onClick={() => setHealthDialogOpen(false)}>
-            Close
           </Button>
         </DialogActions>
       </Dialog>
