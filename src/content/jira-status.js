@@ -129,8 +129,9 @@ function reportStatus() {
   });
 }
 
-// Run after page load, with a delay to let Jira's SPA render
-setTimeout(reportStatus, 3000);
+// Run after page load, with a delay to let Jira's SPA render.
+// Random jitter (3-6s) prevents 20+ tabs from all reporting at once.
+setTimeout(reportStatus, 3000 + Math.random() * 3000);
 
 // Also observe for SPA navigation (Jira Cloud uses client-side routing)
 let lastUrl = window.location.href;

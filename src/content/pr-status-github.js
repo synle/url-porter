@@ -59,8 +59,9 @@ function reportStatus() {
   });
 }
 
-// Run after page load, with a delay to let GitHub's SPA render
-setTimeout(reportStatus, 2000);
+// Run after page load, with a delay to let GitHub's SPA render.
+// Random jitter (2-5s) prevents 20+ tabs from all reporting at once.
+setTimeout(reportStatus, 2000 + Math.random() * 3000);
 
 // Also observe for SPA navigation (GitHub uses turbo/pjax)
 let lastUrl = window.location.href;

@@ -56,8 +56,9 @@ function reportStatus() {
   });
 }
 
-// Run after page load with delay for SPA rendering
-setTimeout(reportStatus, 2000);
+// Run after page load with delay for SPA rendering.
+// Random jitter (2-5s) prevents 20+ tabs from all reporting at once.
+setTimeout(reportStatus, 2000 + Math.random() * 3000);
 
 // Observe for SPA navigation
 let lastUrl = window.location.href;

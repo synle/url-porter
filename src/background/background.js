@@ -51,14 +51,46 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 // --- Message & Storage Listeners ---
 
 /**
- * Debounce timer for bookmark reconciliation. Both onMessage and
- * storage.onChanged fire for the same config write, so we coalesce
- * them into a single reconciliation pass.
+ * Reconciliation queue. Ensures only one reconciliation runs at a time.
+ * If new requests arrive while a reconciliation is in progress, a single
+ * follow-up reconciliation is scheduled after the current one finishes.
+ * Uses a debounce so rapid-fire events (e.g. 20 tabs opening at once)
+ * are batched into one reconciliation pass.
  */
+let reconcileRunning = false;
+let reconcilePending = false;
 let reconcileTimer = null;
+
+/**
+ * Schedule a reconciliation. Debounces rapid calls and serializes execution
+ * so only one reconciliation runs at a time.
+ */
 function scheduleReconcile() {
   clearTimeout(reconcileTimer);
-  reconcileTimer = setTimeout(() => reconcileBookmarksFromStorage(), 300);
+  reconcileTimer = setTimeout(() => runReconcile(), 1000);
+}
+
+/**
+ * Execute reconciliation with queue/lock protection.
+ * @returns {Promise<void>}
+ */
+async function runReconcile() {
+  if (reconcileRunning) {
+    reconcilePending = true;
+    return;
+  }
+  reconcileRunning = true;
+  try {
+    await reconcileBookmarksFromStorage();
+  } finally {
+    reconcileRunning = false;
+    if (reconcilePending) {
+      reconcilePending = false;
+      // Small delay before the follow-up pass to collect any last stragglers
+      clearTimeout(reconcileTimer);
+      reconcileTimer = setTimeout(() => runReconcile(), 500);
+    }
+  }
 }
 
 /** Re-sync rules and bookmarks when UI pages send an update event. */
@@ -71,12 +103,14 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       console.log("[background] stored PR status:", request.status, "for", request.url);
       scheduleReconcile();
     });
+    return;
   }
   if (request.type === "Myevent.jiraStatus") {
     setJiraStatus(request.url, request.status).then(() => {
       console.log("[background] stored Jira status:", request.status, "for", request.url);
       scheduleReconcile();
     });
+    return;
   }
   if (request.type === "Myevent.getBookmarks") {
     getNestedBookmarks().then(sendResponse);
@@ -294,21 +328,13 @@ chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
   if (changeInfo.status !== "complete" || !tab.url) return;
   const isTracked = TRACKED_SITE_PATTERNS.some((re) => re.test(tab.url));
   if (!isTracked) return;
-  // Debounce — wait 5s after last tracked navigation to batch rapid browsing
+  // Debounce — wait 8s after last tracked navigation to batch rapid browsing
+  // (e.g. opening a folder with 20+ tabs at once)
   clearTimeout(bucketReconcileTimer);
-  bucketReconcileTimer = setTimeout(async () => {
-    console.log("[background] tracked site visited, reconciling bookmark buckets...");
-    try {
-      await reconcilePrs();
-      await reconcileGitHubRepos();
-      await reconcileFigmaMocks();
-      await reconcileJiraTickets();
-      await reconcileGoogleDrive();
-      await reconcileOnedrive();
-    } catch (err) {
-      console.error("[background] auto-reconcile failed:", err);
-    }
-  }, 5000);
+  bucketReconcileTimer = setTimeout(() => {
+    console.log("[background] tracked site visited, scheduling reconciliation...");
+    scheduleReconcile();
+  }, 8000);
 });
 
 // --- Helpers ---
