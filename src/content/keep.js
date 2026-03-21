@@ -252,7 +252,10 @@ function injectPreviewButton(modal) {
   console.log(TAG, "injected preview button");
 }
 
-/** Scan the DOM for fixed-position modals and inject preview buttons into them. */
+/**
+ * Scan the DOM for fixed-position modals and inject preview buttons into them.
+ * @returns {void}
+ */
 function scan() {
   console.log(TAG, "scanning for modals");
   for (const el of document.body.children) {
@@ -279,6 +282,7 @@ let scanTimer;
  * Debounce a DOM scan for modals.
  *
  * @param {string} source - Label describing what triggered the scan
+ * @returns {void}
  */
 function scheduleScan(source) {
   console.log(TAG, source + ", scanning in 0.5s");

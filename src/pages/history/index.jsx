@@ -1,3 +1,4 @@
+/** Entry point for the History audit trail page. */
 import React from "react";
 import ReactDOM from "react-dom/client";
 import History from "./History.jsx";

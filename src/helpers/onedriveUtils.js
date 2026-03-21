@@ -185,6 +185,7 @@ async function findPorterFolder(folderName) {
 /**
  * Reconcile the "onedrive" folder. Sorted by most recently visited (newest first).
  * Placed right after "google drive".
+ * @returns {Promise<void>}
  */
 export async function reconcileOnedrive() {
   console.log("[onedriveUtils] reconcileOnedrive: starting...");

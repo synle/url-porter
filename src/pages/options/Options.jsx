@@ -1,3 +1,13 @@
+/**
+ * Options page — main settings UI for URL Porter.
+ *
+ * Two modes:
+ * - "Clean" (default): table UI with search, sort, multi-select, and CRUD dialogs.
+ * - "Advanced": raw JSON editor with comment support.
+ *
+ * Also manages homepage URL, sync server, history limits, and bulk operations.
+ */
+
 import { useState, useEffect, useMemo, useRef } from "react";
 import {
   AppBar,
@@ -62,15 +72,6 @@ import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs/components/prism-core";
 import "prismjs/components/prism-json";
-/**
- * Options page — main settings UI for URL Porter.
- *
- * Two modes:
- * - "Clean" (default): table UI with search, sort, multi-select, and CRUD dialogs.
- * - "Advanced": raw JSON editor with comment support.
- *
- * Also manages homepage URL, sync server, history limits, and bulk operations.
- */
 
 import { ThemeContextProvider } from "../../theme.jsx";
 import SyncDialog from "../../components/SyncDialog.jsx";
@@ -162,7 +163,10 @@ function OptionsContent() {
     loadSettings();
   }, []);
 
-  /** Loads all settings (config, homepage, history limits, bookmark folder) from storage into state. */
+  /**
+   * Loads all settings (config, homepage, history limits, bookmark folder) from storage into state.
+   * @returns {Promise<void>}
+   */
   const loadSettings = async () => {
     const config = await getConfig();
     const homepage = await getHomepageUrl();
@@ -212,7 +216,10 @@ function OptionsContent() {
     }
   };
 
-  /** Auto-saves the homepage URL to storage on input blur. */
+  /**
+   * Auto-saves the homepage URL to storage on input blur.
+   * @returns {Promise<void>}
+   */
   const handleHomepageBlur = async () => {
     try {
       await saveHomepageUrl(homepageUrl.trim());
@@ -222,7 +229,10 @@ function OptionsContent() {
     }
   };
 
-  /** Validates and adds a new redirect link in clean mode, checking for duplicates. */
+  /**
+   * Validates and adds a new redirect link in clean mode, checking for duplicates.
+   * @returns {Promise<void>}
+   */
   const handleAddLink = async () => {
     const aliasError = validateAlias(linkFrom);
     if (aliasError) {
@@ -256,7 +266,10 @@ function OptionsContent() {
     }
   };
 
-  /** Saves an edited link after validating the alias and checking for duplicates. */
+  /**
+   * Saves an edited link after validating the alias and checking for duplicates.
+   * @returns {Promise<void>}
+   */
   const handleEditSave = async () => {
     if (editIndex < 0) return;
 
@@ -288,7 +301,10 @@ function OptionsContent() {
     }
   };
 
-  /** Deletes a single link after confirmation and logs it to history. */
+  /**
+   * Deletes a single link after confirmation and logs it to history.
+   * @returns {Promise<void>}
+   */
   const handleDeleteConfirm = async () => {
     if (deleteIndex < 0) return;
     const deletedEntry = configEntries[deleteIndex];
@@ -302,7 +318,10 @@ function OptionsContent() {
     }
   };
 
-  /** Deletes all currently selected links and logs each deletion to history. */
+  /**
+   * Deletes all currently selected links and logs each deletion to history.
+   * @returns {Promise<void>}
+   */
   const handleMassDelete = async () => {
     const deletedEntries = configEntries.filter((_, i) => selected.includes(i));
     const newEntries = configEntries.filter((_, i) => !selected.includes(i));
@@ -318,7 +337,10 @@ function OptionsContent() {
     }
   };
 
-  /** Resolves a duplicate alias by updating the existing entry's URL to the new value. */
+  /**
+   * Resolves a duplicate alias by updating the existing entry's URL to the new value.
+   * @returns {Promise<void>}
+   */
   const handleDuplicateUpdate = async () => {
     const { index, context } = duplicateDialog;
     const from = context === "edit" ? editFrom.trim() : linkFrom.trim();
@@ -343,7 +365,10 @@ function OptionsContent() {
     }
   };
 
-  /** Saves the raw JSON config from the advanced mode editor to storage. */
+  /**
+   * Saves the raw JSON config from the advanced mode editor to storage.
+   * @returns {Promise<void>}
+   */
   const handleAdvancedSave = async () => {
     try {
       await setConfig(editorContent);
@@ -387,7 +412,10 @@ function OptionsContent() {
     setSearchQuery("");
   };
 
-  /** Resets all settings to defaults, clears config and homepage, and logs deletions to history. */
+  /**
+   * Resets all settings to defaults, clears config and homepage, and logs deletions to history.
+   * @returns {Promise<void>}
+   */
   const handleReset = async () => {
     try {
       // Close dialog immediately so the UI doesn't appear to hang
@@ -411,6 +439,7 @@ function OptionsContent() {
   /**
    * Exports the current config and homepage URL as a downloadable JSON file.
    * Uses the same format as the sync server response ({homepage, configs}).
+   * @returns {void}
    */
   const handleExport = () => {
     const data = { homepage: homepageUrl, configs: configEntries };
@@ -427,6 +456,7 @@ function OptionsContent() {
   /**
    * Prompts the user to select a JSON file and imports its config and homepage.
    * Expects the same format as the sync server ({homepage, configs}).
+   * @returns {void}
    */
   const handleImport = () => {
     const input = document.createElement("input");
@@ -461,6 +491,7 @@ function OptionsContent() {
   /**
    * Runs broken link detection on all config entries.
    * Sends HEAD requests to each URL and flags 4xx/5xx or network errors.
+   * @returns {Promise<void>}
    */
   const handleCheckLinks = async () => {
     if (linkCheckRunning) return;
@@ -491,6 +522,7 @@ function OptionsContent() {
   /**
    * Analyzes the current config for duplicates, redirect chains, and overlapping aliases.
    * Opens the health dialog with the results.
+   * @returns {void}
    */
   const handleConfigHealth = () => {
     const duplicates = findDuplicateAliases(configEntries);
@@ -544,7 +576,10 @@ function OptionsContent() {
     setSelected((prev) => (prev.includes(origIndex) ? prev.filter((i) => i !== origIndex) : [...prev, origIndex]));
   };
 
-  /** Toggles selection of all currently visible (filtered) entries. */
+  /**
+   * Toggles selection of all currently visible (filtered) entries.
+   * @returns {void}
+   */
   const toggleSelectAll = () => {
     const visibleIndices = filteredEntries.map((e) => e._origIndex);
     const allSelected = visibleIndices.every((i) => selected.includes(i));

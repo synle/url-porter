@@ -222,6 +222,7 @@ async function findPorterFolder(folderName) {
  * Reconcile the "jira tickets" folder with Jira URLs found in history and bookmarks.
  * Deletes the old folder entirely and rebuilds from scratch.
  * Deduplicates by ticket key, groups by project, placed after "figma mocks".
+ * @returns {Promise<void>}
  */
 export async function reconcileJiraTickets() {
   console.log("[jiraTicketUtils] reconcileJiraTickets: starting...");

@@ -57,13 +57,19 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
  * Uses a debounce so rapid-fire events (e.g. 20 tabs opening at once)
  * are batched into one reconciliation pass.
  */
+/** @type {boolean} Whether a reconciliation is currently running. */
 let reconcileRunning = false;
+
+/** @type {boolean} Whether another reconciliation was requested during the current run. */
 let reconcilePending = false;
+
+/** @type {ReturnType<typeof setTimeout>|null} Debounce timer for reconciliation. */
 let reconcileTimer = null;
 
 /**
  * Schedule a reconciliation. Debounces rapid calls and serializes execution
  * so only one reconciliation runs at a time.
+ * @returns {void}
  */
 function scheduleReconcile() {
   clearTimeout(reconcileTimer);
@@ -121,7 +127,8 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 /**
  * Collect all bookmarks from nested subfolders of the url-porter folder.
  * Skips root-level bookmarks (only returns items inside subfolders).
- * Returns a flat array of { url, title }.
+ *
+ * @returns {Promise<Array<{url: string, title: string}>>}
  */
 async function getNestedBookmarks() {
   try {
@@ -308,6 +315,7 @@ async function reconcileBookmarksFromStorage() {
 
 // --- Auto-reconcile on visiting tracked sites ---
 
+/** @type {RegExp[]} URL patterns that trigger auto-reconciliation when visited. */
 const TRACKED_SITE_PATTERNS = [
   /github\.com/i,
   /githubprivate\.com/i,
@@ -322,6 +330,7 @@ const TRACKED_SITE_PATTERNS = [
   /onedrive\.live\.com/i,
   /sharepoint\.com/i,
 ];
+/** @type {ReturnType<typeof setTimeout>|null} Debounce timer for tracked-site reconciliation. */
 let bucketReconcileTimer = null;
 
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
@@ -342,6 +351,9 @@ chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
 /**
  * Escape special XML characters for omnibox suggestion descriptions.
  * Chrome's omnibox API uses a restricted XML subset for formatting.
+ *
+ * @param {string} str - The string to escape.
+ * @returns {string} The XML-escaped string.
  */
 function escapeXml(str) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");

@@ -289,6 +289,7 @@ async function findPorterFolder(folderName) {
 /**
  * Reconcile the "prs" folder with PR URLs found in history and bookmarks.
  * Flat list sorted by date (newest first). Placed above "github repos".
+ * @returns {Promise<void>}
  */
 export async function reconcilePrs() {
   console.log("[prUtils] reconcilePrs: starting...");

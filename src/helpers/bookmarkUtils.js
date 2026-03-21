@@ -94,6 +94,7 @@ function resolveShortLink(rawTo, aliasToRawUrl, maxDepth = 10) {
  * - Resolves short links: if a `to` value matches another alias, keeps expanding.
  *
  * @param {import('./configUtils.js').RawConfigEntry[]} configEntries
+ * @returns {Promise<void>}
  */
 export async function reconcileBookmarks(configEntries) {
   console.log("[bookmarkUtils] reconcileBookmarks: called with", configEntries?.length, "entries");

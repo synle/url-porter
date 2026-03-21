@@ -177,6 +177,7 @@ async function findPorterFolder(folderName) {
  * Reconcile the "github repos" folder with repos found in history and bookmarks.
  * Deletes the old folder entirely and rebuilds from scratch.
  * Deduplicates, sorts by repo name, and groups by org in subfolders.
+ * @returns {Promise<void>}
  */
 export async function reconcileGitHubRepos() {
   console.log("[githubRepoUtils] reconcileGitHubRepos: starting...");

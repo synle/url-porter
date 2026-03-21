@@ -48,7 +48,10 @@ function AddLinkContent() {
     detectContextAndPrefill();
   }, []);
 
-  /** Detects the opening context (query params or active tab) and prefills the form fields. */
+  /**
+   * Detects the opening context (query params or active tab) and prefills the form fields.
+   * @returns {Promise<void>}
+   */
   const detectContextAndPrefill = async () => {
     // Check for URL passed via query param (from context menu).
     // Values are URI-encoded by the background script's context menu handler.
@@ -81,7 +84,10 @@ function AddLinkContent() {
     setTimeout(() => fromInputRef.current?.focus(), 100);
   };
 
-  /** Validates the form inputs and saves the new link, or prompts on duplicate. */
+  /**
+   * Validates the form inputs and saves the new link, or prompts on duplicate.
+   * @returns {Promise<void>}
+   */
   const handleSave = async () => {
     const aliasError = validateAlias(linkFrom);
     if (aliasError) {
@@ -112,6 +118,7 @@ function AddLinkContent() {
   /**
    * Appends a new link entry to the config and persists it.
    * @param {Array} configs - The current config array to append to.
+   * @returns {Promise<void>}
    */
   const saveNewLink = async (configs) => {
     const from = normalizeFrom(linkFrom.trim());
@@ -125,7 +132,10 @@ function AddLinkContent() {
     setTimeout(() => window.close(), 1000);
   };
 
-  /** Updates an existing duplicate link entry with the new URL. */
+  /**
+   * Updates an existing duplicate link entry with the new URL.
+   * @returns {Promise<void>}
+   */
   const handleUpdateExisting = async () => {
     try {
       const configs = await getConfig();
@@ -147,17 +157,26 @@ function AddLinkContent() {
     }
   };
 
-  /** Closes the popup window. */
+  /**
+   * Closes the popup window.
+   * @returns {void}
+   */
   const handleCancel = () => {
     window.close();
   };
 
-  /** Opens the Options settings page in a new tab. */
+  /**
+   * Opens the Options settings page in a new tab.
+   * @returns {void}
+   */
   const navigateToOptions = () => {
     chrome.tabs.create({ url: chrome.runtime.getURL("pages/options/options.html") });
   };
 
-  /** Opens the Add Link page in a new browser tab. */
+  /**
+   * Opens the Add Link page in a new browser tab.
+   * @returns {void}
+   */
   const openInNewTab = () => {
     chrome.tabs.create({ url: chrome.runtime.getURL("pages/addlink/addlink.html") });
   };
@@ -171,12 +190,18 @@ function AddLinkContent() {
     setSnackbar({ open: true, message, severity });
   };
 
-  /** Cleans the alias field value on blur. */
+  /**
+   * Cleans the alias field value on blur.
+   * @returns {void}
+   */
   const handleFromBlur = () => {
     setLinkFrom(cleanAlias(linkFrom));
   };
 
-  /** Cleans the URL field value on blur. */
+  /**
+   * Cleans the URL field value on blur.
+   * @returns {void}
+   */
   const handleToBlur = () => {
     if (linkTo.trim()) {
       setLinkTo(cleanUrl(linkTo));

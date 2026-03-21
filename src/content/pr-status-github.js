@@ -53,6 +53,7 @@ function isGitHubErrorPage() {
 
 /**
  * Send the detected PR status to the background script.
+ * @returns {void}
  */
 function reportStatus() {
   if (isNetworkError()) {

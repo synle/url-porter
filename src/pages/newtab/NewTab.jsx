@@ -25,7 +25,10 @@ function NewTabContent() {
     redirectToHomepage();
   }, []);
 
-  /** Redirects the current tab to the configured homepage URL, or shows fallback content. */
+  /**
+   * Redirects the current tab to the configured homepage URL, or shows fallback content.
+   * @returns {Promise<void>}
+   */
   const redirectToHomepage = async () => {
     const url = await getHomepageUrl();
 

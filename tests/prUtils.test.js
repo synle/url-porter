@@ -29,6 +29,11 @@ const chrome = {
     }),
     removeTree: vi.fn(async (id) => {
       const toRemove = new Set();
+      /**
+       * Recursively collect node IDs to remove.
+       * @param {string} nodeId - The node ID to start from.
+       * @returns {void}
+       */
       function collect(nodeId) {
         toRemove.add(nodeId);
         for (const b of mockBookmarks) {
@@ -65,8 +70,16 @@ const chrome = {
 
 vi.stubGlobal("chrome", chrome);
 
-/** Build a bookmark tree from the flat mockBookmarks array. */
+/**
+ * Build a bookmark tree from the flat mockBookmarks array.
+ * @returns {{id: string, children: Array}} Root tree node.
+ */
 function buildTree() {
+  /**
+   * Recursively collect children for a given parent ID.
+   * @param {string} parentId - The parent node ID.
+   * @returns {Array} Child nodes with nested children.
+   */
   function childrenOf(parentId) {
     return mockBookmarks.filter((b) => b.parentId === parentId).map((b) => ({ ...b, children: b.url ? undefined : childrenOf(b.id) }));
   }

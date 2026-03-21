@@ -29,6 +29,11 @@ const chrome = {
     }),
     removeTree: vi.fn(async (id) => {
       const toRemove = new Set();
+      /**
+       * Recursively collect node IDs to remove.
+       * @param {string} nodeId - The node ID to start from.
+       * @returns {void}
+       */
       function collect(nodeId) {
         toRemove.add(nodeId);
         for (const b of mockBookmarks) {
@@ -62,8 +67,16 @@ const chrome = {
 
 vi.stubGlobal("chrome", chrome);
 
-/** Build a bookmark tree from the flat mockBookmarks array. */
+/**
+ * Build a bookmark tree from the flat mockBookmarks array.
+ * @returns {{id: string, children: Array}} Root tree node.
+ */
 function buildTree() {
+  /**
+   * Recursively collect children for a given parent ID.
+   * @param {string} parentId - The parent node ID.
+   * @returns {Array} Child nodes with nested children.
+   */
   function childrenOf(parentId) {
     return mockBookmarks.filter((b) => b.parentId === parentId).map((b) => ({ ...b, children: b.url ? undefined : childrenOf(b.id) }));
   }
@@ -78,6 +91,14 @@ function buildTree() {
 
 const { reconcileJiraTickets } = await import("../src/helpers/jiraTicketUtils.js");
 
+/**
+ * Add a mock bookmark node.
+ * @param {string} parentId - Parent folder ID.
+ * @param {string} title - Bookmark title.
+ * @param {string} url - Bookmark URL.
+ * @param {number} [dateAdded] - Timestamp when added.
+ * @returns {object} The created mock bookmark node.
+ */
 function addMockBookmark(parentId, title, url, dateAdded) {
   const id = String(nextBookmarkId++);
   const node = { id, parentId, title, url, dateAdded: dateAdded || Date.now() };
@@ -85,6 +106,12 @@ function addMockBookmark(parentId, title, url, dateAdded) {
   return node;
 }
 
+/**
+ * Add a mock folder node.
+ * @param {string} parentId - Parent folder ID.
+ * @param {string} title - Folder title.
+ * @returns {object} The created mock folder node.
+ */
 function addMockFolder(parentId, title) {
   const id = String(nextBookmarkId++);
   const node = { id, parentId, title };

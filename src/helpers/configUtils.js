@@ -1,3 +1,5 @@
+/** Config normalization utilities for declarativeNetRequest redirect rules. */
+
 /**
  * @typedef {Object} ConfigEntry
  * @property {string} from - The URL filter pattern (e.g. "||example^")

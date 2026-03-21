@@ -122,6 +122,7 @@ async function findPorterFolder(folderName) {
  * Reconcile the "figma mocks" folder with Figma URLs found in history and bookmarks.
  * Deletes the old folder entirely and rebuilds from scratch.
  * Deduplicates by file ID, sorts by title, placed right after "github repos".
+ * @returns {Promise<void>}
  */
 export async function reconcileFigmaMocks() {
   console.log("[figmaMockUtils] reconcileFigmaMocks: starting...");

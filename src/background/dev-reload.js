@@ -4,10 +4,16 @@
  * This file is only included in the manifest during dev/watch builds.
  */
 
+/** @type {number} Polling interval in milliseconds. */
 const POLL_INTERVAL = 1000;
+
+/** @type {string|null} Last seen timestamp value, null until first poll. */
 let lastTimestamp = null;
 
-/** Poll the reload-timestamp file and trigger a reload if it changed. */
+/**
+ * Poll the reload-timestamp file and trigger a reload if it changed.
+ * @returns {Promise<void>}
+ */
 async function checkForUpdates() {
   try {
     const url = chrome.runtime.getURL("reload-timestamp.txt");

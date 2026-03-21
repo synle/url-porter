@@ -123,6 +123,7 @@ function isErrorPage() {
 
 /**
  * Send the detected ticket status to the background script.
+ * @returns {void}
  */
 function reportStatus() {
   if (isNetworkError()) {

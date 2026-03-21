@@ -158,6 +158,7 @@ async function findPorterFolder(folderName) {
 
 /**
  * Reconcile the "google drive" folder. Sorted by most recently visited (newest first).
+ * @returns {Promise<void>}
  */
 export async function reconcileGoogleDrive() {
   console.log("[googleDriveUtils] reconcileGoogleDrive: starting...");

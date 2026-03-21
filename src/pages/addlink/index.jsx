@@ -1,3 +1,4 @@
+/** Entry point for the Add Link popup page. */
 import React from "react";
 import ReactDOM from "react-dom/client";
 import AddLink from "./AddLink.jsx";

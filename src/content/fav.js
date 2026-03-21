@@ -7,7 +7,10 @@
  */
 const TAG = "[url-porter:fav]";
 
-/** Fetch nested bookmarks from the extension and dispatch them as a CustomEvent. */
+/**
+ * Fetch nested bookmarks from the extension and dispatch them as a CustomEvent.
+ * @returns {Promise<void>}
+ */
 async function init() {
   try {
     const bookmarks = await chrome.runtime.sendMessage({ type: "Myevent.getBookmarks" });

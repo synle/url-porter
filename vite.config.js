@@ -1,3 +1,4 @@
+/** Vite build configuration for URL Porter Chrome Extension. */
 import { defineConfig } from "vite";
 import { resolve, dirname, join } from "path";
 import { fileURLToPath } from "url";
@@ -42,6 +43,7 @@ export default defineConfig({
     react(),
     {
       name: "copy-manifest",
+      /** Copy manifest, content scripts, and dev-reload assets to dist/. @returns {void} */
       closeBundle() {
         const manifestDest = resolve(__dirname, "dist/manifest.json");
         copyFileSync(resolve(__dirname, "src/manifest.json"), manifestDest);
@@ -75,6 +77,7 @@ export default defineConfig({
     },
     {
       name: "move-html",
+      /** Move HTML files from dist/src/pages/ to dist/pages/ and fix asset paths. @returns {void} */
       closeBundle() {
         // Move HTML files from dist/src/pages to dist/pages
         const srcPagesDir = resolve(__dirname, "dist/src/pages");

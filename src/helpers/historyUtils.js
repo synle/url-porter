@@ -14,7 +14,11 @@ const ENTRY_LIMIT_KEY = "historyEntryLimit";
 const DEFAULT_ALIAS_LIMIT = 5000;
 const DEFAULT_ENTRY_LIMIT = 20;
 
-/** Normalize an alias to its canonical history key. */
+/**
+ * Normalize an alias to its canonical history key.
+ * @param {string} from - The alias to normalize.
+ * @returns {string} Lowercased, normalized alias key.
+ */
 function aliasKey(from) {
   return normalizeFrom(from).toLowerCase();
 }
@@ -47,24 +51,38 @@ export async function getHistoryAsFlat() {
   return all;
 }
 
-/** Get the configured max-aliases limit (default: 5000). */
+/**
+ * Get the configured max-aliases limit (default: 5000).
+ * @returns {Promise<number>}
+ */
 export async function getHistoryAliasLimit() {
   const result = await chrome.storage.local.get(ALIAS_LIMIT_KEY);
   return typeof result[ALIAS_LIMIT_KEY] === "number" ? result[ALIAS_LIMIT_KEY] : DEFAULT_ALIAS_LIMIT;
 }
 
-/** Persist a new max-aliases limit (minimum 1). */
+/**
+ * Persist a new max-aliases limit (minimum 1).
+ * @param {number} n - The new limit.
+ * @returns {Promise<void>}
+ */
 export async function setHistoryAliasLimit(n) {
   await chrome.storage.local.set({ [ALIAS_LIMIT_KEY]: Math.max(1, Math.floor(n)) });
 }
 
-/** Get the configured max-entries-per-alias limit (default: 20). */
+/**
+ * Get the configured max-entries-per-alias limit (default: 20).
+ * @returns {Promise<number>}
+ */
 export async function getHistoryEntryLimit() {
   const result = await chrome.storage.local.get(ENTRY_LIMIT_KEY);
   return typeof result[ENTRY_LIMIT_KEY] === "number" ? result[ENTRY_LIMIT_KEY] : DEFAULT_ENTRY_LIMIT;
 }
 
-/** Persist a new max-entries-per-alias limit (minimum 1). */
+/**
+ * Persist a new max-entries-per-alias limit (minimum 1).
+ * @param {number} n - The new limit.
+ * @returns {Promise<void>}
+ */
 export async function setHistoryEntryLimit(n) {
   await chrome.storage.local.set({ [ENTRY_LIMIT_KEY]: Math.max(1, Math.floor(n)) });
 }
@@ -114,7 +132,10 @@ export async function addHistoryEntry(from, to, action) {
   await chrome.storage.local.set({ [HISTORY_KEY]: history });
 }
 
-/** Clear all history entries. */
+/**
+ * Clear all history entries.
+ * @returns {Promise<void>}
+ */
 export async function clearHistory() {
   await chrome.storage.local.remove(HISTORY_KEY);
 }

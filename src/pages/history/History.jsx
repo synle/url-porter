@@ -45,6 +45,7 @@ import { getHistoryAsFlat, clearHistory } from "../../helpers/historyUtils.js";
 import { getConfig, setConfig } from "../../helpers/storage.js";
 import { findDuplicateEntry, normalizeFrom, normalizeTo } from "../../helpers/configUtils.js";
 
+/** @type {Object<string, string>} Maps history action types to MUI color names. */
 const ACTION_COLORS = {
   added: "success",
   edited: "warning",
@@ -64,7 +65,10 @@ function HistoryContent() {
     loadHistory();
   }, []);
 
-  /** Loads all history entries from storage and updates state. */
+  /**
+   * Loads all history entries from storage and updates state.
+   * @returns {Promise<void>}
+   */
   const loadHistory = async () => {
     const history = await getHistoryAsFlat();
     setEntries(history);
@@ -116,13 +120,20 @@ function HistoryContent() {
     }
   };
 
-  /** Handles restoring a single history entry back into the config. */
+  /**
+   * Handles restoring a single history entry back into the config.
+   * @param {{from: string, to: string}} entry - The history entry to restore.
+   * @returns {Promise<void>}
+   */
   const handleRestore = async (entry) => {
     const ok = await restoreEntries([entry]);
     if (ok) showSnackbar("Link restored!");
   };
 
-  /** Restores all currently selected history entries back into the config. */
+  /**
+   * Restores all currently selected history entries back into the config.
+   * @returns {Promise<void>}
+   */
   const handleRestoreSelected = async () => {
     const entriesToRestore = selected.map((i) => filteredEntries[i]);
     const ok = await restoreEntries(entriesToRestore);
@@ -132,7 +143,10 @@ function HistoryContent() {
     }
   };
 
-  /** Restores all history entries back into the config. */
+  /**
+   * Restores all history entries back into the config.
+   * @returns {Promise<void>}
+   */
   const handleRestoreAll = async () => {
     const ok = await restoreEntries(entries);
     if (ok) {
@@ -141,7 +155,10 @@ function HistoryContent() {
     }
   };
 
-  /** Clears all history entries from storage and resets state. */
+  /**
+   * Clears all history entries from storage and resets state.
+   * @returns {Promise<void>}
+   */
   const handleClearHistory = async () => {
     await clearHistory();
     setEntries([]);
@@ -150,7 +167,10 @@ function HistoryContent() {
     showSnackbar("History cleared!");
   };
 
-  /** Navigates to the Options settings page. */
+  /**
+   * Navigates to the Options settings page.
+   * @returns {void}
+   */
   const navigateToOptions = () => {
     window.location.href = chrome.runtime.getURL("pages/options/options.html");
   };
@@ -168,12 +188,19 @@ function HistoryContent() {
     }
   };
 
-  /** Toggles selection state of a history entry by its index. */
+  /**
+   * Toggles selection state of a history entry by its index.
+   * @param {number} index - The index of the entry in the filtered list.
+   * @returns {void}
+   */
   const toggleSelect = (index) => {
     setSelected((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]));
   };
 
-  /** Toggles selection of all visible (filtered) history entries. */
+  /**
+   * Toggles selection of all visible (filtered) history entries.
+   * @returns {void}
+   */
   const toggleSelectAll = () => {
     const allIndices = filteredEntries.map((_, i) => i);
     const allSelected = allIndices.every((i) => selected.includes(i));

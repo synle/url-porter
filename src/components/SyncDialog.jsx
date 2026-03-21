@@ -1,3 +1,4 @@
+/** Sync settings dialog for fetching config from a remote server URL. */
 import { useState, useEffect } from "react";
 import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, TextField, Button } from "@mui/material";
 import { getSyncUrl, setSyncUrlToStorage, setConfig, saveHomepageUrl, isValidUrl, DEFAULT_SYNC_URL } from "../helpers/storage.js";
@@ -21,7 +22,10 @@ export default function SyncDialog({ open, onClose, onSuccess, onError }) {
     }
   }, [open]);
 
-  /** Validate the URL, fetch remote config, and apply it to local storage. */
+  /**
+   * Validate the URL, fetch remote config, and apply it to local storage.
+   * @returns {Promise<void>}
+   */
   const handleSyncSubmit = async () => {
     if (!isValidUrl(syncUrl)) {
       onError("Please enter a valid URL starting with http:// or https://");
