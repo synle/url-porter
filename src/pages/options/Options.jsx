@@ -82,6 +82,7 @@ import {
   validateAlias,
 } from "../../helpers/configUtils.js";
 import { ALIAS_PLACEHOLDER, ALIAS_HELPER_TEXT, URL_PLACEHOLDER, URL_HELPER_TEXT } from "../../helpers/fieldHelpers.js";
+import { checkBrokenLinks, findDuplicateAliases, findRedirectChains, findOverlappingAliases } from "../../helpers/configAnalysis.js";
 import {
   addHistoryEntry,
   getHistoryAliasLimit,
@@ -133,6 +134,15 @@ function OptionsContent() {
   const [historyEntryLimitValue, setHistoryEntryLimitValue] = useState(20);
   const [bookmarkFolderNameValue, setBookmarkFolderNameValue] = useState("url-porter");
   const [githubOrgThresholdValue, setGithubOrgThresholdValue] = useState(3);
+
+  // Broken link checker state
+  const [brokenLinks, setBrokenLinks] = useState({}); // {[origIndex]: errorMsg}
+  const [linkCheckRunning, setLinkCheckRunning] = useState(false);
+  const [linkCheckProgress, setLinkCheckProgress] = useState({ checked: 0, total: 0 });
+
+  // Config health dialog state
+  const [healthDialogOpen, setHealthDialogOpen] = useState(false);
+  const [healthResults, setHealthResults] = useState(null);
 
   const fromInputRef = useRef(null);
 
@@ -734,9 +744,16 @@ function OptionsContent() {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          <Tooltip title={entry.to || ""}>
-                            <span>{entry.to}</span>
-                          </Tooltip>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                            {brokenLinks[entry._origIndex] && (
+                              <Tooltip title={`Broken: ${brokenLinks[entry._origIndex]}`}>
+                                <WarningAmberIcon fontSize="small" color="warning" sx={{ flexShrink: 0 }} />
+                              </Tooltip>
+                            )}
+                            <Tooltip title={entry.to || ""}>
+                              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{entry.to}</span>
+                            </Tooltip>
+                          </Box>
                         </TableCell>
                         <TableCell align="right">
                           <IconButton
@@ -1077,6 +1094,192 @@ function OptionsContent() {
           <Button onClick={() => setDuplicateDialog({ open: false, index: -1, oldTo: "", context: "" })}>Cancel</Button>
           <Button variant="contained" onClick={handleDuplicateUpdate}>
             Update Existing Link
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Config Health Dialog */}
+      <Dialog open={healthDialogOpen} onClose={() => setHealthDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Config Health</DialogTitle>
+        <DialogContent>
+          {healthResults &&
+            healthResults.duplicates.length === 0 &&
+            healthResults.chains.length === 0 &&
+            healthResults.overlaps.length === 0 && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                No issues found! Your config is clean.
+              </Alert>
+            )}
+
+          {healthResults?.duplicates.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                <ContentCopyIcon fontSize="small" color="error" />
+                Duplicate Aliases ({healthResults.duplicates.length})
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Multiple entries share the same alias. Only one redirect can be active per alias.
+              </Typography>
+              <List dense>
+                {healthResults.duplicates.map((group) => (
+                  <ListItem key={group.alias} sx={{ flexDirection: "column", alignItems: "flex-start" }}>
+                    <ListItemText
+                      primary={<Chip label={group.alias} variant="outlined" />}
+                      secondary={group.entries.map((e) => `→ ${e.to}`).join(" | ")}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          )}
+
+          {healthResults?.chains.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                <CallSplitIcon fontSize="small" color="warning" />
+                Redirect Chains ({healthResults.chains.length})
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                These entries redirect to another alias instead of a final URL. The bookmark reconciler resolves these, but the browser
+                redirect may require two hops.
+              </Typography>
+              <List dense>
+                {healthResults.chains.map((chain) => (
+                  <ListItem key={chain.index}>
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      <CallSplitIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary={chain.chain.join(" → ")} secondary={`Entry #${chain.index + 1}`} />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          )}
+
+          {healthResults?.overlaps.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                <CompareArrowsIcon fontSize="small" color="info" />
+                Overlapping Aliases ({healthResults.overlaps.length})
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                One alias is a substring of another, which could cause unexpected URL matching.
+              </Typography>
+              <List dense>
+                {healthResults.overlaps.map((pair, i) => (
+                  <ListItem key={i}>
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      <CompareArrowsIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <>
+                          <Chip label={pair.aliasA} variant="outlined" /> is contained in <Chip label={pair.aliasB} variant="outlined" />
+                        </>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button variant="contained" onClick={() => setHealthDialogOpen(false)}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Config Health Dialog */}
+      <Dialog open={healthDialogOpen} onClose={() => setHealthDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Config Health</DialogTitle>
+        <DialogContent>
+          {healthResults &&
+            healthResults.duplicates.length === 0 &&
+            healthResults.chains.length === 0 &&
+            healthResults.overlaps.length === 0 && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                No issues found! Your config is clean.
+              </Alert>
+            )}
+
+          {healthResults?.duplicates.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                <ContentCopyIcon fontSize="small" color="error" />
+                Duplicate Aliases ({healthResults.duplicates.length})
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Multiple entries share the same alias. Only one redirect can be active per alias.
+              </Typography>
+              <List dense>
+                {healthResults.duplicates.map((group) => (
+                  <ListItem key={group.alias} sx={{ flexDirection: "column", alignItems: "flex-start" }}>
+                    <ListItemText
+                      primary={<Chip label={group.alias} variant="outlined" />}
+                      secondary={group.entries.map((e) => `→ ${e.to}`).join(" | ")}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          )}
+
+          {healthResults?.chains.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                <CallSplitIcon fontSize="small" color="warning" />
+                Redirect Chains ({healthResults.chains.length})
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                These entries redirect to another alias instead of a final URL. The bookmark reconciler resolves these, but the browser
+                redirect may require two hops.
+              </Typography>
+              <List dense>
+                {healthResults.chains.map((chain) => (
+                  <ListItem key={chain.index}>
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      <CallSplitIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary={chain.chain.join(" → ")} secondary={`Entry #${chain.index + 1}`} />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          )}
+
+          {healthResults?.overlaps.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                <CompareArrowsIcon fontSize="small" color="info" />
+                Overlapping Aliases ({healthResults.overlaps.length})
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                One alias is a substring of another, which could cause unexpected URL matching.
+              </Typography>
+              <List dense>
+                {healthResults.overlaps.map((pair, i) => (
+                  <ListItem key={i}>
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      <CompareArrowsIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <>
+                          <Chip label={pair.aliasA} variant="outlined" /> is contained in <Chip label={pair.aliasB} variant="outlined" />
+                        </>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button variant="contained" onClick={() => setHealthDialogOpen(false)}>
+            Close
           </Button>
         </DialogActions>
       </Dialog>
