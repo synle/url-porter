@@ -14,6 +14,8 @@ jobs:
   build:
     # https://github.com/synle/gha-workflows/blob/main/.github/workflows/build-and-commit-sh.yml
     uses: synle/gha-workflows/.github/workflows/build-and-commit-sh.yml@main
+    with:
+      deploy-to-pages: true
     permissions:
       contents: write
       pages: write

@@ -138,13 +138,13 @@ tests/               # Vitest test files (Chrome APIs mocked via vi.stubGlobal)
 ### Mac / Linux
 
 ```bash
-curl -L -o url-porter.zip https://github.com/synle/url-porter/raw/main/url-porter.zip && unzip url-porter.zip -d url-porter
+curl -L -o url-porter.zip https://synle.github.io/url-porter/url-porter.zip && unzip url-porter.zip -d url-porter
 ```
 
 ### Windows
 
 ```bash
-powershell -Command "Start-BitsTransfer -Source https://github.com/synle/url-porter/raw/main/url-porter.zip -Destination url-porter.zip"
+powershell -Command "Start-BitsTransfer -Source https://synle.github.io/url-porter/url-porter.zip -Destination url-porter.zip"
 powershell -Command "Expand-Archive -Path url-porter.zip -DestinationPath url-porter"
 ```
 
