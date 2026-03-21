@@ -58,13 +58,16 @@ export async function checkBrokenLinks(entries, onProgress) {
 
     try {
       const res = await fetch(url, { method: "HEAD", mode: "no-cors" });
-      // no-cors returns opaque responses (status 0) — treat as OK.
-      // Many legit sites block HEAD with 403/405 — only flag 404 and 5xx as broken.
-      if (res.status === 404 || res.status >= 500) {
-        broken.push({ index, from: entry.from, to: url, status: res.status, error: `HTTP ${res.status}` });
+      // no-cors returns opaque responses (status 0) for most cross-origin URLs — treat as OK.
+      // Only flag HTTP 404 since that clearly means the page doesn't exist.
+      if (res.status === 404) {
+        broken.push({ index, from: entry.from, to: url, status: res.status, error: "HTTP 404" });
       }
-    } catch (err) {
-      broken.push({ index, from: entry.from, to: url, status: 0, error: err.message || "Network error" });
+    } catch {
+      // fetch throws for CORS blocks, DNS failures, timeouts, connection refused, etc.
+      // In a Chrome extension options page with no-cors, all these produce the same
+      // "Failed to fetch" error — we can't distinguish real failures from CORS blocks,
+      // so treat all catch errors as likely-reachable to avoid false positives.
     }
 
     checked++;
