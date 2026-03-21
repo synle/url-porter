@@ -45,6 +45,8 @@ import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import HistoryIcon from "@mui/icons-material/History";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import AddLinkIcon from "@mui/icons-material/AddLink";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs/components/prism-core";
 import "prismjs/components/prism-json";
@@ -384,6 +386,56 @@ function OptionsContent() {
     }
   };
 
+  /**
+   * Exports the current config and homepage URL as a downloadable JSON file.
+   * Uses the same format as the sync server response ({homepage, configs}).
+   */
+  const handleExport = () => {
+    const data = { homepage: homepageUrl, configs: configEntries };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `url-porter-config-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showSnackbar("Config exported!");
+  };
+
+  /**
+   * Prompts the user to select a JSON file and imports its config and homepage.
+   * Expects the same format as the sync server ({homepage, configs}).
+   */
+  const handleImport = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json,application/json";
+    input.onchange = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        if (!("configs" in data) || !Array.isArray(data.configs)) {
+          showSnackbar('Invalid file: must contain a "configs" array.', "error");
+          return;
+        }
+        const newHomepage = (data.homepage || "").trim();
+        setHomepageUrl(newHomepage);
+        const ok = await saveAndNotify(data.configs);
+        if (ok) {
+          await saveHomepageUrl(newHomepage);
+          chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
+          await loadSettings();
+          showSnackbar("Config imported successfully!");
+        }
+      } catch (err) {
+        showSnackbar("Import failed: " + err.message, "error");
+      }
+    };
+    input.click();
+  };
+
   // --- Filtering & sorting ---
   const filteredEntries = useMemo(() => {
     let entries = configEntries
@@ -476,6 +528,12 @@ function OptionsContent() {
           </Button>
           <Button color="inherit" startIcon={<SyncIcon />} onClick={() => setSyncDialogOpen(true)}>
             Sync
+          </Button>
+          <Button color="inherit" startIcon={<FileDownloadIcon />} onClick={handleExport}>
+            Export
+          </Button>
+          <Button color="inherit" startIcon={<FileUploadIcon />} onClick={handleImport}>
+            Import
           </Button>
           <Button color="inherit" startIcon={<DeleteForeverIcon />} onClick={() => setResetDialogOpen(true)}>
             Reset All
