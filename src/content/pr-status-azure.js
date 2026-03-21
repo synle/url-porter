@@ -34,9 +34,27 @@ function detectStatus() {
 }
 
 /**
+ * Check if the current page is an Azure DevOps error page.
+ * @returns {boolean}
+ */
+function isAzureErrorPage() {
+  const body = document.body ? document.body.textContent : "";
+  return body.includes("Azure DevOps Services Unavailable") || body.includes("something went wrong");
+}
+
+/**
  * Send the detected PR status to the background script.
  */
 function reportStatus() {
+  if (isNetworkError()) {
+    console.log(TAG, "network error detected, skipping");
+    return;
+  }
+  if (isAzureErrorPage()) {
+    attemptErrorReload("url-porter-azure-reload-count", TAG);
+    return;
+  }
+
   const status = detectStatus();
   if (!status) return;
 

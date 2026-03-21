@@ -37,9 +37,33 @@ function detectStatus() {
 }
 
 /**
+ * Check if the current page is a GitHub error page (IP block, 500 unicorn, etc.).
+ * @returns {boolean}
+ */
+function isGitHubErrorPage() {
+  const body = document.body ? document.body.textContent : "";
+  return (
+    body.includes("Access forbidden") ||
+    body.includes("is not permitted to access this resource") ||
+    body.includes("This is not the web page you are looking for") ||
+    body.includes("Unicorn!") ||
+    document.querySelector("img[alt='Unicorn']") !== null
+  );
+}
+
+/**
  * Send the detected PR status to the background script.
  */
 function reportStatus() {
+  if (isNetworkError()) {
+    console.log(TAG, "network error detected, skipping");
+    return;
+  }
+  if (isGitHubErrorPage()) {
+    attemptErrorReload("url-porter-github-reload-count", TAG);
+    return;
+  }
+
   const status = detectStatus();
   if (!status) return;
 

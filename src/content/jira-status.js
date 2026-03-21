@@ -111,9 +111,29 @@ function getCanonicalUrl() {
 }
 
 /**
+ * Check if the current page is a Jira error page (e.g. "We couldn't connect to that work item").
+ * @returns {boolean}
+ */
+function isErrorPage() {
+  const body = document.body ? document.body.textContent : "";
+  return (
+    body.includes("We couldn\u2019t connect") || body.includes("We couldn't connect") || body.includes("Something went wrong on our end")
+  );
+}
+
+/**
  * Send the detected ticket status to the background script.
  */
 function reportStatus() {
+  if (isNetworkError()) {
+    console.log(TAG, "network error detected, skipping");
+    return;
+  }
+  if (isErrorPage()) {
+    attemptErrorReload("url-porter-jira-reload-count", TAG);
+    return;
+  }
+
   const status = detectStatus();
   if (!status) return;
 
