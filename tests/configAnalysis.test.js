@@ -127,15 +127,23 @@ describe("findOverlappingAliases", () => {
     expect(findOverlappingAliases(entries)).toEqual([]);
   });
 
-  it("detects when one alias is a substring of another", () => {
+  it("detects when one alias is a prefix of another", () => {
+    const entries = [
+      { from: "||chat^", to: "https://chat.com" },
+      { from: "||chatgpt^", to: "https://chatgpt.com" },
+    ];
+    const result = findOverlappingAliases(entries);
+    expect(result).toHaveLength(1);
+    expect(result[0].aliasA).toBe("chat");
+    expect(result[0].aliasB).toBe("chatgpt");
+  });
+
+  it("does not flag non-prefix substrings", () => {
     const entries = [
       { from: "||hub^", to: "https://hub.com" },
       { from: "||github^", to: "https://github.com" },
     ];
-    const result = findOverlappingAliases(entries);
-    expect(result).toHaveLength(1);
-    expect(result[0].aliasA).toBe("hub");
-    expect(result[0].aliasB).toBe("github");
+    expect(findOverlappingAliases(entries)).toEqual([]);
   });
 
   it("does not flag exact duplicates (handled by findDuplicateAliases)", () => {
@@ -164,12 +172,12 @@ describe("findOverlappingAliases", () => {
 
   it("correctly identifies the shorter alias as aliasA", () => {
     const entries = [
-      { from: "||longalias^", to: "https://long.com" },
-      { from: "||alias^", to: "https://short.com" },
+      { from: "||tplinkwifi.net^", to: "https://192.168.1.1" },
+      { from: "||tplinkwifi^", to: "https://tplinkwifi.net" },
     ];
     const result = findOverlappingAliases(entries);
     expect(result).toHaveLength(1);
-    expect(result[0].aliasA).toBe("alias");
-    expect(result[0].aliasB).toBe("longalias");
+    expect(result[0].aliasA).toBe("tplinkwifi");
+    expect(result[0].aliasB).toBe("tplinkwifi.net");
   });
 });

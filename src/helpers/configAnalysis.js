@@ -26,6 +26,14 @@ import { normalizeEntry, normalizeFrom, stripAlias } from "./configUtils.js";
  */
 export async function checkBrokenLinks(entries, onProgress) {
   const normalized = entries.map((e, i) => ({ entry: normalizeEntry(e), index: i })).filter((x) => x.entry);
+
+  // Build a set of known aliases so we can skip short links that redirect to another alias
+  const aliasSet = new Set();
+  for (const { entry } of normalized) {
+    const key = stripAlias(normalizeFrom(entry.from)).toLowerCase();
+    if (key) aliasSet.add(key);
+  }
+
   const broken = [];
   let checked = 0;
 
@@ -37,10 +45,22 @@ export async function checkBrokenLinks(entries, onProgress) {
       continue;
     }
 
+    // Skip short links whose destination is another alias (redirect chains)
+    const strippedTo = url
+      .replace(/^https?:\/\//, "")
+      .replace(/\/$/, "")
+      .toLowerCase();
+    if (aliasSet.has(strippedTo)) {
+      checked++;
+      if (onProgress) onProgress(checked, normalized.length);
+      continue;
+    }
+
     try {
       const res = await fetch(url, { method: "HEAD", mode: "no-cors" });
-      // no-cors returns opaque responses (status 0) — only flag explicit 4xx/5xx
-      if (res.status >= 400) {
+      // no-cors returns opaque responses (status 0) — treat as OK.
+      // Many legit sites block HEAD with 403/405 — only flag 404 and 5xx as broken.
+      if (res.status === 404 || res.status >= 500) {
         broken.push({ index, from: entry.from, to: url, status: res.status, error: `HTTP ${res.status}` });
       }
     } catch (err) {
@@ -153,8 +173,10 @@ export function findRedirectChains(entries) {
  */
 
 /**
- * Find pairs of aliases where one is a substring of another,
+ * Find pairs of aliases where one is a prefix of another,
  * which could cause unexpected matching with declarativeNetRequest.
+ * Only prefix matches matter because the urlFilter pattern uses `||` (domain start anchor)
+ * and `^` (separator/end), so `||fi^` won't match `googlefi` but could match `fi.something`.
  *
  * @param {import('./configUtils.js').RawConfigEntry[]} entries - Config entries to analyze
  * @returns {OverlapPair[]} Pairs of overlapping aliases
@@ -176,9 +198,11 @@ export function findOverlappingAliases(entries) {
       const a = items[i];
       const b = items[j];
       if (a.alias === b.alias) continue; // exact duplicates handled by findDuplicateAliases
-      if (b.alias.includes(a.alias)) {
+      // Only flag prefix matches — the urlFilter `||alias^` anchors at domain start,
+      // so only a prefix of a longer alias can cause unexpected matching.
+      if (b.alias.startsWith(a.alias)) {
         overlaps.push({ indexA: a.index, indexB: b.index, aliasA: a.alias, aliasB: b.alias });
-      } else if (a.alias.includes(b.alias)) {
+      } else if (a.alias.startsWith(b.alias)) {
         overlaps.push({ indexA: b.index, indexB: a.index, aliasA: b.alias, aliasB: a.alias });
       }
     }
