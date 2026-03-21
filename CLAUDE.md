@@ -17,7 +17,7 @@ npm run lint         # ESLint — catches undefined references, missing imports
 npm run format       # Prettier (140 char width)
 ```
 
-Tests use Vitest: `npm test` runs all tests. Test files live in the `tests/` directory at the project root. Chrome APIs are mocked via `vi.stubGlobal`. Node version is pinned to 20.19.1 via Volta.
+Tests use Vitest: `npm test` runs all tests. Test files live in the `tests/` directory at the project root (NOT inside `src/` — build hooks can delete files there). Chrome APIs are mocked via `vi.stubGlobal`. Use fictional company names in test fixtures (Acme, Globex, Initech) and made-up ticket keys (FALCON, PLUTO, ORBIT) — never real company names. Node version is pinned to 20.19.1 via Volta.
 
 The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server endpoint at build time.
 
@@ -44,6 +44,8 @@ The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server
 - `storage.js` — Chrome storage API wrappers. Config rules use `chrome.storage.sync`; homepage URL, sync URL, bookmark folder name, and history use `chrome.storage.local`.
 - `configUtils.js` — Normalizes redirect entries for `declarativeNetRequest` format. Only file with TypeScript declarations (emitted to `types/`).
 - `historyUtils.js` — History tracking with configurable limits (5000 aliases, 20 entries per alias).
+- `configAnalysis.js` — Broken link detection and conflict/duplicate resolution. Pure functions used by the Options page for on-demand health checks.
+- `fieldHelpers.js` — Shared placeholder and helper text constants for form fields (used by AddLink popup and Options dialogs).
 - `bookmarkUtils.js` — Bookmark sync. Maintains a configurable bookmark folder (default "url-porter") under Other Bookmarks that mirrors config entries. The folder name is stored in `chrome.storage.local` and editable on the Options page. Key behaviors:
   - **Deduplicates by title** — if multiple bookmarks share the same title, the later (newer) one is kept and older duplicates are removed. Unique bookmarks not in config are never deleted.
   - **Preserves sort order** — existing bookmarks are updated in-place; new ones are appended to the bottom.
@@ -52,6 +54,17 @@ The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server
 **Bookmark bucket reconcilers** (`src/helpers/{prUtils,githubRepoUtils,figmaMockUtils,jiraTicketUtils,googleDriveUtils,onedriveUtils}.js`):
 
 Each reconciler scans browser history and bookmarks, then rebuilds a subfolder under the url-porter folder (e.g. "jira tickets", "prs", "github repos"). Key design rule: **all bookmark walkers must skip the url-porter folder** (by accepting `porterFolderId` and `continue`-ing when `node.id` matches) to prevent a feedback loop where previously-built bookmark titles get re-parsed and accumulate data (e.g. dates appending on each reconciliation cycle).
+
+**Content scripts** (`src/content/`) — copied verbatim (not Vite inputs). Each registered in `manifest.json`:
+
+- `content-utils.js` — Shared utilities loaded before other content scripts. Provides error page detection and staggered reload with backoff.
+- `pr-status-github.js` — Detects PR status (merged/closed/open) on GitHub pages (`github.com`, `*.githubprivate.com`, `*.ghe.com`) and sends `Myevent.prStatus` to background.
+- `pr-status-azure.js` — Same for Azure DevOps (`*.visualstudio.com`, `dev.azure.com/{org}`). Both Azure URL formats share the same `dedupeKey` for deduplication.
+- `jira-status.js` — Detects Jira ticket status on Atlassian Cloud (`*.atlassian.net/browse/*`) and sends `Myevent.jiraStatus` to background.
+- `keep.js` — Google Keep content script that injects a markdown preview button into note modals.
+- `fav.js` — Content script for `synle.github.io/fav/` that exports bookmark data from url-porter subfolders via `Myevent.getBookmarks`.
+
+**Status tracking data flow**: Content scripts detect status on PR/Jira pages → send message to background → statuses stored in `chrome.storage.local` under `prStatuses` / `jiraStatuses` keys (keyed by canonical URL) → reconcilers prefix bookmark titles with status emoji. Status priority: stored (content script) > old bookmark title prefix > none.
 
 **Data flow**: UI saves config → `storage.js` → sends `"Myevent.updateConfig"` message → `background.js` updates `chrome.declarativeNetRequest.updateDynamicRules()` → history logged → bookmark folder reconciled.
 
@@ -80,7 +93,8 @@ After every change, you MUST:
 2. **Run `npm run lint`** — ESLint must pass with no errors (catches undefined references, missing imports, etc.)
 3. **Run `npm run build`** — production build must succeed without errors
 4. **Run `npm run format`** — format all code with Prettier
-5. **Verify JSDoc** — JSDoc is mandatory for ALL functions (exported and internal). Every function must have a `/** */` block with `@param` and `@returns` annotations. Before finishing any task, scan changed files to confirm JSDoc is present on every function.
+5. **Add JSDoc** — Mandatory on ALL functions, constants, types, and interfaces in every change — JavaScript and TypeScript alike. Script files must start with `/** Description. */` file header (note: `/**` not `/** *`). No exceptions.
+6. **Update README** — When adding or updating a feature, update `README.md` to reflect the change (features list, project structure, scripts table, etc.).
 
 ## Status Emoji Convention
 
