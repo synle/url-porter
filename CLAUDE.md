@@ -15,6 +15,7 @@ npm run bundle       # Bump minor version + create url-porter.zip from dist/
 npm run package      # build + bundle (full release pipeline)
 npm run lint         # ESLint — catches undefined references, missing imports
 npm run format       # Prettier (140 char width)
+npm run validate     # Run all quality checks: test + lint + build + format
 ```
 
 Tests use Vitest: `npm test` runs all tests. Test files live in the `tests/` directory at the project root (NOT inside `src/` — build hooks can delete files there). Chrome APIs are mocked via `vi.stubGlobal`. Use fictional company names in test fixtures (Acme, Globex, Initech) and made-up ticket keys (FALCON, PLUTO, ORBIT) — never real company names. Node version is pinned to 20.19.1 via Volta.
@@ -89,12 +90,9 @@ In dev/watch mode (`--watch`), the manifest's `name` is automatically changed to
 
 After every change, you MUST:
 
-1. **Run `npm test`** — all tests must pass before considering a change complete
-2. **Run `npm run lint`** — ESLint must pass with no errors (catches undefined references, missing imports, etc.)
-3. **Run `npm run build`** — production build must succeed without errors
-4. **Run `npm run format`** — format all code with Prettier
-5. **Add JSDoc** — Mandatory on ALL functions, constants, types, and interfaces in every change — JavaScript and TypeScript alike. Script files must start with `/** Description. */` file header (note: `/**` not `/** *`). No exceptions.
-6. **Update README** — When adding or updating a feature, update `README.md` to reflect the change (features list, project structure, scripts table, etc.).
+1. **Run `npm run validate`** — runs test, lint, build, and format in sequence. All must pass before considering a change complete. This is enforced by hooks in `.claude/settings.json`.
+2. **Add JSDoc** — Mandatory on ALL functions, constants, types, and interfaces in every change — JavaScript and TypeScript alike. Script files must start with `/** Description. */` file header (note: `/**` not `/** *`). No exceptions.
+3. **Update README** — When adding or updating a feature, update `README.md` to reflect the change (features list, project structure, scripts table, etc.).
 
 ## Status Emoji Convention
 
