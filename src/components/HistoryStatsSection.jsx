@@ -1,24 +1,6 @@
 /** Browser history stats section showing most frequently visited URLs. */
 import { useState, useEffect, useMemo, useCallback } from "react";
-import {
-  Box,
-  Typography,
-  TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  InputAdornment,
-  Collapse,
-  Link,
-  Tooltip,
-  Button,
-  Chip,
-} from "@mui/material";
+import { Box, Typography, TextField, Paper, IconButton, InputAdornment, Collapse, Link, Button, Chip, Divider } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
@@ -277,107 +259,109 @@ export default function HistoryStatsSection({ showSnackbar }) {
         </Button>
       </Box>
 
-      {/* Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell onClick={() => handleSort("strippedUrl")} sx={sortableHeaderSx}>
-                URL{sortIndicator("strippedUrl")}
-              </TableCell>
-              <TableCell onClick={() => handleSort("totalVisitCount")} sx={{ ...sortableHeaderSx, width: 95 }}>
-                Visits{sortIndicator("totalVisitCount")}
-              </TableCell>
-              <TableCell onClick={() => handleSort("lastVisitTime")} sx={{ ...sortableHeaderSx, width: 95 }}>
-                Last Visit{sortIndicator("lastVisitTime")}
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredEntries.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
-                  <Typography color="text.secondary">
-                    {loading ? "Loading history..." : searchQuery ? "No matching URLs." : "No history data found."}
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredEntries.map((entry) => {
-                const hasVariants = entry.variants.length > 1;
-                const isExpanded = expandedRows.has(entry.strippedUrl);
-                return (
-                  <Box component="tbody" key={entry.strippedUrl}>
-                    <TableRow hover>
-                      <TableCell sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        <Tooltip title={entry.strippedUrl}>
-                          <Link
-                            href={entry.strippedUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            underline="hover"
-                            sx={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                          >
-                            {entry.strippedUrl}
-                          </Link>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        <Tooltip title={entry.title || ""}>
-                          <Box
-                            component="span"
-                            sx={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                          >
-                            {entry.title || ""}
-                          </Box>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell
-                        onClick={hasVariants ? () => toggleExpand(entry.strippedUrl) : undefined}
-                        sx={{ cursor: hasVariants ? "pointer" : "default", userSelect: "none", whiteSpace: "nowrap" }}
-                      >
-                        <Box display="flex" alignItems="center" gap={0.5}>
-                          {entry.totalVisitCount}
-                          {hasVariants && (
-                            <IconButton>
-                              {isExpanded ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
-                            </IconButton>
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ width: 95, whiteSpace: "nowrap" }}>
-                        {entry.lastVisitTime ? new Date(entry.lastVisitTime).toLocaleDateString() : ""}
-                      </TableCell>
-                    </TableRow>
-                    {hasVariants && (
-                      <TableRow>
-                        <TableCell colSpan={3} sx={{ py: 0, borderBottom: isExpanded ? undefined : "none" }}>
-                          <Collapse in={isExpanded} unmountOnExit>
-                            <Box sx={{ pl: 2, py: 1 }}>
-                              {entry.variants
-                                .sort((a, b) => b.visitCount - a.visitCount)
-                                .map((v) => (
-                                  <Box key={v.url} sx={{ mb: 0.5 }}>
-                                    <Link href={v.url} target="_blank" rel="noopener noreferrer" variant="body2">
-                                      {v.url}
-                                    </Link>
-                                    <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                                      ({v.visitCount} visits)
-                                    </Typography>
-                                  </Box>
-                                ))}
-                            </Box>
-                          </Collapse>
-                        </TableCell>
-                      </TableRow>
+      {/* List */}
+      <Paper>
+        {/* Header */}
+        <Box display="flex" alignItems="center" gap={1} px={2} py={1} sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Typography variant="body2" fontWeight="bold" onClick={() => handleSort("strippedUrl")} sx={sortableHeaderSx} flexGrow={1}>
+            URL{sortIndicator("strippedUrl")}
+          </Typography>
+          <Typography
+            variant="body2"
+            fontWeight="bold"
+            onClick={() => handleSort("totalVisitCount")}
+            sx={{ ...sortableHeaderSx, width: 95, flexShrink: 0, textAlign: "right" }}
+          >
+            Visits{sortIndicator("totalVisitCount")}
+          </Typography>
+          <Typography
+            variant="body2"
+            fontWeight="bold"
+            onClick={() => handleSort("lastVisitTime")}
+            sx={{ ...sortableHeaderSx, width: 95, flexShrink: 0, textAlign: "right" }}
+          >
+            Last Visit{sortIndicator("lastVisitTime")}
+          </Typography>
+        </Box>
+
+        {/* Rows */}
+        {filteredEntries.length === 0 ? (
+          <Box py={4} textAlign="center">
+            <Typography color="text.secondary">
+              {loading ? "Loading history..." : searchQuery ? "No matching URLs." : "No history data found."}
+            </Typography>
+          </Box>
+        ) : (
+          filteredEntries.map((entry, idx) => {
+            const hasVariants = entry.variants.length > 1;
+            const isExpanded = expandedRows.has(entry.strippedUrl);
+            return (
+              <Box key={entry.strippedUrl}>
+                {idx > 0 && <Divider />}
+                <Box display="flex" alignItems="center" gap={1} px={2} py={0.75} sx={{ "&:hover": { bgcolor: "action.hover" } }}>
+                  <Box flexGrow={1} flexShrink={1} minWidth={0}>
+                    <Link
+                      href={entry.strippedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      underline="hover"
+                      variant="body2"
+                      sx={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                    >
+                      {entry.strippedUrl}
+                    </Link>
+                    {entry.title && (
+                      <Typography variant="caption" color="text.secondary" noWrap display="block">
+                        {entry.title}
+                      </Typography>
                     )}
                   </Box>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                  <Box
+                    sx={{
+                      width: 95,
+                      flexShrink: 0,
+                      textAlign: "right",
+                      cursor: hasVariants ? "pointer" : "default",
+                      userSelect: "none",
+                    }}
+                    onClick={hasVariants ? () => toggleExpand(entry.strippedUrl) : undefined}
+                  >
+                    <Typography variant="body2" component="span">
+                      {entry.totalVisitCount}
+                    </Typography>
+                    {hasVariants && (
+                      <IconButton>
+                        {isExpanded ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
+                      </IconButton>
+                    )}
+                  </Box>
+                  <Typography variant="body2" sx={{ width: 95, flexShrink: 0, textAlign: "right" }}>
+                    {entry.lastVisitTime ? new Date(entry.lastVisitTime).toLocaleDateString() : ""}
+                  </Typography>
+                </Box>
+                {hasVariants && (
+                  <Collapse in={isExpanded} unmountOnExit>
+                    <Box sx={{ pl: 4, pr: 2, pb: 1 }}>
+                      {entry.variants
+                        .sort((a, b) => b.visitCount - a.visitCount)
+                        .map((v) => (
+                          <Box key={v.url} sx={{ mb: 0.5 }}>
+                            <Link href={v.url} target="_blank" rel="noopener noreferrer" variant="body2">
+                              {v.url}
+                            </Link>
+                            <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                              ({v.visitCount} visits)
+                            </Typography>
+                          </Box>
+                        ))}
+                    </Box>
+                  </Collapse>
+                )}
+              </Box>
+            );
+          })
+        )}
+      </Paper>
     </Box>
   );
 }
