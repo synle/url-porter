@@ -314,14 +314,25 @@ export default function HistoryStatsSection({ showSnackbar }) {
                     <TableRow hover>
                       <TableCell sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         <Tooltip title={entry.strippedUrl}>
-                          <Link href={entry.strippedUrl} target="_blank" rel="noopener noreferrer" underline="hover">
+                          <Link
+                            href={entry.strippedUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            underline="hover"
+                            sx={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                          >
                             {entry.strippedUrl}
                           </Link>
                         </Tooltip>
                       </TableCell>
                       <TableCell sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         <Tooltip title={entry.title || ""}>
-                          <span>{entry.title || ""}</span>
+                          <Box
+                            component="span"
+                            sx={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                          >
+                            {entry.title || ""}
+                          </Box>
                         </Tooltip>
                       </TableCell>
                       <TableCell
