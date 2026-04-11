@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Box, TextField, Select, MenuItem, FormControl, InputLabel, Switch, FormControlLabel, Button } from "@mui/material";
 import { validateRule } from "../helpers/genericBookmarkRuleUtils.js";
+import { extractDomainFromRegex } from "../helpers/ruleDerivation.js";
 
 /** @type {string[]} Folder names reserved by hardcoded reconcilers. */
 const RESERVED_NAMES = ["prs", "github repos", "figma mocks", "jira tickets", "google drive", "onedrive"];
@@ -48,6 +49,19 @@ export default function BookmarkRuleForm({ rule, existingNames = [], onSave, onC
       setFormEnabled(rule.enabled !== false);
     }
   }, [rule]);
+
+  /**
+   * Auto-fill History Keywords from URL Match Pattern when keywords are empty.
+   * Extracts the domain from the regex and sets it as the keyword.
+   * @returns {void}
+   */
+  const handleUrlMatchBlur = () => {
+    if (formKeywords.trim()) return;
+    const domain = extractDomainFromRegex(formUrlMatch);
+    if (domain) {
+      setFormKeywords(domain);
+    }
+  };
 
   /**
    * Validate form inputs and call onSave with the built rule object.
@@ -120,21 +134,22 @@ export default function BookmarkRuleForm({ rule, existingNames = [], onSave, onC
         sx={{ mt: 1, mb: 2 }}
       />
       <TextField
+        label="URL Match Pattern"
+        fullWidth
+        value={formUrlMatch}
+        onChange={(e) => setFormUrlMatch(e.target.value)}
+        onBlur={handleUrlMatchBlur}
+        placeholder="^https?://leetcode\.com/problems/[^/?#]+"
+        helperText="Regex to match URLs (e.g. ^https?://leetcode\\.com/problems/[^/?#]+)"
+        sx={{ mb: 2 }}
+      />
+      <TextField
         label="History Keywords"
         fullWidth
         value={formKeywords}
         onChange={(e) => setFormKeywords(e.target.value)}
         placeholder="leetcode.com"
-        helperText="Comma-separated keywords to search browser history (e.g. leetcode.com, stackoverflow.com)"
-        sx={{ mb: 2 }}
-      />
-      <TextField
-        label="URL Match Pattern"
-        fullWidth
-        value={formUrlMatch}
-        onChange={(e) => setFormUrlMatch(e.target.value)}
-        placeholder="^https?://leetcode\.com/problems/[^/?#]+"
-        helperText="Regex to match URLs (e.g. ^https?://leetcode\\.com/problems/[^/?#]+)"
+        helperText="Comma-separated keywords to search browser history — auto-filled from URL pattern above"
         sx={{ mb: 2 }}
       />
       <TextField

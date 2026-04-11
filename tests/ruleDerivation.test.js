@@ -1,10 +1,10 @@
 /**
- * Tests for rule derivation utilities (escapeRegex, deriveRuleFromUrl).
+ * Tests for rule derivation utilities (escapeRegex, deriveRuleFromUrl, extractDomainFromRegex).
  * These functions auto-generate bookmark rule fields from a URL.
  */
 
 import { describe, it, expect } from "vitest";
-import { escapeRegex, deriveRuleFromUrl } from "../src/helpers/ruleDerivation.js";
+import { escapeRegex, deriveRuleFromUrl, extractDomainFromRegex } from "../src/helpers/ruleDerivation.js";
 
 describe("escapeRegex", () => {
   it("returns plain strings unchanged", () => {
@@ -128,5 +128,50 @@ describe("deriveRuleFromUrl", () => {
     const result = deriveRuleFromUrl("https://localhost:3000/api/users", fixedDate);
     expect(result.name).toBe("localhost 04/11/2026");
     expect(result.historyKeywords).toEqual(["localhost"]);
+  });
+});
+
+describe("extractDomainFromRegex", () => {
+  it("extracts domain from a typical URL match pattern", () => {
+    expect(extractDomainFromRegex("^https?://leetcode\\.com/problems/[^/?#]+")).toBe("leetcode.com");
+  });
+
+  it("extracts domain with subdomain", () => {
+    expect(extractDomainFromRegex("^https?://docs\\.acme\\.com/wiki/")).toBe("docs.acme.com");
+  });
+
+  it("extracts domain without protocol prefix", () => {
+    expect(extractDomainFromRegex("stackoverflow\\.com/questions/")).toBe("stackoverflow.com");
+  });
+
+  it("handles double-escaped dots", () => {
+    expect(extractDomainFromRegex("^https?://globex\\.example\\.com/")).toBe("globex.example.com");
+  });
+
+  it("returns empty string for empty input", () => {
+    expect(extractDomainFromRegex("")).toBe("");
+  });
+
+  it("returns empty string for null/undefined", () => {
+    expect(extractDomainFromRegex(null)).toBe("");
+    expect(extractDomainFromRegex(undefined)).toBe("");
+  });
+
+  it("returns empty string for pattern with no domain", () => {
+    expect(extractDomainFromRegex("[^/?#]+")).toBe("");
+  });
+
+  it("extracts domain with literal dots", () => {
+    expect(extractDomainFromRegex("^https?://example.com/path")).toBe("example.com");
+  });
+
+  it("does not autofill for random non-domain patterns", () => {
+    expect(extractDomainFromRegex("foo.123")).toBe("");
+    expect(extractDomainFromRegex("some-random-text")).toBe("");
+    expect(extractDomainFromRegex("^https?://[^/]+/path")).toBe("");
+  });
+
+  it("does not treat numeric TLDs as valid", () => {
+    expect(extractDomainFromRegex("192.168.1.1")).toBe("");
   });
 });

@@ -10,6 +10,28 @@ export function escapeRegex(str) {
 }
 
 /**
+ * Extract a domain from a URL match regex pattern.
+ * Looks for a hostname-like segment (e.g. "leetcode\\.com" → "leetcode.com").
+ * Returns empty string if no domain can be extracted.
+ *
+ * @param {string} pattern - A URL match regex string
+ * @returns {string} The extracted domain or empty string
+ */
+export function extractDomainFromRegex(pattern) {
+  if (!pattern) return "";
+  // Match a hostname pattern: word chars and escaped/literal dots, at least one dot required
+  const match = pattern.match(/(?:\/\/)?([a-zA-Z0-9][-a-zA-Z0-9]*(?:\\?\.[a-zA-Z0-9][-a-zA-Z0-9]*)+)/);
+  if (!match) return "";
+  // Unescape regex dots
+  const domain = match[1].replace(/\\\./g, ".");
+  // Only return if the last segment looks like a real TLD (2+ alpha chars)
+  const parts = domain.split(".");
+  const tld = parts[parts.length - 1];
+  if (!/^[a-zA-Z]{2,}$/.test(tld)) return "";
+  return domain;
+}
+
+/**
  * Derive auto-fill values for a bookmark rule from a URL string.
  * Extracts domain, builds history keywords, URL match pattern, and dedup key pattern.
  *
