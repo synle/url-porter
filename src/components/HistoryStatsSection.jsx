@@ -279,19 +279,19 @@ export default function HistoryStatsSection({ showSnackbar }) {
 
       {/* Table */}
       <TableContainer component={Paper}>
-        <Table>
+        <Table sx={{ tableLayout: "fixed" }}>
           <TableHead>
             <TableRow>
-              <TableCell onClick={() => handleSort("strippedUrl")} sx={{ ...sortableHeaderSx, width: "99%" }}>
+              <TableCell onClick={() => handleSort("strippedUrl")} sx={{ ...sortableHeaderSx, width: "50%" }}>
                 URL{sortIndicator("strippedUrl")}
               </TableCell>
-              <TableCell onClick={() => handleSort("title")} sx={{ ...sortableHeaderSx, whiteSpace: "nowrap" }}>
+              <TableCell onClick={() => handleSort("title")} sx={{ ...sortableHeaderSx, width: "25%" }}>
                 Page Title{sortIndicator("title")}
               </TableCell>
-              <TableCell onClick={() => handleSort("totalVisitCount")} sx={{ ...sortableHeaderSx, whiteSpace: "nowrap" }}>
+              <TableCell onClick={() => handleSort("totalVisitCount")} sx={{ ...sortableHeaderSx, width: "10%" }}>
                 Visits{sortIndicator("totalVisitCount")}
               </TableCell>
-              <TableCell onClick={() => handleSort("lastVisitTime")} sx={{ ...sortableHeaderSx, whiteSpace: "nowrap" }}>
+              <TableCell onClick={() => handleSort("lastVisitTime")} sx={{ ...sortableHeaderSx, width: "15%" }}>
                 Last Visit{sortIndicator("lastVisitTime")}
               </TableCell>
             </TableRow>
@@ -312,22 +312,14 @@ export default function HistoryStatsSection({ showSnackbar }) {
                 return (
                   <Box component="tbody" key={entry.strippedUrl}>
                     <TableRow hover>
-                      <TableCell
-                        sx={{
-                          maxWidth: 0,
-                          width: "99%",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                      <TableCell sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         <Tooltip title={entry.strippedUrl}>
                           <Link href={entry.strippedUrl} target="_blank" rel="noopener noreferrer" underline="hover">
                             {entry.strippedUrl}
                           </Link>
                         </Tooltip>
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: "nowrap" }}>
+                      <TableCell sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         <Tooltip title={entry.title || ""}>
                           <span>{entry.title || ""}</span>
                         </Tooltip>
