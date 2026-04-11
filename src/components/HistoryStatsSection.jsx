@@ -270,7 +270,7 @@ export default function HistoryStatsSection({ showSnackbar }) {
             variant="body2"
             fontWeight="bold"
             onClick={() => handleSort("totalVisitCount")}
-            sx={{ ...sortableHeaderSx, width: 95, flexShrink: 0, textAlign: "right" }}
+            sx={{ ...sortableHeaderSx, width: 95, flexShrink: 0 }}
           >
             Visits{sortIndicator("totalVisitCount")}
           </Typography>
@@ -278,7 +278,7 @@ export default function HistoryStatsSection({ showSnackbar }) {
             variant="body2"
             fontWeight="bold"
             onClick={() => handleSort("lastVisitTime")}
-            sx={{ ...sortableHeaderSx, width: 95, flexShrink: 0, textAlign: "right" }}
+            sx={{ ...sortableHeaderSx, width: 95, flexShrink: 0 }}
           >
             Last Visit{sortIndicator("lastVisitTime")}
           </Typography>
@@ -320,26 +320,23 @@ export default function HistoryStatsSection({ showSnackbar }) {
                     sx={{
                       width: 95,
                       flexShrink: 0,
-                      textAlign: "right",
-                      cursor: hasVariants ? "pointer" : "default",
+                      cursor: "pointer",
                       userSelect: "none",
                     }}
-                    onClick={hasVariants ? () => toggleExpand(entry.strippedUrl) : undefined}
+                    onClick={() => toggleExpand(entry.strippedUrl)}
                   >
                     <Typography variant="body2" component="span">
                       {entry.totalVisitCount}
                     </Typography>
-                    {hasVariants && (
-                      <IconButton>
-                        {isExpanded ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
-                      </IconButton>
-                    )}
+                    <IconButton>
+                      {isExpanded ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
+                    </IconButton>
                   </Box>
-                  <Typography variant="body2" sx={{ width: 95, flexShrink: 0, textAlign: "right" }}>
+                  <Typography variant="body2" sx={{ width: 95, flexShrink: 0 }}>
                     {entry.lastVisitTime ? new Date(entry.lastVisitTime).toLocaleDateString() : ""}
                   </Typography>
                 </Box>
-                {hasVariants && (
+                {
                   <Collapse in={isExpanded} unmountOnExit>
                     <Box sx={{ pl: 4, pr: 2, pb: 1 }}>
                       {entry.variants
@@ -356,7 +353,7 @@ export default function HistoryStatsSection({ showSnackbar }) {
                         ))}
                     </Box>
                   </Collapse>
-                )}
+                }
               </Box>
             );
           })
