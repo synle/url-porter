@@ -279,19 +279,16 @@ export default function HistoryStatsSection({ showSnackbar }) {
 
       {/* Table */}
       <TableContainer component={Paper}>
-        <Table sx={{ tableLayout: "fixed" }}>
+        <Table>
           <TableHead>
             <TableRow>
-              <TableCell onClick={() => handleSort("strippedUrl")} sx={{ ...sortableHeaderSx, width: "50%" }}>
+              <TableCell onClick={() => handleSort("strippedUrl")} sx={sortableHeaderSx}>
                 URL{sortIndicator("strippedUrl")}
               </TableCell>
-              <TableCell onClick={() => handleSort("title")} sx={{ ...sortableHeaderSx, width: "25%" }}>
-                Page Title{sortIndicator("title")}
-              </TableCell>
-              <TableCell onClick={() => handleSort("totalVisitCount")} sx={{ ...sortableHeaderSx, width: "10%" }}>
+              <TableCell onClick={() => handleSort("totalVisitCount")} sx={{ ...sortableHeaderSx, width: 95 }}>
                 Visits{sortIndicator("totalVisitCount")}
               </TableCell>
-              <TableCell onClick={() => handleSort("lastVisitTime")} sx={{ ...sortableHeaderSx, width: "15%" }}>
+              <TableCell onClick={() => handleSort("lastVisitTime")} sx={{ ...sortableHeaderSx, width: 95 }}>
                 Last Visit{sortIndicator("lastVisitTime")}
               </TableCell>
             </TableRow>
@@ -299,7 +296,7 @@ export default function HistoryStatsSection({ showSnackbar }) {
           <TableBody>
             {filteredEntries.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
                   <Typography color="text.secondary">
                     {loading ? "Loading history..." : searchQuery ? "No matching URLs." : "No history data found."}
                   </Typography>
@@ -348,13 +345,13 @@ export default function HistoryStatsSection({ showSnackbar }) {
                           )}
                         </Box>
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: "nowrap" }}>
+                      <TableCell sx={{ width: 95, whiteSpace: "nowrap" }}>
                         {entry.lastVisitTime ? new Date(entry.lastVisitTime).toLocaleDateString() : ""}
                       </TableCell>
                     </TableRow>
                     {hasVariants && (
                       <TableRow>
-                        <TableCell colSpan={4} sx={{ py: 0, borderBottom: isExpanded ? undefined : "none" }}>
+                        <TableCell colSpan={3} sx={{ py: 0, borderBottom: isExpanded ? undefined : "none" }}>
                           <Collapse in={isExpanded} unmountOnExit>
                             <Box sx={{ pl: 2, py: 1 }}>
                               {entry.variants
