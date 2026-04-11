@@ -814,7 +814,7 @@ function OptionsContent() {
           </ToggleButtonGroup>
         </Box>
 
-        {mode !== "stats" && (
+        {mode === "clean" && (
           <>
             {/* Homepage URL */}
             <TextField
@@ -1069,7 +1069,7 @@ function OptionsContent() {
                 borderColor: theme.palette.mode === "light" ? "rgba(0, 0, 0, 0.23)" : "rgba(255, 255, 255, 0.23)",
                 borderRadius: 1,
                 overflow: "auto",
-                maxHeight: "calc(100vh - 450px)",
+                maxHeight: "calc(100vh - 250px)",
                 minHeight: 400,
                 p: 0,
                 m: 0,

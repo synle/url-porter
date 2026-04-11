@@ -112,8 +112,8 @@ export default function HistoryStatsSection({ showSnackbar }) {
 
     // Sort
     entries = [...entries].sort((a, b) => {
-      if (sortBy === "totalVisitCount") {
-        return sortDir === "desc" ? b.totalVisitCount - a.totalVisitCount : a.totalVisitCount - b.totalVisitCount;
+      if (sortBy === "totalVisitCount" || sortBy === "lastVisitTime") {
+        return sortDir === "desc" ? b[sortBy] - a[sortBy] : a[sortBy] - b[sortBy];
       }
       const aVal = (a[sortBy] || "").toLowerCase();
       const bVal = (b[sortBy] || "").toLowerCase();
@@ -282,21 +282,24 @@ export default function HistoryStatsSection({ showSnackbar }) {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell onClick={() => handleSort("strippedUrl")} sx={sortableHeaderSx}>
+              <TableCell onClick={() => handleSort("strippedUrl")} sx={{ ...sortableHeaderSx, width: "99%" }}>
                 URL{sortIndicator("strippedUrl")}
               </TableCell>
-              <TableCell onClick={() => handleSort("title")} sx={sortableHeaderSx}>
+              <TableCell onClick={() => handleSort("title")} sx={{ ...sortableHeaderSx, whiteSpace: "nowrap" }}>
                 Page Title{sortIndicator("title")}
               </TableCell>
-              <TableCell onClick={() => handleSort("totalVisitCount")} sx={sortableHeaderSx}>
+              <TableCell onClick={() => handleSort("totalVisitCount")} sx={{ ...sortableHeaderSx, whiteSpace: "nowrap" }}>
                 Visits{sortIndicator("totalVisitCount")}
+              </TableCell>
+              <TableCell onClick={() => handleSort("lastVisitTime")} sx={{ ...sortableHeaderSx, whiteSpace: "nowrap" }}>
+                Last Visit{sortIndicator("lastVisitTime")}
               </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredEntries.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
                   <Typography color="text.secondary">
                     {loading ? "Loading history..." : searchQuery ? "No matching URLs." : "No history data found."}
                   </Typography>
@@ -311,24 +314,20 @@ export default function HistoryStatsSection({ showSnackbar }) {
                     <TableRow hover>
                       <TableCell
                         sx={{
-                          maxWidth: 400,
+                          maxWidth: 0,
+                          width: "99%",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
                         }}
                       >
                         <Tooltip title={entry.strippedUrl}>
-                          <span>{entry.strippedUrl}</span>
+                          <Link href={entry.strippedUrl} target="_blank" rel="noopener noreferrer" underline="hover">
+                            {entry.strippedUrl}
+                          </Link>
                         </Tooltip>
                       </TableCell>
-                      <TableCell
-                        sx={{
-                          maxWidth: 250,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>
                         <Tooltip title={entry.title || ""}>
                           <span>{entry.title || ""}</span>
                         </Tooltip>
@@ -346,10 +345,13 @@ export default function HistoryStatsSection({ showSnackbar }) {
                           )}
                         </Box>
                       </TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>
+                        {entry.lastVisitTime ? new Date(entry.lastVisitTime).toLocaleDateString() : ""}
+                      </TableCell>
                     </TableRow>
                     {hasVariants && (
                       <TableRow>
-                        <TableCell colSpan={3} sx={{ py: 0, borderBottom: isExpanded ? undefined : "none" }}>
+                        <TableCell colSpan={4} sx={{ py: 0, borderBottom: isExpanded ? undefined : "none" }}>
                           <Collapse in={isExpanded} unmountOnExit>
                             <Box sx={{ pl: 2, py: 1 }}>
                               {entry.variants
