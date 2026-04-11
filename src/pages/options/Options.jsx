@@ -59,6 +59,7 @@ import ViewListIcon from "@mui/icons-material/ViewList";
 import CodeIcon from "@mui/icons-material/Code";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import HistoryIcon from "@mui/icons-material/History";
+import BarChartIcon from "@mui/icons-material/BarChart";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import AddLinkIcon from "@mui/icons-material/AddLink";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
@@ -76,6 +77,7 @@ import "prismjs/components/prism-json";
 import { ThemeContextProvider } from "../../theme.jsx";
 import SyncDialog from "../../components/SyncDialog.jsx";
 import BookmarkRulesSection from "../../components/BookmarkRulesSection.jsx";
+import HistoryStatsSection from "../../components/HistoryStatsSection.jsx";
 import {
   getConfig,
   setConfig,
@@ -87,6 +89,12 @@ import {
   setGithubOrgThreshold,
   getBookmarkRules,
   setBookmarkRules,
+  getStatsVisitThreshold,
+  setStatsVisitThreshold,
+  getStatsMaxResults,
+  setStatsMaxResults,
+  getStatsLookbackMonths,
+  setStatsLookbackMonths,
 } from "../../helpers/storage.js";
 import {
   normalizeEntry,
@@ -184,6 +192,9 @@ function OptionsContent() {
     const orgThreshold = await getGithubOrgThreshold();
     setGithubOrgThresholdValue(orgThreshold);
     const bookmarkRules = await getBookmarkRules();
+    const statsVisitThreshold = await getStatsVisitThreshold();
+    const statsMaxResults = await getStatsMaxResults();
+    const statsLookbackMonths = await getStatsLookbackMonths();
     const fullConfig = {
       homepage,
       configs: Array.isArray(config) ? config : [],
@@ -192,6 +203,9 @@ function OptionsContent() {
       historyAliasLimit: aliasLimit,
       historyEntryLimit: entryLimit,
       githubOrgThreshold: orgThreshold,
+      statsVisitThreshold,
+      statsMaxResults,
+      statsLookbackMonths,
     };
     const json = JSON.stringify(fullConfig, null, 2);
     setEditorContent(json);
@@ -225,6 +239,9 @@ function OptionsContent() {
       const aliasLimit = await getHistoryAliasLimit();
       const entryLimit = await getHistoryEntryLimit();
       const orgThreshold = await getGithubOrgThreshold();
+      const svt = await getStatsVisitThreshold();
+      const smr = await getStatsMaxResults();
+      const slm = await getStatsLookbackMonths();
       const fullConfig = {
         homepage: homepageUrl,
         configs,
@@ -233,6 +250,9 @@ function OptionsContent() {
         historyAliasLimit: aliasLimit,
         historyEntryLimit: entryLimit,
         githubOrgThreshold: orgThreshold,
+        statsVisitThreshold: svt,
+        statsMaxResults: smr,
+        statsLookbackMonths: slm,
       };
       const json = JSON.stringify(fullConfig, null, 2);
       setEditorContent(json);
@@ -431,6 +451,15 @@ function OptionsContent() {
         if (typeof data.githubOrgThreshold === "number" && data.githubOrgThreshold >= 1) {
           await setGithubOrgThreshold(data.githubOrgThreshold);
         }
+        if (typeof data.statsVisitThreshold === "number" && data.statsVisitThreshold >= 1) {
+          await setStatsVisitThreshold(data.statsVisitThreshold);
+        }
+        if (typeof data.statsMaxResults === "number" && data.statsMaxResults >= 1) {
+          await setStatsMaxResults(data.statsMaxResults);
+        }
+        if (typeof data.statsLookbackMonths === "number" && data.statsLookbackMonths >= 1) {
+          await setStatsLookbackMonths(data.statsLookbackMonths);
+        }
       }
 
       chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
@@ -464,6 +493,9 @@ function OptionsContent() {
   const switchMode = async (newMode) => {
     if (newMode === "advanced") {
       const bookmarkRules = await getBookmarkRules();
+      const svt = await getStatsVisitThreshold();
+      const smr = await getStatsMaxResults();
+      const slm = await getStatsLookbackMonths();
       const fullConfig = {
         homepage: homepageUrl,
         configs: configEntries,
@@ -472,6 +504,9 @@ function OptionsContent() {
         historyAliasLimit: historyAliasLimitValue,
         historyEntryLimit: historyEntryLimitValue,
         githubOrgThreshold: githubOrgThresholdValue,
+        statsVisitThreshold: svt,
+        statsMaxResults: smr,
+        statsLookbackMonths: slm,
       };
       const json = JSON.stringify(fullConfig, null, 2);
       setEditorContent(json);
@@ -516,6 +551,9 @@ function OptionsContent() {
     const entryLimit = await getHistoryEntryLimit();
     const folderName = await getBookmarkFolderName();
     const orgThreshold = await getGithubOrgThreshold();
+    const svt = await getStatsVisitThreshold();
+    const smr = await getStatsMaxResults();
+    const slm = await getStatsLookbackMonths();
     const data = {
       homepage: homepageUrl,
       configs: configEntries,
@@ -524,6 +562,9 @@ function OptionsContent() {
       historyAliasLimit: aliasLimit,
       historyEntryLimit: entryLimit,
       githubOrgThreshold: orgThreshold,
+      statsVisitThreshold: svt,
+      statsMaxResults: smr,
+      statsLookbackMonths: slm,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -573,6 +614,15 @@ function OptionsContent() {
           }
           if (typeof data.githubOrgThreshold === "number" && data.githubOrgThreshold >= 1) {
             await setGithubOrgThreshold(data.githubOrgThreshold);
+          }
+          if (typeof data.statsVisitThreshold === "number" && data.statsVisitThreshold >= 1) {
+            await setStatsVisitThreshold(data.statsVisitThreshold);
+          }
+          if (typeof data.statsMaxResults === "number" && data.statsMaxResults >= 1) {
+            await setStatsMaxResults(data.statsMaxResults);
+          }
+          if (typeof data.statsLookbackMonths === "number" && data.statsLookbackMonths >= 1) {
+            await setStatsLookbackMonths(data.statsLookbackMonths);
           }
           chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
           await loadSettings();
@@ -758,92 +808,102 @@ function OptionsContent() {
             <ToggleButton value="advanced">
               <CodeIcon sx={{ mr: 1 }} /> Advanced Mode
             </ToggleButton>
+            <ToggleButton value="stats">
+              <BarChartIcon sx={{ mr: 1 }} /> Stats
+            </ToggleButton>
           </ToggleButtonGroup>
         </Box>
 
-        {/* Homepage URL */}
-        <TextField
-          label="Homepage URL"
-          fullWidth
-          value={homepageUrl}
-          onChange={(e) => setHomepageUrl(e.target.value)}
-          onBlur={handleHomepageBlur}
-          placeholder="Enter your Homepage URL here"
-          sx={{ mb: 3 }}
-        />
+        {mode !== "stats" && (
+          <>
+            {/* Homepage URL */}
+            <TextField
+              label="Homepage URL"
+              fullWidth
+              value={homepageUrl}
+              onChange={(e) => setHomepageUrl(e.target.value)}
+              onBlur={handleHomepageBlur}
+              placeholder="Enter your Homepage URL here"
+              sx={{ mb: 3 }}
+            />
 
-        {/* Bookmark Folder Name */}
-        <TextField
-          label="Bookmark Folder Name"
-          fullWidth
-          value={bookmarkFolderNameValue}
-          onChange={(e) => setBookmarkFolderNameValue(e.target.value)}
-          onBlur={async () => {
-            const val = bookmarkFolderNameValue.trim() || "url-porter";
-            setBookmarkFolderNameValue(val);
-            try {
-              await setBookmarkFolderName(val);
-              chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
-            } catch (err) {
-              showSnackbar("Failed to save bookmark folder name: " + err, "error");
-            }
-          }}
-          placeholder="url-porter"
-          sx={{ mb: 3 }}
-        />
+            {/* Bookmark Folder Name */}
+            <TextField
+              label="Bookmark Folder Name"
+              fullWidth
+              value={bookmarkFolderNameValue}
+              onChange={(e) => setBookmarkFolderNameValue(e.target.value)}
+              onBlur={async () => {
+                const val = bookmarkFolderNameValue.trim() || "url-porter";
+                setBookmarkFolderNameValue(val);
+                try {
+                  await setBookmarkFolderName(val);
+                  chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
+                } catch (err) {
+                  showSnackbar("Failed to save bookmark folder name: " + err, "error");
+                }
+              }}
+              placeholder="url-porter"
+              sx={{ mb: 3 }}
+            />
 
-        {/* History Limits */}
-        <Box display="flex" alignItems="center" gap={2} mb={3} flexWrap="wrap">
-          <Typography variant="body2" color="text.secondary">
-            Max link aliases in history:
-          </Typography>
-          <TextField
-            type="number"
-            value={historyAliasLimitValue}
-            onChange={(e) => setHistoryAliasLimitValue(Number(e.target.value))}
-            onBlur={async () => {
-              const val = Math.max(1, historyAliasLimitValue || 5000);
-              setHistoryAliasLimitValue(val);
-              await setHistoryAliasLimit(val);
-            }}
-            slotProps={{ input: { inputProps: { min: 1 } } }}
-            sx={{ width: 100 }}
-          />
-          <Typography variant="body2" color="text.secondary">
-            Max entries per alias:
-          </Typography>
-          <TextField
-            type="number"
-            value={historyEntryLimitValue}
-            onChange={(e) => setHistoryEntryLimitValue(Number(e.target.value))}
-            onBlur={async () => {
-              const val = Math.max(1, historyEntryLimitValue || 20);
-              setHistoryEntryLimitValue(val);
-              await setHistoryEntryLimit(val);
-            }}
-            slotProps={{ input: { inputProps: { min: 1 } } }}
-            sx={{ width: 100 }}
-          />
-          <Typography variant="body2" color="text.secondary">
-            GitHub org folder threshold:
-          </Typography>
-          <TextField
-            type="number"
-            value={githubOrgThresholdValue}
-            onChange={(e) => setGithubOrgThresholdValue(Number(e.target.value))}
-            onBlur={async () => {
-              const val = Math.max(1, githubOrgThresholdValue || 3);
-              setGithubOrgThresholdValue(val);
-              await setGithubOrgThreshold(val);
-              chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
-            }}
-            slotProps={{ input: { inputProps: { min: 1 } } }}
-            sx={{ width: 100 }}
-          />
-        </Box>
+            {/* History Limits */}
+            <Box display="flex" alignItems="center" gap={2} mb={3} flexWrap="wrap">
+              <Typography variant="body2" color="text.secondary">
+                Max link aliases in history:
+              </Typography>
+              <TextField
+                type="number"
+                value={historyAliasLimitValue}
+                onChange={(e) => setHistoryAliasLimitValue(Number(e.target.value))}
+                onBlur={async () => {
+                  const val = Math.max(1, historyAliasLimitValue || 5000);
+                  setHistoryAliasLimitValue(val);
+                  await setHistoryAliasLimit(val);
+                }}
+                slotProps={{ input: { inputProps: { min: 1 } } }}
+                sx={{ width: 100 }}
+              />
+              <Typography variant="body2" color="text.secondary">
+                Max entries per alias:
+              </Typography>
+              <TextField
+                type="number"
+                value={historyEntryLimitValue}
+                onChange={(e) => setHistoryEntryLimitValue(Number(e.target.value))}
+                onBlur={async () => {
+                  const val = Math.max(1, historyEntryLimitValue || 20);
+                  setHistoryEntryLimitValue(val);
+                  await setHistoryEntryLimit(val);
+                }}
+                slotProps={{ input: { inputProps: { min: 1 } } }}
+                sx={{ width: 100 }}
+              />
+              <Typography variant="body2" color="text.secondary">
+                GitHub org folder threshold:
+              </Typography>
+              <TextField
+                type="number"
+                value={githubOrgThresholdValue}
+                onChange={(e) => setGithubOrgThresholdValue(Number(e.target.value))}
+                onBlur={async () => {
+                  const val = Math.max(1, githubOrgThresholdValue || 3);
+                  setGithubOrgThresholdValue(val);
+                  await setGithubOrgThreshold(val);
+                  chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
+                }}
+                slotProps={{ input: { inputProps: { min: 1 } } }}
+                sx={{ width: 100 }}
+              />
+            </Box>
 
-        {/* Custom Bookmark Rules */}
-        <BookmarkRulesSection showSnackbar={showSnackbar} />
+            {/* Custom Bookmark Rules */}
+            <BookmarkRulesSection showSnackbar={showSnackbar} />
+          </>
+        )}
+
+        {/* Stats Mode */}
+        {mode === "stats" && <HistoryStatsSection showSnackbar={showSnackbar} />}
 
         {/* Clean Mode */}
         {mode === "clean" && (

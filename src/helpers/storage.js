@@ -266,6 +266,90 @@ export async function setJiraStatus(url, status) {
 }
 
 /**
+ * Get the stats minimum visit threshold from local storage.
+ * URLs with fewer visits than this are excluded from the stats view.
+ *
+ * @returns {Promise<number>} Threshold (default 3)
+ */
+export function getStatsVisitThreshold() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("statsVisitThreshold", (result) => {
+      resolve(result.statsVisitThreshold || 3);
+    });
+  });
+}
+
+/**
+ * Save the stats minimum visit threshold to local storage.
+ *
+ * @param {number} input_value - The threshold to save
+ * @returns {Promise<void>}
+ */
+export function setStatsVisitThreshold(input_value) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ statsVisitThreshold: input_value }, () => {
+      resolve();
+    });
+  });
+}
+
+/**
+ * Get the stats maximum results limit from local storage.
+ * Caps the number of rows displayed in the stats view.
+ *
+ * @returns {Promise<number>} Max results (default 200)
+ */
+export function getStatsMaxResults() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("statsMaxResults", (result) => {
+      resolve(result.statsMaxResults || 200);
+    });
+  });
+}
+
+/**
+ * Save the stats maximum results limit to local storage.
+ *
+ * @param {number} input_value - The max results to save
+ * @returns {Promise<void>}
+ */
+export function setStatsMaxResults(input_value) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ statsMaxResults: input_value }, () => {
+      resolve();
+    });
+  });
+}
+
+/**
+ * Get the stats lookback period in months from local storage.
+ * Controls how far back in browser history the stats view searches.
+ *
+ * @returns {Promise<number>} Lookback months (default 6)
+ */
+export function getStatsLookbackMonths() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("statsLookbackMonths", (result) => {
+      resolve(result.statsLookbackMonths || 6);
+    });
+  });
+}
+
+/**
+ * Save the stats lookback period in months to local storage.
+ *
+ * @param {number} input_value - The lookback months to save
+ * @returns {Promise<void>}
+ */
+export function setStatsLookbackMonths(input_value) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ statsLookbackMonths: input_value }, () => {
+      resolve();
+    });
+  });
+}
+
+/**
  * Get all custom bookmark rules from local storage.
  * Each rule defines how to reconcile a bookmark subfolder from browser history and bookmarks.
  *

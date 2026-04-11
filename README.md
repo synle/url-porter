@@ -16,7 +16,8 @@ A Chrome extension that lets you configure redirect rules and set a custom homep
 - **Config Health Checks** - On-demand broken link detection and conflict/duplicate resolution from the Options page
 - **History Tracking** - Audit trail of all redirect rule changes with configurable limits, search, restore, and bulk delete
 - **Sync Server** - Optionally sync your configuration from a remote JSON file
-- **Full Config JSON Editor** - Edit all settings (homepage, redirect rules, bookmark rules, history limits, folder name, GitHub threshold) in a single syntax-highlighted JSON editor (Prism.js)
+- **Browse History Stats** - Stats tab in Options showing most frequently visited URLs from browser history, grouped by path (stripping query strings/hashes), with sortable columns, search/filter, configurable visit threshold, max results, lookback period, expandable URL variants, and JSON export
+- **Full Config JSON Editor** - Edit all settings (homepage, redirect rules, bookmark rules, history limits, folder name, GitHub threshold, stats settings) in a single syntax-highlighted JSON editor (Prism.js)
 - **Full Config Export/Import** - Export and import all settings as a single JSON file including redirect rules, bookmark rules, and all preferences
 - **Omnibox Integration** - Type "go" in the address bar to search and navigate your redirect rules
 - **Context Menu** - Right-click to quickly add the current page as a redirect rule or create a bookmark rule for the current site
@@ -45,7 +46,10 @@ The full config format (used in Advanced Mode, export, and import) includes all 
   "bookmarkFolderName": "url-porter",
   "historyAliasLimit": 5000,
   "historyEntryLimit": 20,
-  "githubOrgThreshold": 3
+  "githubOrgThreshold": 3,
+  "statsVisitThreshold": 3,
+  "statsMaxResults": 200,
+  "statsLookbackMonths": 6
 }
 ```
 
@@ -127,7 +131,7 @@ src/
 │   ├── addrule/     # Standalone page for adding bookmark rules (from context menu)
 │   ├── history/     # Audit trail of redirect rule changes
 │   ├── newtab/      # New tab override (auto-redirects to configured homepage)
-│   └── options/     # Main settings UI (Clean table mode + Advanced full-config JSON editor)
+│   └── options/     # Main settings UI (Clean table mode + Advanced full-config JSON editor + Stats)
 ├── manifest.json    # Chrome extension manifest (Manifest V3)
 └── theme.jsx        # MUI theme (auto light/dark, compact sizing, no animations)
 tests/               # Vitest test files (Chrome APIs mocked via vi.stubGlobal)

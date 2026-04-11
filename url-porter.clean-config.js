@@ -85,6 +85,15 @@ try {
   if (typeof parsedData.githubOrgThreshold === "number" && parsedData.githubOrgThreshold >= 1) {
     result.githubOrgThreshold = parsedData.githubOrgThreshold;
   }
+  if (typeof parsedData.statsVisitThreshold === "number" && parsedData.statsVisitThreshold >= 1) {
+    result.statsVisitThreshold = parsedData.statsVisitThreshold;
+  }
+  if (typeof parsedData.statsMaxResults === "number" && parsedData.statsMaxResults >= 1) {
+    result.statsMaxResults = parsedData.statsMaxResults;
+  }
+  if (typeof parsedData.statsLookbackMonths === "number" && parsedData.statsLookbackMonths >= 1) {
+    result.statsLookbackMonths = parsedData.statsLookbackMonths;
+  }
 
   console.log(JSON.stringify(result, null, 2));
   if (duplicatesRemoved > 0) {

@@ -23,6 +23,9 @@ function buildExportPayload(homepage, configs, options = {}) {
     historyAliasLimit: options.historyAliasLimit || 5000,
     historyEntryLimit: options.historyEntryLimit || 20,
     githubOrgThreshold: options.githubOrgThreshold || 3,
+    statsVisitThreshold: options.statsVisitThreshold || 3,
+    statsMaxResults: options.statsMaxResults || 200,
+    statsLookbackMonths: options.statsLookbackMonths || 6,
   };
   return payload;
 }
@@ -70,6 +73,9 @@ describe("buildExportPayload", () => {
     expect(payload.historyAliasLimit).toBe(5000);
     expect(payload.historyEntryLimit).toBe(20);
     expect(payload.githubOrgThreshold).toBe(3);
+    expect(payload.statsVisitThreshold).toBe(3);
+    expect(payload.statsMaxResults).toBe(200);
+    expect(payload.statsLookbackMonths).toBe(6);
     expect(payload.bookmarkRules).toEqual([]);
   });
 
@@ -91,11 +97,17 @@ describe("buildExportPayload", () => {
       historyAliasLimit: 10000,
       historyEntryLimit: 50,
       githubOrgThreshold: 5,
+      statsVisitThreshold: 10,
+      statsMaxResults: 500,
+      statsLookbackMonths: 12,
     });
     expect(payload.bookmarkFolderName).toBe("my-bookmarks");
     expect(payload.historyAliasLimit).toBe(10000);
     expect(payload.historyEntryLimit).toBe(50);
     expect(payload.githubOrgThreshold).toBe(5);
+    expect(payload.statsVisitThreshold).toBe(10);
+    expect(payload.statsMaxResults).toBe(500);
+    expect(payload.statsLookbackMonths).toBe(12);
     expect(payload.bookmarkRules).toEqual([{ id: "r1", name: "initech docs" }]);
   });
 
@@ -106,6 +118,9 @@ describe("buildExportPayload", () => {
       historyAliasLimit: 2000,
       historyEntryLimit: 10,
       githubOrgThreshold: 7,
+      statsVisitThreshold: 5,
+      statsMaxResults: 100,
+      statsLookbackMonths: 3,
     });
     const json = JSON.stringify(payload, null, 2);
     const parsed = JSON.parse(json);

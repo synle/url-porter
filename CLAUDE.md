@@ -85,7 +85,10 @@ User-configurable bookmark rules stored in `chrome.storage.local` under `bookmar
   "bookmarkFolderName": "url-porter",
   "historyAliasLimit": 5000,
   "historyEntryLimit": 20,
-  "githubOrgThreshold": 3
+  "githubOrgThreshold": 3,
+  "statsVisitThreshold": 3,
+  "statsMaxResults": 200,
+  "statsLookbackMonths": 6
 }
 ```
 
