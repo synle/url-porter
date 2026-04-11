@@ -35,8 +35,9 @@ The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server
 **Extension entry points** (each is a separate Vite input with its own HTML/JSX):
 
 - `src/background/background.js` — Service worker. Manages `chrome.declarativeNetRequest` redirect rules, context menus, omnibox suggestions ("go" keyword), and message handling.
-- `src/pages/options/` — Main settings UI with "Clean" (table) and "Advanced" (syntax-highlighted JSON editor via `react-simple-code-editor` + Prism.js) modes. Also configures homepage URL, bookmark folder name, and history limits.
+- `src/pages/options/` — Main settings UI with "Clean" (table) and "Advanced" (full-config JSON editor via `react-simple-code-editor` + Prism.js) modes. Also configures homepage URL, bookmark folder name, history limits, and custom bookmark rules.
 - `src/pages/addlink/` — Browser action popup for quick-adding the current page as a redirect rule.
+- `src/pages/addrule/` — Standalone page for adding a bookmark rule. Opened from context menu with auto-filled fields (domain + date rule name, history keywords, URL match/dedup patterns derived from the current page URL).
 - `src/pages/newtab/` — New tab override that auto-redirects to a configured homepage.
 - `src/pages/history/` — Audit trail of redirect rule changes with search, restore, and bulk delete.
 
@@ -47,6 +48,7 @@ The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server
 - `historyUtils.js` — History tracking with configurable limits (5000 aliases, 20 entries per alias).
 - `configAnalysis.js` — Broken link detection and conflict/duplicate resolution. Pure functions used by the Options page for on-demand health checks.
 - `fieldHelpers.js` — Shared placeholder and helper text constants for form fields (used by AddLink popup and Options dialogs).
+- `ruleDerivation.js` — Pure functions for deriving bookmark rule fields from a URL (`escapeRegex`, `deriveRuleFromUrl`). Used by the AddRule page for auto-fill.
 - `bookmarkUtils.js` — Bookmark sync. Maintains a configurable bookmark folder (default "url-porter") under Other Bookmarks that mirrors config entries. The folder name is stored in `chrome.storage.local` and editable on the Options page. Key behaviors:
   - **Deduplicates by title** — if multiple bookmarks share the same title, the later (newer) one is kept and older duplicates are removed. Unique bookmarks not in config are never deleted.
   - **Preserves sort order** — existing bookmarks are updated in-place; new ones are appended to the bottom.
@@ -58,7 +60,7 @@ Each reconciler scans browser history and bookmarks, then rebuilds a subfolder u
 
 **Generic bookmark rule reconciler** (`src/helpers/genericBookmarkRuleUtils.js`):
 
-User-configurable bookmark rules stored in `chrome.storage.local` under `bookmarkRules`. Each rule defines history search keywords, a URL match regex, a dedup key extraction regex, title cleanup patterns, and sort preferences. The generic reconciler generalizes the 5-step pattern (search history, walk bookmarks, dedup, delete old folder, rebuild) into a single reusable function. Rules are managed via the `BookmarkRulesSection` component on the Options page and included in import/export. Reserved folder names (prs, github repos, etc.) are blocked to prevent conflicts with hardcoded reconcilers.
+User-configurable bookmark rules stored in `chrome.storage.local` under `bookmarkRules`. Each rule defines history search keywords, a URL match regex, a dedup key extraction regex, title cleanup patterns, and sort preferences. The generic reconciler generalizes the 5-step pattern (search history, walk bookmarks, dedup, delete old folder, rebuild) into a single reusable function. Rules are managed via the `BookmarkRulesSection` component on the Options page (which uses the `BookmarkRuleForm` reusable component) and can also be added via the context menu "Add Bookmark Rule for This Site" action (opens `src/pages/addrule/`). Rules are included in import/export. Reserved folder names (prs, github repos, etc.) are blocked to prevent conflicts with hardcoded reconcilers.
 
 **Content scripts** (`src/content/`) — copied verbatim (not Vite inputs). Each registered in `manifest.json`:
 
@@ -72,6 +74,22 @@ User-configurable bookmark rules stored in `chrome.storage.local` under `bookmar
 **Status tracking data flow**: Content scripts detect status on PR/Jira pages → send message to background → statuses stored in `chrome.storage.local` under `prStatuses` / `jiraStatuses` keys (keyed by canonical URL) → reconcilers prefix bookmark titles with status emoji. Status priority: stored (content script) > old bookmark title prefix > none.
 
 **Data flow**: UI saves config → `storage.js` → sends `"Myevent.updateConfig"` message → `background.js` updates `chrome.declarativeNetRequest.updateDynamicRules()` → history logged → bookmark folder reconciled.
+
+**Full config JSON format** (used in Advanced Mode editor, export, and import):
+
+```json
+{
+  "homepage": "https://example.com",
+  "configs": [{ "from": "alias", "to": "https://target.com" }],
+  "bookmarkRules": [],
+  "bookmarkFolderName": "url-porter",
+  "historyAliasLimit": 5000,
+  "historyEntryLimit": 20,
+  "githubOrgThreshold": 3
+}
+```
+
+The Advanced Mode editor and export/import use this single object. For backward compatibility, a plain `[]` configs array is also accepted in the Advanced Mode editor.
 
 **Theme** (`src/theme.jsx`): MUI theme with auto light/dark mode detection, all animations disabled, compact sizing (small defaults for all components), and ripple disabled.
 

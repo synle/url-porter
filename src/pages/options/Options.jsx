@@ -175,9 +175,6 @@ function OptionsContent() {
     const homepage = await getHomepageUrl();
     setHomepageUrl(homepage);
     setConfigEntries(Array.isArray(config) ? config : []);
-    const json = JSON.stringify(Array.isArray(config) ? config : [], null, 2);
-    setEditorContent(json);
-    setLastSavedEditorContent(json);
     const aliasLimit = await getHistoryAliasLimit();
     setHistoryAliasLimitValue(aliasLimit);
     const entryLimit = await getHistoryEntryLimit();
@@ -186,6 +183,19 @@ function OptionsContent() {
     setBookmarkFolderNameValue(folderName);
     const orgThreshold = await getGithubOrgThreshold();
     setGithubOrgThresholdValue(orgThreshold);
+    const bookmarkRules = await getBookmarkRules();
+    const fullConfig = {
+      homepage,
+      configs: Array.isArray(config) ? config : [],
+      bookmarkRules,
+      bookmarkFolderName: folderName,
+      historyAliasLimit: aliasLimit,
+      historyEntryLimit: entryLimit,
+      githubOrgThreshold: orgThreshold,
+    };
+    const json = JSON.stringify(fullConfig, null, 2);
+    setEditorContent(json);
+    setLastSavedEditorContent(json);
   };
 
   /**
@@ -208,8 +218,23 @@ function OptionsContent() {
       await saveHomepageUrl(homepageUrl.trim());
       chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
       const refreshed = await getConfig();
-      setConfigEntries(Array.isArray(refreshed) ? refreshed : []);
-      const json = JSON.stringify(Array.isArray(refreshed) ? refreshed : [], null, 2);
+      const configs = Array.isArray(refreshed) ? refreshed : [];
+      setConfigEntries(configs);
+      const bookmarkRules = await getBookmarkRules();
+      const folderName = await getBookmarkFolderName();
+      const aliasLimit = await getHistoryAliasLimit();
+      const entryLimit = await getHistoryEntryLimit();
+      const orgThreshold = await getGithubOrgThreshold();
+      const fullConfig = {
+        homepage: homepageUrl,
+        configs,
+        bookmarkRules,
+        bookmarkFolderName: folderName,
+        historyAliasLimit: aliasLimit,
+        historyEntryLimit: entryLimit,
+        githubOrgThreshold: orgThreshold,
+      };
+      const json = JSON.stringify(fullConfig, null, 2);
       setEditorContent(json);
       setLastSavedEditorContent(json);
       return true;
@@ -374,8 +399,40 @@ function OptionsContent() {
    */
   const handleAdvancedSave = async () => {
     try {
-      await setConfig(editorContent);
-      await saveHomepageUrl(homepageUrl.trim());
+      const { stripJsonComments } = await import("../../helpers/storage.js");
+      const cleaned = stripJsonComments(editorContent);
+      const data = JSON.parse(cleaned);
+
+      // Support both the full config object and a plain configs array for backwards compatibility
+      if (Array.isArray(data)) {
+        await setConfig(JSON.stringify(data));
+        await saveHomepageUrl(homepageUrl.trim());
+      } else {
+        if (!("configs" in data) || !Array.isArray(data.configs)) {
+          showSnackbar('Invalid config: must contain a "configs" array.', "error");
+          return;
+        }
+        await setConfig(JSON.stringify(data.configs));
+        if (typeof data.homepage === "string") {
+          await saveHomepageUrl(data.homepage.trim());
+        }
+        if (Array.isArray(data.bookmarkRules)) {
+          await setBookmarkRules(data.bookmarkRules);
+        }
+        if (typeof data.bookmarkFolderName === "string" && data.bookmarkFolderName.trim()) {
+          await setBookmarkFolderName(data.bookmarkFolderName.trim());
+        }
+        if (typeof data.historyAliasLimit === "number" && data.historyAliasLimit >= 1) {
+          await setHistoryAliasLimit(data.historyAliasLimit);
+        }
+        if (typeof data.historyEntryLimit === "number" && data.historyEntryLimit >= 1) {
+          await setHistoryEntryLimit(data.historyEntryLimit);
+        }
+        if (typeof data.githubOrgThreshold === "number" && data.githubOrgThreshold >= 1) {
+          await setGithubOrgThreshold(data.githubOrgThreshold);
+        }
+      }
+
       chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
       await loadSettings();
       showSnackbar("Settings saved!");
@@ -404,9 +461,19 @@ function OptionsContent() {
    * Switches the UI mode, resyncing editor content if entering advanced mode.
    * @param {string} newMode - The mode to switch to ("clean" or "advanced").
    */
-  const switchMode = (newMode) => {
+  const switchMode = async (newMode) => {
     if (newMode === "advanced") {
-      const json = JSON.stringify(configEntries, null, 2);
+      const bookmarkRules = await getBookmarkRules();
+      const fullConfig = {
+        homepage: homepageUrl,
+        configs: configEntries,
+        bookmarkRules,
+        bookmarkFolderName: bookmarkFolderNameValue,
+        historyAliasLimit: historyAliasLimitValue,
+        historyEntryLimit: historyEntryLimitValue,
+        githubOrgThreshold: githubOrgThresholdValue,
+      };
+      const json = JSON.stringify(fullConfig, null, 2);
       setEditorContent(json);
       setLastSavedEditorContent(json);
     }
@@ -440,13 +507,24 @@ function OptionsContent() {
   };
 
   /**
-   * Exports the current config and homepage URL as a downloadable JSON file.
-   * Uses the same format as the sync server response ({homepage, configs}), plus bookmarkRules.
+   * Exports the full config (homepage, configs, bookmarkRules, and settings) as a downloadable JSON file.
    * @returns {Promise<void>}
    */
   const handleExport = async () => {
     const bookmarkRules = await getBookmarkRules();
-    const data = { homepage: homepageUrl, configs: configEntries, bookmarkRules };
+    const aliasLimit = await getHistoryAliasLimit();
+    const entryLimit = await getHistoryEntryLimit();
+    const folderName = await getBookmarkFolderName();
+    const orgThreshold = await getGithubOrgThreshold();
+    const data = {
+      homepage: homepageUrl,
+      configs: configEntries,
+      bookmarkRules,
+      bookmarkFolderName: folderName,
+      historyAliasLimit: aliasLimit,
+      historyEntryLimit: entryLimit,
+      githubOrgThreshold: orgThreshold,
+    };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -483,6 +561,18 @@ function OptionsContent() {
           await saveHomepageUrl(newHomepage);
           if (Array.isArray(data.bookmarkRules)) {
             await setBookmarkRules(data.bookmarkRules);
+          }
+          if (typeof data.bookmarkFolderName === "string" && data.bookmarkFolderName.trim()) {
+            await setBookmarkFolderName(data.bookmarkFolderName.trim());
+          }
+          if (typeof data.historyAliasLimit === "number" && data.historyAliasLimit >= 1) {
+            await setHistoryAliasLimit(data.historyAliasLimit);
+          }
+          if (typeof data.historyEntryLimit === "number" && data.historyEntryLimit >= 1) {
+            await setHistoryEntryLimit(data.historyEntryLimit);
+          }
+          if (typeof data.githubOrgThreshold === "number" && data.githubOrgThreshold >= 1) {
+            await setGithubOrgThreshold(data.githubOrgThreshold);
           }
           chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
           await loadSettings();
@@ -953,7 +1043,7 @@ function OptionsContent() {
               })}
             >
               <Typography component="legend" variant="caption" sx={{ ml: 1, px: 0.5, color: "text.secondary" }}>
-                JSON Config
+                Full Config JSON
               </Typography>
               <Editor
                 className="prism-code-editor"

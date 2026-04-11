@@ -32,6 +32,12 @@ chrome.runtime.onInstalled.addListener(async () => {
     contexts: ["page"],
   });
 
+  chrome.contextMenus.create({
+    id: "add-bookmark-rule",
+    title: "Add Bookmark Rule for This Site",
+    contexts: ["page"],
+  });
+
   chrome.omnibox.setDefaultSuggestion({
     description: "Search URL Porter links: %s",
   });
@@ -39,13 +45,18 @@ chrome.runtime.onInstalled.addListener(async () => {
 
 // --- Context Menu ---
 
-/** Open the Add Link page pre-filled with the current tab's URL and title. */
+/** Handle context menu clicks for Add Link and Add Bookmark Rule. */
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "add-to-url-porter") {
     const url = encodeURIComponent(tab.url || "");
     const title = encodeURIComponent(tab.title || "");
     const addLinkUrl = chrome.runtime.getURL(`pages/addlink/addlink.html?url=${url}&title=${title}`);
     chrome.tabs.create({ url: addLinkUrl });
+  }
+  if (info.menuItemId === "add-bookmark-rule") {
+    const url = encodeURIComponent(tab.url || "");
+    const addRuleUrl = chrome.runtime.getURL(`pages/addrule/addrule.html?url=${url}`);
+    chrome.tabs.create({ url: addRuleUrl });
   }
 });
 

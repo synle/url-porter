@@ -16,9 +16,10 @@ A Chrome extension that lets you configure redirect rules and set a custom homep
 - **Config Health Checks** - On-demand broken link detection and conflict/duplicate resolution from the Options page
 - **History Tracking** - Audit trail of all redirect rule changes with configurable limits, search, restore, and bulk delete
 - **Sync Server** - Optionally sync your configuration from a remote JSON file
-- **JSON Editor** - Edit your configuration with syntax-highlighted JSON editor (Prism.js)
+- **Full Config JSON Editor** - Edit all settings (homepage, redirect rules, bookmark rules, history limits, folder name, GitHub threshold) in a single syntax-highlighted JSON editor (Prism.js)
+- **Full Config Export/Import** - Export and import all settings as a single JSON file including redirect rules, bookmark rules, and all preferences
 - **Omnibox Integration** - Type "go" in the address bar to search and navigate your redirect rules
-- **Context Menu** - Right-click to quickly add the current page as a redirect rule
+- **Context Menu** - Right-click to quickly add the current page as a redirect rule or create a bookmark rule for the current site
 - **Light/Dark Mode** - Automatically adapts to your system theme preference
 
 ## Configuration
@@ -30,18 +31,22 @@ The config is a JSON array of redirect rules. Each rule can be:
 
 ### Sample Config JSON
 
+The full config format (used in Advanced Mode, export, and import) includes all settings:
+
 ```json
-[
-  {
-    "from": "fav",
-    "to": "https://synle.github.io/fav/"
-  },
-  {
-    "from": "plex",
-    "to": "https://app.plex.tv/desktop/#!/"
-  },
-  ["google", "google.com"]
-]
+{
+  "homepage": "https://synle.github.io/fav/",
+  "configs": [
+    { "from": "fav", "to": "https://synle.github.io/fav/" },
+    { "from": "plex", "to": "https://app.plex.tv/desktop/#!/" },
+    ["google", "google.com"]
+  ],
+  "bookmarkRules": [],
+  "bookmarkFolderName": "url-porter",
+  "historyAliasLimit": 5000,
+  "historyEntryLimit": 20,
+  "githubOrgThreshold": 3
+}
 ```
 
 ## Development
@@ -115,13 +120,14 @@ With `npm run dev`, the extension auto-reloads on file changes — no manual rel
 src/
 ├── background/      # Service worker (redirect rules, context menus, omnibox, bookmark sync)
 ├── content/         # Content scripts (PR status, Jira status, Keep markdown, fav export)
-├── components/      # Reusable UI components (SyncDialog, BookmarkRulesSection)
+├── components/      # Reusable UI components (SyncDialog, BookmarkRulesSection, BookmarkRuleForm)
 ├── helpers/         # Shared utilities (storage, config, history, bookmarks, reconcilers)
 ├── pages/
 │   ├── addlink/     # Browser action popup for quick-adding redirect rules
+│   ├── addrule/     # Standalone page for adding bookmark rules (from context menu)
 │   ├── history/     # Audit trail of redirect rule changes
 │   ├── newtab/      # New tab override (auto-redirects to configured homepage)
-│   └── options/     # Main settings UI (Clean table mode + Advanced JSON editor)
+│   └── options/     # Main settings UI (Clean table mode + Advanced full-config JSON editor)
 ├── manifest.json    # Chrome extension manifest (Manifest V3)
 └── theme.jsx        # MUI theme (auto light/dark, compact sizing, no animations)
 tests/               # Vitest test files (Chrome APIs mocked via vi.stubGlobal)
