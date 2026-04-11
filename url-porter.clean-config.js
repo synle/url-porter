@@ -69,6 +69,23 @@ try {
     configs: dedupedConfigs,
   };
 
+  // Retain optional settings if they exist in the source
+  if (Array.isArray(parsedData.bookmarkRules)) {
+    result.bookmarkRules = parsedData.bookmarkRules;
+  }
+  if (typeof parsedData.bookmarkFolderName === "string" && parsedData.bookmarkFolderName.trim()) {
+    result.bookmarkFolderName = parsedData.bookmarkFolderName.trim();
+  }
+  if (typeof parsedData.historyAliasLimit === "number" && parsedData.historyAliasLimit >= 1) {
+    result.historyAliasLimit = parsedData.historyAliasLimit;
+  }
+  if (typeof parsedData.historyEntryLimit === "number" && parsedData.historyEntryLimit >= 1) {
+    result.historyEntryLimit = parsedData.historyEntryLimit;
+  }
+  if (typeof parsedData.githubOrgThreshold === "number" && parsedData.githubOrgThreshold >= 1) {
+    result.githubOrgThreshold = parsedData.githubOrgThreshold;
+  }
+
   console.log(JSON.stringify(result, null, 2));
   if (duplicatesRemoved > 0) {
     console.log(`\nRemoved ${duplicatesRemoved} duplicate(s).`);

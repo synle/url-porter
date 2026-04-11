@@ -6,6 +6,15 @@ import { validateRule } from "../helpers/genericBookmarkRuleUtils.js";
 /** @type {string[]} Folder names reserved by hardcoded reconcilers. */
 const RESERVED_NAMES = ["prs", "github repos", "figma mocks", "jira tickets", "google drive", "onedrive"];
 
+/** @type {object} Default example values shown when adding a new rule without URL context. */
+const DEFAULT_EXAMPLE = {
+  name: "leetcode problems",
+  historyKeywords: "leetcode.com",
+  urlMatchPattern: "^https?://leetcode\\.com/problems/[^/?#]+",
+  dedupeKeyPattern: "leetcode\\.com/problems/([^/?#]+)",
+  titleStripPatterns: "\\s*-\\s*LeetCode.*$\n\\s*\\|\\s*LeetCode.*$",
+};
+
 /**
  * Form component for adding or editing a bookmark rule.
  *
@@ -18,11 +27,11 @@ const RESERVED_NAMES = ["prs", "github repos", "figma mocks", "jira tickets", "g
  * @returns {React.ReactElement}
  */
 export default function BookmarkRuleForm({ rule, existingNames = [], onSave, onCancel, showSnackbar }) {
-  const [formName, setFormName] = useState("");
-  const [formKeywords, setFormKeywords] = useState("");
-  const [formUrlMatch, setFormUrlMatch] = useState("");
-  const [formDedupeKey, setFormDedupeKey] = useState("");
-  const [formTitleStrip, setFormTitleStrip] = useState("");
+  const [formName, setFormName] = useState(DEFAULT_EXAMPLE.name);
+  const [formKeywords, setFormKeywords] = useState(DEFAULT_EXAMPLE.historyKeywords);
+  const [formUrlMatch, setFormUrlMatch] = useState(DEFAULT_EXAMPLE.urlMatchPattern);
+  const [formDedupeKey, setFormDedupeKey] = useState(DEFAULT_EXAMPLE.dedupeKeyPattern);
+  const [formTitleStrip, setFormTitleStrip] = useState(DEFAULT_EXAMPLE.titleStripPatterns);
   const [formSortField, setFormSortField] = useState("visitTime");
   const [formSortDirection, setFormSortDirection] = useState("desc");
   const [formEnabled, setFormEnabled] = useState(true);
