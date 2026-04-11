@@ -9,6 +9,7 @@ A Chrome extension that lets you configure redirect rules and set a custom homep
 - **Add Link Page** - Quickly add new redirect rules from a dedicated popup or page
 - **Bookmark Sync** - Automatically maintains a bookmark folder mirroring your redirect rules (configurable folder name)
 - **Bookmark Bucket Reconcilers** - Auto-organizes bookmarks into subfolders by type: PRs, GitHub repos, Figma mocks, Jira tickets, Google Drive files, and OneDrive files — built from browser history and existing bookmarks
+- **Custom Bookmark Rules** - Define your own bookmark reconciler rules through settings to auto-organize bookmarks from any website (e.g., LeetCode problems, StackOverflow answers, Confluence pages) — no code changes needed
 - **PR Status Tracking** - Content scripts on GitHub (including Enterprise) and Azure DevOps detect PR status (open/merged/closed) and prefix bookmark titles with status emoji
 - **Jira Ticket Status Tracking** - Content script on Atlassian Cloud detects ticket status and prefixes bookmark titles with status emoji (🔵 in progress, ✅ done, ⚪ not started, ❌ blocked)
 - **Google Keep Markdown Preview** - Content script that injects a markdown preview button into Google Keep note modals
@@ -114,6 +115,7 @@ With `npm run dev`, the extension auto-reloads on file changes — no manual rel
 src/
 ├── background/      # Service worker (redirect rules, context menus, omnibox, bookmark sync)
 ├── content/         # Content scripts (PR status, Jira status, Keep markdown, fav export)
+├── components/      # Reusable UI components (SyncDialog, BookmarkRulesSection)
 ├── helpers/         # Shared utilities (storage, config, history, bookmarks, reconcilers)
 ├── pages/
 │   ├── addlink/     # Browser action popup for quick-adding redirect rules

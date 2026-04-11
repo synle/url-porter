@@ -75,6 +75,7 @@ import "prismjs/components/prism-json";
 
 import { ThemeContextProvider } from "../../theme.jsx";
 import SyncDialog from "../../components/SyncDialog.jsx";
+import BookmarkRulesSection from "../../components/BookmarkRulesSection.jsx";
 import {
   getConfig,
   setConfig,
@@ -84,6 +85,8 @@ import {
   setBookmarkFolderName,
   getGithubOrgThreshold,
   setGithubOrgThreshold,
+  getBookmarkRules,
+  setBookmarkRules,
 } from "../../helpers/storage.js";
 import {
   normalizeEntry,
@@ -438,11 +441,12 @@ function OptionsContent() {
 
   /**
    * Exports the current config and homepage URL as a downloadable JSON file.
-   * Uses the same format as the sync server response ({homepage, configs}).
-   * @returns {void}
+   * Uses the same format as the sync server response ({homepage, configs}), plus bookmarkRules.
+   * @returns {Promise<void>}
    */
-  const handleExport = () => {
-    const data = { homepage: homepageUrl, configs: configEntries };
+  const handleExport = async () => {
+    const bookmarkRules = await getBookmarkRules();
+    const data = { homepage: homepageUrl, configs: configEntries, bookmarkRules };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -477,6 +481,9 @@ function OptionsContent() {
         const ok = await saveAndNotify(data.configs);
         if (ok) {
           await saveHomepageUrl(newHomepage);
+          if (Array.isArray(data.bookmarkRules)) {
+            await setBookmarkRules(data.bookmarkRules);
+          }
           chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
           await loadSettings();
           showSnackbar("Config imported successfully!");
@@ -744,6 +751,9 @@ function OptionsContent() {
             sx={{ width: 100 }}
           />
         </Box>
+
+        {/* Custom Bookmark Rules */}
+        <BookmarkRulesSection showSnackbar={showSnackbar} />
 
         {/* Clean Mode */}
         {mode === "clean" && (

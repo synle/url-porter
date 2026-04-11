@@ -264,3 +264,31 @@ export async function setJiraStatus(url, status) {
     });
   });
 }
+
+/**
+ * Get all custom bookmark rules from local storage.
+ * Each rule defines how to reconcile a bookmark subfolder from browser history and bookmarks.
+ *
+ * @returns {Promise<Array<{id: string, name: string, historyKeywords: string[], urlMatchPattern: string, dedupeKeyPattern: string, titleStripPatterns: string[], sortField: string, sortDirection: string, enabled: boolean}>>}
+ */
+export function getBookmarkRules() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("bookmarkRules", (result) => {
+      resolve(result.bookmarkRules || []);
+    });
+  });
+}
+
+/**
+ * Save custom bookmark rules to local storage.
+ *
+ * @param {Array<{id: string, name: string, historyKeywords: string[], urlMatchPattern: string, dedupeKeyPattern: string, titleStripPatterns: string[], sortField: string, sortDirection: string, enabled: boolean}>} rules - The bookmark rules to save
+ * @returns {Promise<void>}
+ */
+export function setBookmarkRules(rules) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ bookmarkRules: rules }, () => {
+      resolve();
+    });
+  });
+}

@@ -56,6 +56,10 @@ The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server
 
 Each reconciler scans browser history and bookmarks, then rebuilds a subfolder under the url-porter folder (e.g. "jira tickets", "prs", "github repos"). Key design rule: **all bookmark walkers must skip the url-porter folder** (by accepting `porterFolderId` and `continue`-ing when `node.id` matches) to prevent a feedback loop where previously-built bookmark titles get re-parsed and accumulate data (e.g. dates appending on each reconciliation cycle).
 
+**Generic bookmark rule reconciler** (`src/helpers/genericBookmarkRuleUtils.js`):
+
+User-configurable bookmark rules stored in `chrome.storage.local` under `bookmarkRules`. Each rule defines history search keywords, a URL match regex, a dedup key extraction regex, title cleanup patterns, and sort preferences. The generic reconciler generalizes the 5-step pattern (search history, walk bookmarks, dedup, delete old folder, rebuild) into a single reusable function. Rules are managed via the `BookmarkRulesSection` component on the Options page and included in import/export. Reserved folder names (prs, github repos, etc.) are blocked to prevent conflicts with hardcoded reconcilers.
+
 **Content scripts** (`src/content/`) — copied verbatim (not Vite inputs). Each registered in `manifest.json`:
 
 - `content-utils.js` — Shared utilities loaded before other content scripts. Provides error page detection and staggered reload with backoff.

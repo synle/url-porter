@@ -6,15 +6,18 @@
 import { describe, it, expect } from "vitest";
 
 /**
- * Builds an export payload from config entries and homepage URL.
- * Matches the sync server format: {homepage, configs}.
+ * Builds an export payload from config entries, homepage URL, and optional bookmark rules.
+ * Matches the sync server format: {homepage, configs}, plus bookmarkRules.
  *
  * @param {string} homepage - The homepage URL
  * @param {Array<{from: string, to: string}>} configs - The config entries
- * @returns {{homepage: string, configs: Array<{from: string, to: string}>}}
+ * @param {Array<object>} [bookmarkRules] - Optional custom bookmark rules
+ * @returns {{homepage: string, configs: Array<{from: string, to: string}>, bookmarkRules?: Array<object>}}
  */
-function buildExportPayload(homepage, configs) {
-  return { homepage, configs };
+function buildExportPayload(homepage, configs, bookmarkRules) {
+  const payload = { homepage, configs };
+  if (bookmarkRules) payload.bookmarkRules = bookmarkRules;
+  return payload;
 }
 
 /**
@@ -107,5 +110,51 @@ describe("validateImportPayload", () => {
   it("rejects object where configs is an object", () => {
     const result = validateImportPayload({ configs: { from: "a", to: "b" } });
     expect(result.valid).toBe(false);
+  });
+
+  it("accepts payload with bookmarkRules (optional)", () => {
+    const result = validateImportPayload({
+      configs: [],
+      bookmarkRules: [{ id: "1", name: "test rule" }],
+    });
+    expect(result.valid).toBe(true);
+  });
+
+  it("accepts payload without bookmarkRules (backward-compatible)", () => {
+    const result = validateImportPayload({ configs: [] });
+    expect(result.valid).toBe(true);
+  });
+});
+
+describe("buildExportPayload with bookmarkRules", () => {
+  it("includes bookmarkRules when provided", () => {
+    const rules = [{ id: "r1", name: "initech docs", historyKeywords: ["initech.com"], enabled: true }];
+    const payload = buildExportPayload("https://home.com", [{ from: "a", to: "https://a.com" }], rules);
+    expect(payload.bookmarkRules).toEqual(rules);
+  });
+
+  it("omits bookmarkRules when not provided", () => {
+    const payload = buildExportPayload("https://home.com", []);
+    expect(payload.bookmarkRules).toBeUndefined();
+  });
+
+  it("round-trips bookmarkRules through JSON", () => {
+    const rules = [
+      {
+        id: "r1",
+        name: "globex wiki",
+        historyKeywords: ["globex.example.com"],
+        urlMatchPattern: "^https?://globex\\.example\\.com/wiki/",
+        dedupeKeyPattern: "globex\\.example\\.com/wiki/([^/?#]+)",
+        titleStripPatterns: ["\\s*-\\s*Globex Wiki.*$"],
+        sortField: "title",
+        sortDirection: "asc",
+        enabled: true,
+      },
+    ];
+    const payload = buildExportPayload("https://home.com", [], rules);
+    const json = JSON.stringify(payload, null, 2);
+    const parsed = JSON.parse(json);
+    expect(parsed.bookmarkRules).toEqual(rules);
   });
 });

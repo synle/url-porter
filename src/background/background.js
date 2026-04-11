@@ -9,7 +9,7 @@
  */
 
 import { normalizeEntriesForRedirect, normalizeEntry, stripAlias } from "../helpers/configUtils.js";
-import { getConfig, getBookmarkFolderName, setPrStatus, setJiraStatus } from "../helpers/storage.js";
+import { getConfig, getBookmarkFolderName, setPrStatus, setJiraStatus, getBookmarkRules } from "../helpers/storage.js";
 import { reconcileBookmarks } from "../helpers/bookmarkUtils.js";
 import { reconcilePrs } from "../helpers/prUtils.js";
 import { reconcileGitHubRepos } from "../helpers/githubRepoUtils.js";
@@ -17,6 +17,7 @@ import { reconcileFigmaMocks } from "../helpers/figmaMockUtils.js";
 import { reconcileJiraTickets } from "../helpers/jiraTicketUtils.js";
 import { reconcileGoogleDrive } from "../helpers/googleDriveUtils.js";
 import { reconcileOnedrive } from "../helpers/onedriveUtils.js";
+import { reconcileAllBookmarkRules } from "../helpers/genericBookmarkRuleUtils.js";
 
 // --- Lifecycle ---
 
@@ -102,6 +103,7 @@ async function runReconcile() {
 /** Re-sync rules and bookmarks when UI pages send an update event. */
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.type === "Myevent.updateConfig") {
+    refreshCustomTrackedPatterns();
     updateRedirectRules().then(scheduleReconcile);
   }
   if (request.type === "Myevent.prStatus") {
@@ -308,6 +310,8 @@ async function reconcileBookmarksFromStorage() {
     console.log("[background] reconcileBookmarksFromStorage: google drive reconciled successfully");
     await reconcileOnedrive();
     console.log("[background] reconcileBookmarksFromStorage: onedrive reconciled successfully");
+    await reconcileAllBookmarkRules();
+    console.log("[background] reconcileBookmarksFromStorage: custom bookmark rules reconciled successfully");
   } catch (error) {
     console.error("[background] reconcileBookmarksFromStorage: FAILED:", error, error?.stack);
   }
@@ -330,12 +334,42 @@ const TRACKED_SITE_PATTERNS = [
   /onedrive\.live\.com/i,
   /sharepoint\.com/i,
 ];
+
+/** @type {RegExp[]} Cached compiled patterns from custom bookmark rules. */
+let customTrackedPatterns = [];
+
+/**
+ * Refresh cached custom tracked site patterns from stored bookmark rules.
+ * Called on startup and whenever config changes.
+ * @returns {Promise<void>}
+ */
+async function refreshCustomTrackedPatterns() {
+  try {
+    const rules = await getBookmarkRules();
+    customTrackedPatterns = rules
+      .filter((r) => r.enabled && r.urlMatchPattern)
+      .map((r) => {
+        try {
+          return new RegExp(r.urlMatchPattern, "i");
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
+  } catch {
+    customTrackedPatterns = [];
+  }
+}
+
+// Load custom patterns on startup
+refreshCustomTrackedPatterns();
+
 /** @type {ReturnType<typeof setTimeout>|null} Debounce timer for tracked-site reconciliation. */
 let bucketReconcileTimer = null;
 
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
   if (changeInfo.status !== "complete" || !tab.url) return;
-  const isTracked = TRACKED_SITE_PATTERNS.some((re) => re.test(tab.url));
+  const isTracked = TRACKED_SITE_PATTERNS.some((re) => re.test(tab.url)) || customTrackedPatterns.some((re) => re.test(tab.url));
   if (!isTracked) return;
   // Debounce — wait 8s after last tracked navigation to batch rapid browsing
   // (e.g. opening a folder with 20+ tabs at once)
