@@ -11,7 +11,7 @@ export function groupHistoryItems(items) {
   const map = new Map();
 
   for (const item of items) {
-    if (!item.url) continue;
+    if (!item.url || !(item.url.startsWith("http://") || item.url.startsWith("https://"))) continue;
 
     let strippedUrl;
     try {

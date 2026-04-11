@@ -78,20 +78,19 @@ describe("groupHistoryItems", () => {
     expect(result).toHaveLength(2);
   });
 
-  it("handles URLs that fail URL parsing gracefully", () => {
+  it("skips URLs that fail URL parsing", () => {
     const result = groupHistoryItems([{ url: "not-a-valid-url", title: "Bad URL", visitCount: 1, lastVisitTime: 1 }]);
-    expect(result).toHaveLength(1);
-    expect(result[0].strippedUrl).toBe("not-a-valid-url");
-    expect(result[0].title).toBe("Bad URL");
+    expect(result).toHaveLength(0);
   });
 
-  it("handles chrome:// and about: URLs without crash", () => {
+  it("skips chrome:// and about: URLs", () => {
     const result = groupHistoryItems([
       { url: "chrome://settings/", title: "Settings", visitCount: 5, lastVisitTime: 1 },
       { url: "about:blank", title: "", visitCount: 1, lastVisitTime: 2 },
+      { url: "https://example.com", title: "Example", visitCount: 3, lastVisitTime: 3 },
     ]);
-    expect(result).toHaveLength(2);
-    expect(result.find((e) => e.title === "Settings")).toBeTruthy();
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Example");
   });
 
   it("skips items with no url", () => {
