@@ -13,7 +13,7 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "sass": "^1.99.0",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.2",
     "vite": "^6.4.2",
     "vite-plugin-web-extension": "^4.5.1",
     "vitest": "^4.1.4"
