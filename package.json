@@ -37,7 +37,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.10",
-    "@mui/material": "^7.3.10",
+    "@mui/material": "^9.0.0",
     "prismjs": "^1.30.0",
     "react-simple-code-editor": "^0.14.1"
   },
