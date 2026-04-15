@@ -12,7 +12,7 @@ URL Porter is a Chrome Extension (Manifest V3) that lets users configure custom 
 npm run dev          # Build to dist/ in watch mode (rebuilds on file changes)
 npm run build        # One-off production build → dist/ (also generates types/)
 npm run bundle       # Create url-porter.zip from dist/
-npm run package      # build + bundle (full release pipeline)
+npm run package      # build + bundle (creates url-porter.zip)
 npm run lint         # ESLint — catches undefined references, missing imports
 npm run format       # Prettier (140 char width)
 npm run validate     # Run all quality checks: test + lint + build + format
@@ -47,6 +47,7 @@ The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server
 - `configUtils.js` — Normalizes redirect entries for `declarativeNetRequest` format. Only file with TypeScript declarations (emitted to `types/`).
 - `historyUtils.js` — History tracking with configurable limits (5000 aliases, 20 entries per alias).
 - `configAnalysis.js` — Broken link detection and conflict/duplicate resolution. Pure functions used by the Options page for on-demand health checks.
+- `historyStatsUtils.js` — Browse history stats aggregation (most visited URLs grouped by path, stripping query strings/hashes). Used by the HistoryStatsSection component on the Options page Stats tab.
 - `fieldHelpers.js` — Shared placeholder and helper text constants for form fields (used by AddLink popup and Options dialogs).
 - `ruleDerivation.js` — Pure functions for deriving bookmark rule fields from a URL (`escapeRegex`, `deriveRuleFromUrl`). Used by the AddRule page for auto-fill.
 - `bookmarkUtils.js` — Bookmark sync. Maintains a configurable bookmark folder (default "url-porter") under Other Bookmarks that mirrors config entries. The folder name is stored in `chrome.storage.local` and editable on the Options page. Key behaviors:

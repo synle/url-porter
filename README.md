@@ -113,7 +113,7 @@ With `npm run dev`, the extension auto-reloads on file changes — no manual rel
 | `npm run dev`      | Build to `dist/` in watch mode (rebuilds on file changes)  |
 | `npm run build`    | One-off production build to `dist/` (also generates types) |
 | `npm run bundle`   | Create `url-porter.zip` from `dist/`                       |
-| `npm run package`  | Build + bundle (full release pipeline)                     |
+| `npm run package`  | Build + bundle (creates `url-porter.zip`)                  |
 | `npm run validate` | Run all quality checks: test + lint + build + format       |
 | `npm run format`   | Format code with Prettier (140 char width)                 |
 | `npm run lint`     | ESLint — catches undefined references, missing imports     |
@@ -148,17 +148,19 @@ tests/               # Vitest test files (Chrome APIs mocked via vi.stubGlobal)
 
 ## Installation
 
+Download the latest `url-porter.zip` from [GitHub Releases](https://github.com/synle/url-porter/releases/latest), or use the commands below.
+
 ### Mac / Linux
 
 ```bash
-curl -L -o url-porter.zip https://synle.github.io/url-porter/url-porter.zip && unzip url-porter.zip -d url-porter
+curl -L -o url-porter.zip https://github.com/synle/url-porter/releases/latest/download/url-porter.zip && unzip url-porter.zip -d url-porter
 ```
 
 ### Windows
 
-```bash
-powershell -Command "Start-BitsTransfer -Source https://synle.github.io/url-porter/url-porter.zip -Destination url-porter.zip"
-powershell -Command "Expand-Archive -Path url-porter.zip -DestinationPath url-porter"
+```powershell
+Invoke-WebRequest -Uri https://github.com/synle/url-porter/releases/latest/download/url-porter.zip -OutFile url-porter.zip
+Expand-Archive -Path url-porter.zip -DestinationPath url-porter
 ```
 
 Then load the `url-porter` folder as an unpacked extension in Chrome (see [Load in Chrome](#load-in-chrome) above).
