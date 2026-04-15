@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "URL Porter",
-  "version": "1.72.0",
+  "version": "1.74.0",
   "description": "This extension lets you configure redirect rules and set a custom homepage.",
   "icons": {
     "16": "icon.png",
@@ -9,7 +9,9 @@
     "128": "icon.png"
   },
   "permissions": ["storage", "declarativeNetRequest", "contextMenus", "tabs", "bookmarks", "history"],
-  "omnibox": { "keyword": "go" },
+  "omnibox": {
+    "keyword": "go"
+  },
   "host_permissions": ["*://*/*"],
   "background": {
     "service_worker": "background/background.js",
