@@ -22,7 +22,7 @@
     "dev": "npm run build:types && vite build --watch",
     "build": "npm run build:types && vite build",
     "build:types": "tsc",
-    "bundle": "npm version minor --no-git-tag-version && node scripts/bundle.js",
+    "bundle": "node scripts/bundle.js",
     "package": "npm run build && npm run bundle",
     "package-syle": "VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL=https://synle.github.io/fav/url-porter.json npm run package",
     "test": "vitest run",

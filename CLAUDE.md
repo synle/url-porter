@@ -11,7 +11,7 @@ URL Porter is a Chrome Extension (Manifest V3) that lets users configure custom 
 ```bash
 npm run dev          # Build to dist/ in watch mode (rebuilds on file changes)
 npm run build        # One-off production build → dist/ (also generates types/)
-npm run bundle       # Bump minor version + create url-porter.zip from dist/
+npm run bundle       # Create url-porter.zip from dist/
 npm run package      # build + bundle (full release pipeline)
 npm run lint         # ESLint — catches undefined references, missing imports
 npm run format       # Prettier (140 char width)

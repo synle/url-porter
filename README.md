@@ -112,7 +112,7 @@ With `npm run dev`, the extension auto-reloads on file changes — no manual rel
 | ------------------ | ---------------------------------------------------------- |
 | `npm run dev`      | Build to `dist/` in watch mode (rebuilds on file changes)  |
 | `npm run build`    | One-off production build to `dist/` (also generates types) |
-| `npm run bundle`   | Bump minor version + create `url-porter.zip` from `dist/`  |
+| `npm run bundle`   | Create `url-porter.zip` from `dist/`                       |
 | `npm run package`  | Build + bundle (full release pipeline)                     |
 | `npm run validate` | Run all quality checks: test + lint + build + format       |
 | `npm run format`   | Format code with Prettier (140 char width)                 |

@@ -21,6 +21,9 @@ jobs:
 
       - run: npm ci || npm i
 
+      - name: Bump version
+        run: npm version minor --no-git-tag-version
+
       - run: npm run package-syle
 
       - name: Read version from package.json
