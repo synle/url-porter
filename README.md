@@ -108,15 +108,16 @@ With `npm run dev`, the extension auto-reloads on file changes — no manual rel
 
 ### Scripts
 
-| Script            | Description                                                |
-| ----------------- | ---------------------------------------------------------- |
-| `npm run dev`     | Build to `dist/` in watch mode (rebuilds on file changes)  |
-| `npm run build`   | One-off production build to `dist/` (also generates types) |
-| `npm run bundle`  | Bump minor version + create `url-porter.zip` from `dist/`  |
-| `npm run package` | Build + bundle (full release pipeline)                     |
-| `npm run format`  | Format code with Prettier (140 char width)                 |
-| `npm run lint`    | ESLint — catches undefined references, missing imports     |
-| `npm test`        | Run all tests with Vitest                                  |
+| Script             | Description                                                |
+| ------------------ | ---------------------------------------------------------- |
+| `npm run dev`      | Build to `dist/` in watch mode (rebuilds on file changes)  |
+| `npm run build`    | One-off production build to `dist/` (also generates types) |
+| `npm run bundle`   | Bump minor version + create `url-porter.zip` from `dist/`  |
+| `npm run package`  | Build + bundle (full release pipeline)                     |
+| `npm run validate` | Run all quality checks: test + lint + build + format       |
+| `npm run format`   | Format code with Prettier (140 char width)                 |
+| `npm run lint`     | ESLint — catches undefined references, missing imports     |
+| `npm test`         | Run all tests with Vitest                                  |
 
 ### Project Structure
 
@@ -161,3 +162,15 @@ powershell -Command "Expand-Archive -Path url-porter.zip -DestinationPath url-po
 ```
 
 Then load the `url-porter` folder as an unpacked extension in Chrome (see [Load in Chrome](#load-in-chrome) above).
+
+## CI/CD
+
+| Workflow                 | Trigger                      | What it does                                                                           |
+| ------------------------ | ---------------------------- | -------------------------------------------------------------------------------------- |
+| **build-main**           | Push/PR to main              | Builds, tests, formats, deploys to GitHub Pages                                        |
+| **build-main** (PR)      | Pull requests                | Uploads `url-porter.zip` artifact and posts a PR comment with download link            |
+| **release**              | Manual (`workflow_dispatch`) | Bumps version, builds, creates GitHub release with `url-porter.zip`, tags `v{version}` |
+| **cleanup-artifacts**    | Weekly (Sunday)              | Deletes old artifacts, draft releases, and stale workflow runs                         |
+| **cleanup-pr-artifacts** | PR closed                    | Cleans up artifacts from closed PRs                                                    |
+
+**Versioning:** `package.json` is the single source of truth. The manifest version (`src/manifest.json`) is automatically synced during build and bundle steps.

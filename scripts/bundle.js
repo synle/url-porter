@@ -14,15 +14,17 @@ const rootDir = join(__dirname, "..");
 const distDir = join(rootDir, "dist");
 const outputPath = join(rootDir, "url-porter.zip");
 
+/** Syncs manifest.json version from package.json in both dist/ and src/. */
 async function syncManifestVersion() {
   const pkgPath = join(rootDir, "package.json");
-  const manifestPath = join(distDir, "manifest.json");
-
   const pkg = JSON.parse(await readFile(pkgPath, "utf-8"));
-  const manifest = JSON.parse(await readFile(manifestPath, "utf-8"));
 
-  manifest.version = pkg.version;
-  await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+  for (const dir of [distDir, join(rootDir, "src")]) {
+    const manifestPath = join(dir, "manifest.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf-8"));
+    manifest.version = pkg.version;
+    await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+  }
   console.log(`✓ Set manifest.json version to ${pkg.version}`);
 }
 

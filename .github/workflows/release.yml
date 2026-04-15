@@ -23,9 +23,40 @@ jobs:
 
       - run: npm run package-syle
 
+      - name: Read version from package.json
+        id: version
+        run: echo "version=$(node -p 'require(\"./package.json\").version')" >> "$GITHUB_OUTPUT"
+
       - name: Commit and push version bump
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          git diff --cached --quiet || (git commit -m "release: bump version" && git push)
+          git diff --cached --quiet || (git commit -m "release: v${{ steps.version.outputs.version }}" && git push)
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: URL Porter v${{ steps.version.outputs.version }}
+          body: |
+            ## URL Porter v${{ steps.version.outputs.version }}
+
+            ### Install
+
+            **Mac / Linux:**
+            ```bash
+            curl -L -o url-porter.zip https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/url-porter.zip && unzip url-porter.zip -d url-porter
+            ```
+
+            **Windows:**
+            ```powershell
+            Invoke-WebRequest -Uri https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/url-porter.zip -OutFile url-porter.zip
+            Expand-Archive -Path url-porter.zip -DestinationPath url-porter
+            ```
+
+            Then load the `url-porter` folder as an unpacked extension in Chrome (`chrome://extensions/` → Developer mode → Load unpacked).
+          files: url-porter.zip
+          draft: false
+          prerelease: false
+          make_latest: true
