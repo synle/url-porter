@@ -138,6 +138,19 @@ These 4 emojis are the standard status icons used in bookmark title prefixes acr
 - **Versioning**: `package.json` is the single source of truth. `src/manifest.json` and `dist/manifest.json` are synced automatically during build (by `vite.config.js` `copy-manifest` plugin) and bundle (by `scripts/bundle.js`). Version bumping only happens in the release workflow, never during CI builds.
 - **cleanup-artifacts** / **cleanup-pr-artifacts**: Scheduled and PR-close cleanup workflows.
 
+## GitHub Raw File URLs
+
+When fetching raw file content from GitHub repos, always use the `?raw=true` blob URL format:
+
+```
+https://github.com/{owner}/{repo}/blob/head/{path}?raw=true
+```
+
+Do NOT use:
+
+- `https://api.github.com/repos/{owner}/{repo}/contents/{path}` (GitHub Contents API)
+- `https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}`
+
 ## Key Conventions
 
 - ES modules throughout (`"type": "module"` in package.json and manifest.json background)
