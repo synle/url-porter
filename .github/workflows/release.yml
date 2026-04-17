@@ -2,6 +2,11 @@ name: release
 
 on:
   workflow_dispatch:
+    inputs:
+      notes:
+        description: "Optional release notes (prepended to auto-generated changelog)"
+        required: false
+        default: ""
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,6 +19,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -37,6 +44,77 @@ jobs:
           git add -A
           git diff --cached --quiet || (git commit -m "release: v${{ steps.version.outputs.version }}" && git pull --rebase && git push)
 
+      - name: Build release notes
+        id: notes
+        env:
+          VERSION: v${{ steps.version.outputs.version }}
+          USER_NOTES: ${{ github.event.inputs.notes }}
+          REPO: ${{ github.repository }}
+        run: |
+          CURRENT_SHA=$(git rev-parse HEAD)
+
+          # Find the last official release tag (exclude the one we're about to create)
+          PREV_TAG=$(git tag --sort=-v:refname | grep -v "^${VERSION}$" | head -n 1)
+
+          if [ -n "$PREV_TAG" ]; then
+            PREV_SHA=$(git rev-parse "$PREV_TAG")
+            COMMITS=$(git log --oneline "${PREV_TAG}..HEAD" --max-count=10)
+            TOTAL=$(git rev-list --count "${PREV_TAG}..HEAD")
+            DIFF_RANGE="${PREV_TAG}...${CURRENT_SHA}"
+          else
+            PREV_SHA=""
+            COMMITS=$(git log --oneline --max-count=10)
+            TOTAL=$(git rev-list --count HEAD)
+            DIFF_RANGE="${CURRENT_SHA}"
+          fi
+
+          {
+            echo "## URL Porter ${VERSION}"
+            echo ""
+
+            # User-provided notes at the top
+            if [ -n "$USER_NOTES" ]; then
+              echo "$USER_NOTES"
+              echo ""
+            fi
+
+            # Changelog
+            echo "### Changes"
+            echo ""
+            echo "$COMMITS" | while IFS= read -r line; do
+              SHA=$(echo "$line" | cut -d' ' -f1)
+              MSG=$(echo "$line" | cut -d' ' -f2-)
+              echo "- [\`${SHA}\`](https://github.com/${REPO}/commit/${SHA}) ${MSG}"
+            done
+            echo ""
+
+            if [ "$TOTAL" -gt 10 ]; then
+              echo "_Showing 10 of ${TOTAL} commits._"
+              echo ""
+            fi
+
+            echo "[Full changelog](https://github.com/${REPO}/compare/${DIFF_RANGE})"
+            echo ""
+
+            # Install instructions at the bottom
+            echo "---"
+            echo ""
+            echo "### Install"
+            echo ""
+            echo "**Mac / Linux:**"
+            echo '```bash'
+            echo "curl -L -o url-porter.zip https://github.com/${REPO}/releases/download/${VERSION}/url-porter.zip && unzip url-porter.zip -d url-porter"
+            echo '```'
+            echo ""
+            echo "**Windows:**"
+            echo '```powershell'
+            echo "Invoke-WebRequest -Uri https://github.com/${REPO}/releases/download/${VERSION}/url-porter.zip -OutFile url-porter.zip"
+            echo "Expand-Archive -Path url-porter.zip -DestinationPath url-porter"
+            echo '```'
+            echo ""
+            echo 'Then load the `url-porter` folder as an unpacked extension in Chrome (`chrome://extensions/` → Developer mode → Load unpacked).'
+          } > release-notes.md
+
       - name: Delete existing release and tag
         env:
           TAG: v${{ steps.version.outputs.version }}
@@ -48,23 +126,7 @@ jobs:
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: URL Porter v${{ steps.version.outputs.version }}
-          body: |
-            ## URL Porter v${{ steps.version.outputs.version }}
-
-            ### Install
-
-            **Mac / Linux:**
-            ```bash
-            curl -L -o url-porter.zip https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/url-porter.zip && unzip url-porter.zip -d url-porter
-            ```
-
-            **Windows:**
-            ```powershell
-            Invoke-WebRequest -Uri https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/url-porter.zip -OutFile url-porter.zip
-            Expand-Archive -Path url-porter.zip -DestinationPath url-porter
-            ```
-
-            Then load the `url-porter` folder as an unpacked extension in Chrome (`chrome://extensions/` → Developer mode → Load unpacked).
+          body_path: release-notes.md
           files: url-porter.zip
           draft: false
           prerelease: false
