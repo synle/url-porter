@@ -37,6 +37,12 @@ jobs:
           git add -A
           git diff --cached --quiet || (git commit -m "release: v${{ steps.version.outputs.version }}" && git pull --rebase && git push)
 
+      - name: Delete existing release and tag
+        env:
+          TAG: v${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
