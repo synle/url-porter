@@ -104,6 +104,29 @@ jobs:
 
             console.log(`\nDraft releases deleted: ${drafts.length}`);
 
+            // --- Cleanup [Error] Beta Releases ---
+            console.log(`\n=== Error Release Cleanup ===\n`);
+
+            const errorReleases = releases.filter(r => !r.draft && r.name && r.name.includes('[Error]'));
+
+            for (const rel of errorReleases) {
+              console.log(`Deleting error release: ${rel.name} (tag: ${rel.tag_name}, created: ${rel.created_at})`);
+              await github.rest.repos.deleteRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: rel.id,
+              });
+              if (rel.tag_name) {
+                await github.rest.git.deleteRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: `tags/${rel.tag_name}`,
+                }).catch(() => {});
+              }
+            }
+
+            console.log(`\nError releases deleted: ${errorReleases.length}`);
+
             // --- Cleanup Old Workflow Runs ---
             console.log(`\n=== Workflow Run Cleanup (older than ${KEEP_RUNS_DAYS} days) ===\n`);
 

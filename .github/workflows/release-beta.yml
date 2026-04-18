@@ -1,0 +1,130 @@
+name: release-beta
+
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "Optional release notes (prepended to auto-generated changelog)"
+        required: false
+        default: ""
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-beta:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci || npm i
+
+      - name: Resolve identifiers
+        id: meta
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          VERSION=$(node -e 'process.stdout.write(require("./package.json").version)')
+          TAG="beta-v${VERSION}-${SHORT_SHA}"
+          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Delete existing beta release
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+
+      - name: Create draft release placeholder
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" \
+            --draft \
+            --title "URL Porter Beta ${{ steps.meta.outputs.tag }}" \
+            --notes "Build in progress..." \
+            --target ${{ github.sha }}
+
+      - name: Build and package
+        run: npm run package-syle
+
+      - name: Build release notes
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+          USER_NOTES: ${{ github.event.inputs.notes }}
+          REPO: ${{ github.repository }}
+        run: |
+          CURRENT_SHA=$(git rev-parse HEAD)
+
+          # Find the last official release tag (exclude beta tags)
+          PREV_TAG=$(git tag --sort=-v:refname | grep -v "^beta-" | head -n 1)
+
+          if [ -n "$PREV_TAG" ]; then
+            COMMITS=$(git log --oneline "${PREV_TAG}..HEAD" --max-count=10)
+            TOTAL=$(git rev-list --count "${PREV_TAG}..HEAD")
+            DIFF_RANGE="${PREV_TAG}...${CURRENT_SHA}"
+          else
+            COMMITS=$(git log --oneline --max-count=10)
+            TOTAL=$(git rev-list --count HEAD)
+            DIFF_RANGE="${CURRENT_SHA}"
+          fi
+
+          {
+            echo "## URL Porter Beta ${TAG}"
+            echo ""
+
+            if [ -n "$USER_NOTES" ]; then
+              echo "$USER_NOTES"
+              echo ""
+            fi
+
+            echo "### Changes"
+            echo ""
+            echo "$COMMITS" | while IFS= read -r line; do
+              SHA=$(echo "$line" | cut -d' ' -f1)
+              MSG=$(echo "$line" | cut -d' ' -f2-)
+              echo "- [\`${SHA}\`](https://github.com/${REPO}/commit/${SHA}) ${MSG}"
+            done
+            echo ""
+
+            if [ "$TOTAL" -gt 10 ]; then
+              echo "_Showing 10 of ${TOTAL} commits._"
+              echo ""
+            fi
+
+            echo "[Full changelog](https://github.com/${REPO}/compare/${DIFF_RANGE})"
+          } > release-notes.md
+
+      - name: Update release — Success
+        if: success()
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release edit "$TAG" \
+            --title "URL Porter Beta ${{ steps.meta.outputs.tag }} [Success]" \
+            --notes-file release-notes.md
+          gh release upload "$TAG" url-porter.zip --clobber
+
+      - name: Update release — Error
+        if: failure()
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          gh release edit "$TAG" \
+            --title "URL Porter Beta ${{ steps.meta.outputs.tag }} [Error]" \
+            --notes "Build failed. See [workflow run](https://github.com/${REPO}/actions/runs/${RUN_ID}) for details." \
+            2>/dev/null || true
