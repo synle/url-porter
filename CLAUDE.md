@@ -160,7 +160,6 @@ Do NOT use:
 - Settings that auto-save on blur (homepage URL, bookmark folder name, history limits) send `"Myevent.updateConfig"` message to trigger background reconciliation
 - No Monaco Editor — use `react-simple-code-editor` + Prism.js for the JSON editor (Monaco doesn't work in Chrome extensions)
 
-
 ## Git / PR Merge Policy
 
 - Always use **squash and merge** when merging PRs. Never use merge commits or rebase merges. This keeps the git history clean with one commit per PR.
