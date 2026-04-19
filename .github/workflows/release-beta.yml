@@ -57,12 +57,27 @@ jobs:
         run: |
           gh release create "$TAG" \
             --draft \
+            --prerelease \
             --title "URL Porter Beta ${{ steps.meta.outputs.tag }}" \
             --notes "Build in progress..." \
             --target $(git rev-parse HEAD)
 
+      - name: Mark manifest as beta
+        run: |
+          node -e "
+            const fs = require('fs');
+            const m = JSON.parse(fs.readFileSync('src/manifest.json', 'utf-8'));
+            m.name = 'URL Porter (Beta)';
+            m.version_name = m.version + '-beta.${{ steps.meta.outputs.short_sha }}';
+            fs.writeFileSync('src/manifest.json', JSON.stringify(m, null, 2) + '\n');
+          "
+
       - name: Build and package
         run: npm run package-syle
+
+      - name: Restore manifest
+        if: always()
+        run: git checkout src/manifest.json
 
       - name: Build release notes
         env:

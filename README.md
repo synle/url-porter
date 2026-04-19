@@ -171,8 +171,8 @@ Then load the `url-porter` folder as an unpacked extension in Chrome (see [Load 
 | ------------------------ | ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | **build-main**           | Push/PR to main              | Builds, tests, formats, deploys to GitHub Pages                                                                  |
 | **build-main** (PR)      | Pull requests                | Uploads `url-porter.zip` artifact and posts a PR comment with download link                                      |
-| **release**              | Manual (`workflow_dispatch`) | Bumps version, builds, creates GitHub release with `url-porter.zip`, tags `v{version}`                           |
-| **release-beta**         | Manual (`workflow_dispatch`) | Creates a draft release tagged `release-beta-{sha}` with `url-porter.zip`, title marked `[Success]` or `[Error]` |
+| **release-official**     | Manual (`workflow_dispatch`) | Bumps version, builds, creates GitHub release with `url-porter.zip`, tags `v{version}`                           |
+| **release-beta**         | Manual (`workflow_dispatch`) | Creates a draft prerelease tagged `release-beta-{date}-{sha}` with beta-marked manifest, `[Success]`/`[Error]`   |
 | **cleanup-artifacts**    | Weekly (Sunday)              | Deletes old artifacts, draft releases, `[Error]` releases, and stale workflow runs                               |
 | **cleanup-pr-artifacts** | PR closed                    | Cleans up artifacts from closed PRs                                                                              |
 

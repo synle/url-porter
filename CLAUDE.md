@@ -134,8 +134,9 @@ These 4 emojis are the standard status icons used in bookmark title prefixes acr
 ## CI/CD
 
 - **build-main** (`build-main.yml`): Runs on push/PR to main. Uses reusable workflow from `synle/gha-workflows` which auto-detects and runs `package-syle`, formats code, commits changes, and deploys to GitHub Pages. On PRs, a separate `pr-artifacts` job uploads the zip and posts a download comment.
-- **release** (`release.yml`): Manual `workflow_dispatch` only. Bumps version (`npm version minor`), runs `package-syle`, commits version bump, creates GitHub release with tag `v{version}` and `url-porter.zip` asset via `softprops/action-gh-release`.
-- **Versioning**: `package.json` is the single source of truth. `src/manifest.json` and `dist/manifest.json` are synced automatically during build (by `vite.config.js` `copy-manifest` plugin) and bundle (by `scripts/bundle.js`). Version bumping only happens in the release workflow, never during CI builds.
+- **release-official** (`release-official.yml`): Manual `workflow_dispatch` only. Bumps version (`npm version minor`), runs `package-syle`, commits version bump, creates GitHub release with tag `v{version}` and `url-porter.zip` asset via `softprops/action-gh-release`. Published as the latest official release.
+- **release-beta** (`release-beta.yml`): Manual `workflow_dispatch` only. Creates a draft prerelease tagged `release-beta-{date}-{sha}` with `url-porter.zip`. Manifest name is set to "URL Porter (Beta)" and `version_name` includes the beta SHA suffix. Title marked `[Success]` or `[Error]`.
+- **Versioning**: `package.json` is the single source of truth. `src/manifest.json` and `dist/manifest.json` are synced automatically during build (by `vite.config.js` `copy-manifest` plugin) and bundle (by `scripts/bundle.js`). Version bumping only happens in the release-official workflow, never during CI builds.
 - **cleanup-artifacts** / **cleanup-pr-artifacts**: Scheduled and PR-close cleanup workflows.
 
 ## GitHub Raw File URLs
