@@ -11,5 +11,5 @@
     "skipLibCheck": true
   },
   "include": ["src/helpers/configUtils.js"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "build", "dist"]
 }
