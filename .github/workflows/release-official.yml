@@ -28,106 +28,72 @@ jobs:
 
       - run: npm ci || npm i
 
+      # Bump version (repo-specific: url-porter bumps during CI)
       - name: Bump version
         run: npm version minor --no-git-tag-version
 
+      # Pre-build: resolve tag and create draft
+      - name: Resolve tag
+        id: tag
+        uses: synle/gha-workflows/actions/release/_common/resolve-tag@main
+        with:
+          mode: official
+
+      - name: Create draft
+        uses: synle/gha-workflows/actions/release/_common/draft@main
+        with:
+          tag: ${{ steps.tag.outputs.tag }}
+          project_name: URL Porter
+
+      # Build (repo-specific)
       - run: npm run package-syle
 
-      - name: Read version from package.json
-        id: version
-        run: echo "version=$(node -e 'process.stdout.write(require("./package.json").version)')" >> "$GITHUB_OUTPUT"
-
+      # Commit version bump (repo-specific)
       - name: Commit and push version bump
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          git diff --cached --quiet || (git commit -m "release: v${{ steps.version.outputs.version }}" && git pull --rebase && git push)
+          git diff --cached --quiet || (git commit -m "release: ${{ steps.tag.outputs.tag }}" && git pull --rebase && git push)
 
-      - name: Build release notes
-        id: notes
+      # Post-build: generate notes and finalize
+      - name: Generate release notes
+        uses: synle/gha-workflows/actions/release/_common/notes@main
+        with:
+          tag: ${{ steps.tag.outputs.tag }}
+          project_name: URL Porter
+          user_notes: ${{ github.event.inputs.notes }}
+
+      - name: Append install instructions
         env:
-          VERSION: v${{ steps.version.outputs.version }}
-          USER_NOTES: ${{ github.event.inputs.notes }}
+          TAG: ${{ steps.tag.outputs.tag }}
           REPO: ${{ github.repository }}
         run: |
-          CURRENT_SHA=$(git rev-parse HEAD)
-
-          # Find the last official release tag (exclude the one we're about to create)
-          PREV_TAG=$(git tag --sort=-v:refname | grep -v "^${VERSION}$" | head -n 1)
-
-          if [ -n "$PREV_TAG" ]; then
-            PREV_SHA=$(git rev-parse "$PREV_TAG")
-            COMMITS=$(git log --oneline "${PREV_TAG}..HEAD" --max-count=10)
-            TOTAL=$(git rev-list --count "${PREV_TAG}..HEAD")
-            DIFF_RANGE="${PREV_TAG}...${CURRENT_SHA}"
-          else
-            PREV_SHA=""
-            COMMITS=$(git log --oneline --max-count=10)
-            TOTAL=$(git rev-list --count HEAD)
-            DIFF_RANGE="${CURRENT_SHA}"
-          fi
-
           {
-            echo "## URL Porter ${VERSION}"
             echo ""
-
-            # User-provided notes at the top
-            if [ -n "$USER_NOTES" ]; then
-              echo "$USER_NOTES"
-              echo ""
-            fi
-
-            # Changelog
-            echo "### Changes"
-            echo ""
-            echo "$COMMITS" | while IFS= read -r line; do
-              SHA=$(echo "$line" | cut -d' ' -f1)
-              MSG=$(echo "$line" | cut -d' ' -f2-)
-              echo "- [\`${SHA}\`](https://github.com/${REPO}/commit/${SHA}) ${MSG}"
-            done
-            echo ""
-
-            if [ "$TOTAL" -gt 10 ]; then
-              echo "_Showing 10 of ${TOTAL} commits._"
-              echo ""
-            fi
-
-            echo "[Full changelog](https://github.com/${REPO}/compare/${DIFF_RANGE})"
-            echo ""
-
-            # Install instructions at the bottom
             echo "---"
             echo ""
             echo "### Install"
             echo ""
             echo "**Mac / Linux:**"
             echo '```bash'
-            echo "curl -L -o url-porter.zip https://github.com/${REPO}/releases/download/${VERSION}/url-porter.zip && unzip url-porter.zip -d url-porter"
+            echo "curl -L -o url-porter.zip https://github.com/${REPO}/releases/download/${TAG}/url-porter.zip && unzip url-porter.zip -d url-porter"
             echo '```'
             echo ""
             echo "**Windows:**"
             echo '```powershell'
-            echo "Invoke-WebRequest -Uri https://github.com/${REPO}/releases/download/${VERSION}/url-porter.zip -OutFile url-porter.zip"
+            echo "Invoke-WebRequest -Uri https://github.com/${REPO}/releases/download/${TAG}/url-porter.zip -OutFile url-porter.zip"
             echo "Expand-Archive -Path url-porter.zip -DestinationPath url-porter"
             echo '```'
             echo ""
             echo 'Then load the `url-porter` folder as an unpacked extension in Chrome (`chrome://extensions/` → Developer mode → Load unpacked).'
-          } > release-notes.md
+          } >> release-notes.md
 
-      - name: Delete existing release and tag
-        env:
-          TAG: v${{ steps.version.outputs.version }}
-          GH_TOKEN: ${{ github.token }}
-        run: gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
-
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+      - name: Finalize release
+        uses: synle/gha-workflows/actions/release/_common/finalize@main
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: URL Porter v${{ steps.version.outputs.version }}
-          body_path: release-notes.md
+          tag: ${{ steps.tag.outputs.tag }}
+          project_name: URL Porter
+          mode: official
+          build_result: success
           files: url-porter.zip
-          draft: false
-          prerelease: false
-          make_latest: true

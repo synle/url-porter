@@ -33,119 +33,56 @@ jobs:
 
       - run: npm ci || npm i
 
-      - name: Resolve identifiers
-        id: meta
-        run: |
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          VERSION=$(node -e 'process.stdout.write(require("./package.json").version)')
-          DATE=$(date -u '+%Y-%m-%d-%H-%M')
-          TAG="release-beta-${DATE}-${SHORT_SHA}"
-          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+      # Pre-build: resolve tag and create draft
+      - name: Resolve tag
+        id: tag
+        uses: synle/gha-workflows/actions/release/_common/resolve-tag@main
+        with:
+          mode: beta
+          sha: ${{ github.event.inputs.sha }}
 
-      - name: Delete existing beta release
-        env:
-          TAG: ${{ steps.meta.outputs.tag }}
-          GH_TOKEN: ${{ github.token }}
-        run: gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+      - name: Create draft
+        uses: synle/gha-workflows/actions/release/_common/draft@main
+        with:
+          tag: ${{ steps.tag.outputs.tag }}
+          project_name: URL Porter Beta
 
-      - name: Create draft release placeholder
-        env:
-          TAG: ${{ steps.meta.outputs.tag }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "$TAG" \
-            --draft \
-            --prerelease \
-            --title "URL Porter Beta ${{ steps.meta.outputs.tag }}" \
-            --notes "Build in progress..." \
-            --target $(git rev-parse HEAD)
-
+      # Mark manifest as beta (repo-specific)
       - name: Mark manifest as beta
         run: |
           node -e "
             const fs = require('fs');
             const m = JSON.parse(fs.readFileSync('src/manifest.json', 'utf-8'));
             m.name = 'URL Porter (Beta)';
-            m.version_name = m.version + '-beta.${{ steps.meta.outputs.short_sha }}';
+            m.version_name = m.version + '-beta.${{ steps.tag.outputs.short_sha }}';
             fs.writeFileSync('src/manifest.json', JSON.stringify(m, null, 2) + '\n');
           "
 
+      # Build (repo-specific)
       - name: Build and package
+        id: build
         run: npm run package-syle
 
+      # Restore manifest (repo-specific)
       - name: Restore manifest
         if: always()
         run: git checkout src/manifest.json
 
-      - name: Build release notes
-        env:
-          TAG: ${{ steps.meta.outputs.tag }}
-          USER_NOTES: ${{ github.event.inputs.notes }}
-          REPO: ${{ github.repository }}
-        run: |
-          CURRENT_SHA=$(git rev-parse HEAD)
+      # Post-build: generate notes and finalize
+      - name: Generate release notes
+        if: always()
+        uses: synle/gha-workflows/actions/release/_common/notes@main
+        with:
+          tag: ${{ steps.tag.outputs.tag }}
+          project_name: URL Porter Beta
+          user_notes: ${{ github.event.inputs.notes }}
 
-          # Find the last official release tag (exclude beta tags)
-          PREV_TAG=$(git tag --sort=-v:refname | grep -v "^release-beta-" | head -n 1)
-
-          if [ -n "$PREV_TAG" ]; then
-            COMMITS=$(git log --oneline "${PREV_TAG}..HEAD" --max-count=10)
-            TOTAL=$(git rev-list --count "${PREV_TAG}..HEAD")
-            DIFF_RANGE="${PREV_TAG}...${CURRENT_SHA}"
-          else
-            COMMITS=$(git log --oneline --max-count=10)
-            TOTAL=$(git rev-list --count HEAD)
-            DIFF_RANGE="${CURRENT_SHA}"
-          fi
-
-          {
-            echo "## URL Porter Beta ${TAG}"
-            echo ""
-
-            if [ -n "$USER_NOTES" ]; then
-              echo "$USER_NOTES"
-              echo ""
-            fi
-
-            echo "### Changes"
-            echo ""
-            echo "$COMMITS" | while IFS= read -r line; do
-              SHA=$(echo "$line" | cut -d' ' -f1)
-              MSG=$(echo "$line" | cut -d' ' -f2-)
-              echo "- [\`${SHA}\`](https://github.com/${REPO}/commit/${SHA}) ${MSG}"
-            done
-            echo ""
-
-            if [ "$TOTAL" -gt 10 ]; then
-              echo "_Showing 10 of ${TOTAL} commits._"
-              echo ""
-            fi
-
-            echo "[Full changelog](https://github.com/${REPO}/compare/${DIFF_RANGE})"
-          } > release-notes.md
-
-      - name: Update release — Success
-        if: success()
-        env:
-          TAG: ${{ steps.meta.outputs.tag }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release edit "$TAG" \
-            --title "URL Porter Beta ${{ steps.meta.outputs.tag }} [Success]" \
-            --notes-file release-notes.md
-          gh release upload "$TAG" url-porter.zip --clobber
-
-      - name: Update release — Error
-        if: failure()
-        env:
-          TAG: ${{ steps.meta.outputs.tag }}
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          RUN_ID: ${{ github.run_id }}
-        run: |
-          gh release edit "$TAG" \
-            --title "URL Porter Beta ${{ steps.meta.outputs.tag }} [Error]" \
-            --notes "Build failed. See [workflow run](https://github.com/${REPO}/actions/runs/${RUN_ID}) for details." \
-            2>/dev/null || true
+      - name: Finalize release
+        if: always()
+        uses: synle/gha-workflows/actions/release/_common/finalize@main
+        with:
+          tag: ${{ steps.tag.outputs.tag }}
+          project_name: URL Porter Beta
+          mode: beta
+          build_result: ${{ steps.build.outcome }}
+          files: url-porter.zip
