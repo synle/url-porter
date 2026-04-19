@@ -36,13 +36,13 @@ jobs:
       # Pre-build: resolve tag and create draft
       - name: Resolve tag
         id: tag
-        uses: synle/gha-workflows/actions/release/_common/resolve-tag@main
+        uses: synle/workflows/actions/release/_common/resolve-tag@main
         with:
           mode: beta
           sha: ${{ github.event.inputs.sha }}
 
       - name: Create draft
-        uses: synle/gha-workflows/actions/release/_common/draft@main
+        uses: synle/workflows/actions/release/_common/draft@main
         with:
           tag: ${{ steps.tag.outputs.tag }}
           project_name: URL Porter Beta
@@ -71,7 +71,7 @@ jobs:
       # Post-build: generate notes and finalize
       - name: Generate release notes
         if: always()
-        uses: synle/gha-workflows/actions/release/_common/notes@main
+        uses: synle/workflows/actions/release/_common/notes@main
         with:
           tag: ${{ steps.tag.outputs.tag }}
           project_name: URL Porter Beta
@@ -79,7 +79,7 @@ jobs:
 
       - name: Finalize release
         if: always()
-        uses: synle/gha-workflows/actions/release/_common/finalize@main
+        uses: synle/workflows/actions/release/_common/finalize@main
         with:
           tag: ${{ steps.tag.outputs.tag }}
           project_name: URL Porter Beta
