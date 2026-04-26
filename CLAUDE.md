@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-URL Porter is a Chrome Extension (Manifest V3) that lets users configure custom URL redirect rules (short aliases → full URLs), set a custom new tab homepage, and sync config from a remote server. Built with React 19, MUI 7, and Vite 6.
+URL Porter is a Chrome Extension (Manifest V3) that lets users configure custom URL redirect rules (short aliases → full URLs), set a custom new tab homepage, and sync config from a remote server. Built with React 19, MUI 9, and Vite 6.
 
 ## Build & Development Commands
 

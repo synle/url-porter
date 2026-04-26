@@ -141,7 +141,7 @@ tests/               # Vitest test files (Chrome APIs mocked via vi.stubGlobal)
 ### Tech Stack
 
 - **React 19** + **Vite 6** — build and dev tooling
-- **MUI 7 (Material UI)** — component library and theming
+- **MUI 9 (Material UI)** — component library and theming
 - **react-simple-code-editor** + **Prism.js** — lightweight syntax-highlighted JSON editor
 - **Vitest** — test runner with Chrome API mocking
 - **Chrome Manifest V3** — declarativeNetRequest, storage, bookmarks, history, omnibox APIs
