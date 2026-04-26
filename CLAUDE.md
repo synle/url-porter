@@ -20,6 +20,10 @@ npm run validate     # Run all quality checks: test + lint + build + format
 
 Tests use Vitest: `npm test` runs all tests. Test files live in the `tests/` directory at the project root (NOT inside `src/` — build hooks can delete files there). Chrome APIs are mocked via `vi.stubGlobal`. Use fictional company names in test fixtures (Acme, Globex, Initech) and made-up ticket keys (FALCON, PLUTO, ORBIT) — never real company names. Node version is pinned to 20.19.1 via Volta.
 
+**VSCode debugging:** `.vscode/launch.json` provides launch configs for Vitest
+run-all, Vitest debug-current-file, and a watch-mode dev build for the Chrome
+extension. Open the Run and Debug panel and pick one.
+
 The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server endpoint at build time.
 
 ## Local Development with Chrome
