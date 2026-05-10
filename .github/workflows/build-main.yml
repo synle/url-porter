@@ -21,6 +21,62 @@ jobs:
       pages: write
       id-token: write
 
+  coverage:
+    # Coverage thresholds live in vite.config.js under
+    # `test.coverage.thresholds`. The `--coverage` flag fails the
+    # run when any of statements / branches / functions / lines
+    # falls below its configured floor. `tee` keeps the full
+    # output for the step-summary block below.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci || npm i
+
+      - name: Run coverage
+        run: |
+          set -o pipefail
+          npm run test:coverage 2>&1 | tee /tmp/cov.txt
+
+      # Upload the full HTML / json-summary reports as an artifact
+      # so reviewers can drill into per-file line-level coverage
+      # when the run-page summary's totals aren't enough. `always()`
+      # so the artifact still uploads when thresholds fail — that's
+      # exactly when humans want the numbers.
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      # Surface the coverage summary on the run page. `always()` so
+      # it posts even when thresholds fail.
+      - name: Post coverage to step summary
+        if: always()
+        run: |
+          {
+            echo "## Test coverage — \`$GITHUB_SHA\`"
+            echo
+            echo '```text'
+            if [ -f /tmp/cov.txt ]; then
+              awk '/^=+ Coverage summary =+$/,/^=+$/' /tmp/cov.txt \
+                || tail -n 8 /tmp/cov.txt
+            else
+              echo "(coverage did not run)"
+            fi
+            echo '```'
+            echo
+            echo "Thresholds (from \`vite.config.js → test.coverage.thresholds\`):"
+            echo "lines ≥ 19, statements ≥ 18, branches ≥ 19, functions ≥ 13."
+          } >> "$GITHUB_STEP_SUMMARY"
+
   pr-artifacts:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest

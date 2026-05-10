@@ -5,6 +5,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@vitejs/plugin-react": "^5.2.0",
+    "@vitest/coverage-v8": "^4.1.5",
     "archiver": "^7.0.1",
     "eslint": "^9.39.4",
     "eslint-plugin-react": "^7.37.5",
@@ -26,6 +27,7 @@
     "package": "npm run build && npm run bundle",
     "package-syle": "VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL=https://synle.github.io/fav/url-porter.json npm run package",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint src/",
     "format": "prettier --write --print-width 140 --ignore-unknown --no-error-on-unmatched-pattern --cache '**/*.{js,jsx,ts,tsx,mjs,cjs,json,html,css,scss,less,md,yml,yaml,graphql,vue,xml}'",
     "validate": "npm test && npm run lint && npm run build && npm run format"
