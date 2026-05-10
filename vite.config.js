@@ -10,6 +10,27 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const isDev = process.argv.includes("--watch");
 
 export default defineConfig({
+  test: {
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "text-summary", "json-summary", "html"],
+      reportsDirectory: "coverage",
+      include: ["src/**/*.{js,jsx,ts,tsx}"],
+      exclude: ["src/**/*.{test,spec}.{js,jsx,ts,tsx}", "src/**/*.d.ts", "scripts/**"],
+      // Baseline captured at v1.84.0 against the current 8-file
+      // test suite (Statements 19.97 / Branches 20.33 /
+      // Functions 14.71 / Lines 20.26). CI floor is the integer
+      // baseline minus 1pt as a safety margin against coincidental
+      // flakes — a real regression beyond that fails the build.
+      // Raise these as coverage improves; never lower them.
+      thresholds: {
+        lines: 19,
+        statements: 18,
+        branches: 19,
+        functions: 13,
+      },
+    },
+  },
   build: {
     outDir: "dist",
     emptyOutDir: true,
