@@ -29,9 +29,9 @@ jobs:
     # output for the step-summary block below.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
 
@@ -49,7 +49,7 @@ jobs:
       # exactly when humans want the numbers.
       - name: Upload coverage reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-reports
           path: coverage/
@@ -84,9 +84,9 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
 
@@ -97,7 +97,7 @@ jobs:
       - run: node scripts/bundle.js
 
       - name: Upload extension zip
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         id: upload
         with:
           name: url-porter-pr-${{ github.event.pull_request.number }}
@@ -106,7 +106,7 @@ jobs:
           compression-level: 0
 
       - name: Post PR comment with artifact link
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
