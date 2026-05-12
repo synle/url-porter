@@ -11,23 +11,35 @@ const isDev = process.argv.includes("--watch");
 
 export default defineConfig({
   test: {
+    environment: "jsdom",
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary", "json-summary", "html"],
       reportsDirectory: "coverage",
+      // Explicit source globs only — never `**/*` (rule 41).
       include: ["src/**/*.{js,jsx,ts,tsx}"],
-      exclude: ["src/**/*.{test,spec}.{js,jsx,ts,tsx}", "src/**/*.d.ts", "scripts/**"],
-      // Baseline captured at v1.84.0 against the current 8-file
-      // test suite (Statements 19.97 / Branches 20.33 /
-      // Functions 14.71 / Lines 20.26). CI floor is the integer
-      // baseline minus 1pt as a safety margin against coincidental
-      // flakes — a real regression beyond that fails the build.
-      // Raise these as coverage improves; never lower them.
+      exclude: [
+        "src/**/*.{test,spec}.{js,jsx,ts,tsx}",
+        "src/**/*.d.ts",
+        "scripts/**",
+        ".env*",
+        "**/secret*",
+        "**/credential*",
+        "**/*.pem",
+        "**/*.key",
+        "**/*.p12",
+        "assets/binaries/**",
+        "secrets/**",
+      ],
+      // Coverage floor raised from the v1.84.0 baseline (20% / 20%) once we
+      // built out unit-test coverage for helpers, background, and content scripts.
+      // The numbers are 1-2pt below the actual stable values to give CI a small
+      // flake margin. Raise these as coverage improves; never lower them.
       thresholds: {
-        lines: 19,
-        statements: 18,
-        branches: 19,
-        functions: 13,
+        lines: 75,
+        statements: 73,
+        branches: 60,
+        functions: 70,
       },
     },
   },
