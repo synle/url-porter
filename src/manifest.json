@@ -1,18 +1,27 @@
 {
   "manifest_version": 3,
   "name": "URL Porter",
-  "version": "1.86.1",
+  "version": "1.87.0",
   "description": "This extension lets you configure redirect rules and set a custom homepage.",
   "icons": {
     "16": "icon.png",
     "48": "icon.png",
     "128": "icon.png"
   },
-  "permissions": ["storage", "declarativeNetRequest", "contextMenus", "tabs", "bookmarks", "history"],
+  "permissions": [
+    "storage",
+    "declarativeNetRequest",
+    "contextMenus",
+    "tabs",
+    "bookmarks",
+    "history"
+  ],
   "omnibox": {
     "keyword": "go"
   },
-  "host_permissions": ["*://*/*"],
+  "host_permissions": [
+    "*://*/*"
+  ],
   "background": {
     "service_worker": "background/background.js",
     "type": "module"
@@ -26,25 +35,53 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://keep.google.com/*"],
-      "css": ["content/keep.css"],
-      "js": ["content/keep.js"]
+      "matches": [
+        "https://keep.google.com/*"
+      ],
+      "css": [
+        "content/keep.css"
+      ],
+      "js": [
+        "content/keep.js"
+      ]
     },
     {
-      "matches": ["https://synle.github.io/fav/*"],
-      "js": ["content/fav.js"]
+      "matches": [
+        "https://synle.github.io/fav/*"
+      ],
+      "js": [
+        "content/fav.js"
+      ]
     },
     {
-      "matches": ["https://github.com/*/pull/*", "https://*.githubprivate.com/*/pull/*", "https://*.ghe.com/*/pull/*"],
-      "js": ["content/content-utils.js", "content/pr-status-github.js"]
+      "matches": [
+        "https://github.com/*/pull/*",
+        "https://*.githubprivate.com/*/pull/*",
+        "https://*.ghe.com/*/pull/*"
+      ],
+      "js": [
+        "content/content-utils.js",
+        "content/pr-status-github.js"
+      ]
     },
     {
-      "matches": ["https://*.visualstudio.com/*/pullrequest/*", "https://dev.azure.com/*/pullrequest/*"],
-      "js": ["content/content-utils.js", "content/pr-status-azure.js"]
+      "matches": [
+        "https://*.visualstudio.com/*/pullrequest/*",
+        "https://dev.azure.com/*/pullrequest/*"
+      ],
+      "js": [
+        "content/content-utils.js",
+        "content/pr-status-azure.js"
+      ]
     },
     {
-      "matches": ["https://*.atlassian.net/browse/*"],
-      "js": ["content/content-utils.js", "content/jira-status.js"]
+      "matches": [
+        "https://*.atlassian.net/browse/*"
+      ],
+      "js": [
+        "content/content-utils.js",
+        "content/jira-status.js"
+      ]
     }
   ]
 }
