@@ -1,12 +1,10 @@
 /**
  * Tests for configAnalysis helpers — findDuplicateAliases, findRedirectChains,
- * findOverlappingAliases.
- *
- * checkBrokenLinks is excluded since it requires network access.
+ * findOverlappingAliases, checkBrokenLinks (with a mocked global fetch).
  */
 
-import { describe, it, expect } from "vitest";
-import { findDuplicateAliases, findRedirectChains, findOverlappingAliases } from "../src/helpers/configAnalysis.js";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { findDuplicateAliases, findRedirectChains, findOverlappingAliases, checkBrokenLinks } from "../src/helpers/configAnalysis.js";
 
 describe("findDuplicateAliases", () => {
   it("returns empty for no duplicates", () => {
@@ -179,5 +177,71 @@ describe("findOverlappingAliases", () => {
     expect(result).toHaveLength(1);
     expect(result[0].aliasA).toBe("tplinkwifi");
     expect(result[0].aliasB).toBe("tplinkwifi.net");
+  });
+});
+
+describe("checkBrokenLinks", () => {
+  let origFetch;
+  beforeEach(() => {
+    origFetch = globalThis.fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = origFetch;
+  });
+
+  it("returns [] when no entries", async () => {
+    globalThis.fetch = vi.fn();
+    const result = await checkBrokenLinks([]);
+    expect(result).toEqual([]);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it("skips entries that do not have an http(s) destination", async () => {
+    globalThis.fetch = vi.fn();
+    const result = await checkBrokenLinks([
+      { from: "a", to: "ftp://x.com" },
+      { from: "b", to: "" },
+    ]);
+    expect(result).toEqual([]);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it("skips short-link redirects that point to another alias", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ status: 200 });
+    const result = await checkBrokenLinks([
+      { from: "a", to: "aaa" },
+      { from: "aaa", to: "https://aaa.com" },
+    ]);
+    expect(result).toEqual([]);
+    // Only the second entry's URL should be fetched
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(globalThis.fetch).toHaveBeenCalledWith("https://aaa.com", { method: "HEAD", mode: "no-cors" });
+  });
+
+  it("flags 404 responses as broken links", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ status: 404 });
+    const result = await checkBrokenLinks([{ from: "x", to: "https://missing.example.com" }]);
+    expect(result).toHaveLength(1);
+    expect(result[0].status).toBe(404);
+  });
+
+  it("treats fetch errors as reachable (no false positives)", async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
+    const result = await checkBrokenLinks([{ from: "x", to: "https://blocked.example.com" }]);
+    expect(result).toEqual([]);
+  });
+
+  it("invokes the onProgress callback after each entry", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ status: 200 });
+    const onProgress = vi.fn();
+    await checkBrokenLinks(
+      [
+        { from: "a", to: "https://a.com" },
+        { from: "b", to: "https://b.com" },
+      ],
+      onProgress,
+    );
+    expect(onProgress).toHaveBeenCalledTimes(2);
+    expect(onProgress).toHaveBeenLastCalledWith(2, 2);
   });
 });

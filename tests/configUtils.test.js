@@ -13,6 +13,10 @@ import {
   cleanUrl,
   validateAlias,
   normalizeEntry,
+  normalizeEntries,
+  normalizeEntryForRedirect,
+  normalizeEntriesForRedirect,
+  findDuplicateEntry,
 } from "../src/helpers/configUtils.js";
 
 describe("sanitizeBookmarkTitle", () => {
@@ -200,5 +204,112 @@ describe("normalizeEntry", () => {
     expect(normalizeEntry(null)).toBeNull();
     expect(normalizeEntry("string")).toBeNull();
     expect(normalizeEntry([1])).toBeNull();
+  });
+});
+
+describe("normalizeEntries", () => {
+  it("normalizes a mixed array of valid and invalid entries", () => {
+    const out = normalizeEntries([{ from: "a", to: "b" }, ["c", "d"], null, "not-entry"]);
+    expect(out).toEqual([
+      { from: "a", to: "b" },
+      { from: "c", to: "d" },
+    ]);
+  });
+
+  it("returns [] for non-array input", () => {
+    expect(normalizeEntries(null)).toEqual([]);
+    expect(normalizeEntries("nope")).toEqual([]);
+  });
+});
+
+describe("normalizeEntryForRedirect", () => {
+  it("returns null for invalid shape", () => {
+    expect(normalizeEntryForRedirect(null)).toBeNull();
+  });
+
+  it("returns a fully normalized {from, to} pair", () => {
+    const out = normalizeEntryForRedirect({ from: "GH", to: "github.com" });
+    expect(out.from).toBe("||gh^");
+    expect(out.to).toBe("https://github.com");
+  });
+
+  it("normalizes array tuples", () => {
+    const out = normalizeEntryForRedirect(["FOO", "foo.com"]);
+    expect(out.from).toBe("||foo^");
+    expect(out.to).toBe("https://foo.com");
+  });
+});
+
+describe("normalizeEntriesForRedirect", () => {
+  it("returns [] for non-array input", () => {
+    expect(normalizeEntriesForRedirect(null)).toEqual([]);
+  });
+
+  it("filters out null/invalid entries and returns the rest fully normalized", () => {
+    const out = normalizeEntriesForRedirect([{ from: "GH", to: "github.com" }, null, ["GL", "gitlab.com"]]);
+    expect(out).toHaveLength(2);
+    const froms = out.map((e) => e.from);
+    expect(froms).toContain("||gh^");
+    expect(froms).toContain("||gl^");
+  });
+});
+
+describe("findDuplicateEntry", () => {
+  it("returns null when no entries", () => {
+    expect(findDuplicateEntry([], "x")).toBeNull();
+  });
+
+  it("returns null when alias is empty", () => {
+    expect(findDuplicateEntry([{ from: "x", to: "y" }], "")).toBeNull();
+  });
+
+  it("returns null for non-array entries", () => {
+    expect(findDuplicateEntry(null, "x")).toBeNull();
+  });
+
+  it("finds a duplicate by normalized from", () => {
+    const result = findDuplicateEntry([{ from: "||gh^", to: "https://github.com" }], "gh");
+    expect(result).not.toBeNull();
+    expect(result.index).toBe(0);
+  });
+
+  it("skips the given skipIndex (edit mode)", () => {
+    const entries = [
+      { from: "||gh^", to: "https://github.com" },
+      { from: "||gh^", to: "https://github.com/org" },
+    ];
+    expect(findDuplicateEntry(entries, "gh", 0).index).toBe(1);
+    expect(findDuplicateEntry(entries, "gh", 1).index).toBe(0);
+  });
+
+  it("returns null when no entry matches", () => {
+    expect(findDuplicateEntry([{ from: "||gh^", to: "https://github.com" }], "gl")).toBeNull();
+  });
+
+  it("skips entries that fail normalization", () => {
+    const entries = [null, "not-entry", { from: "||gh^", to: "https://github.com" }];
+    const result = findDuplicateEntry(entries, "gh");
+    expect(result.index).toBe(2);
+  });
+});
+
+describe("cleanAlias", () => {
+  it("trims and lowercases", () => {
+    expect(cleanAlias("  Hello  ")).toBe("hello");
+  });
+
+  it("strips non-ASCII characters", () => {
+    expect(cleanAlias("ali\u200Bas")).toBe("alias");
+  });
+});
+
+describe("stripAlias", () => {
+  it("returns input as-is when no delimiters", () => {
+    expect(stripAlias("bare")).toBe("bare");
+  });
+
+  it("returns empty for null/undefined", () => {
+    expect(stripAlias(null)).toBe("");
+    expect(stripAlias(undefined)).toBe("");
   });
 });
