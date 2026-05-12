@@ -35,7 +35,7 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm ci || npm i
+      - run: npm ci || npm install --no-fund --prefer-offline
 
       - name: Run coverage
         run: |
@@ -90,7 +90,7 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm ci || npm i
+      - run: npm ci || npm install --no-fund --prefer-offline
 
       - run: npm run build
 
