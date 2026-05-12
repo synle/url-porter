@@ -31,7 +31,7 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm ci || npm i
+      - run: npm ci || npm install --no-fund --prefer-offline
 
       # Pre-build: resolve tag and create draft
       - name: Resolve tag
