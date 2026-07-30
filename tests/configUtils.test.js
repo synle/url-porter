@@ -81,7 +81,9 @@ describe("sanitizeBookmarkTitle", () => {
   });
 
   it("handles combined transformations", () => {
-    expect(sanitizeBookmarkTitle("https://www.example.com/path#section")).toBe("example.com/path/section");
+    expect(sanitizeBookmarkTitle("https://www.example.com/path#section")).toBe(
+      "example.com/path/section",
+    );
   });
 });
 
@@ -246,7 +248,11 @@ describe("normalizeEntriesForRedirect", () => {
   });
 
   it("filters out null/invalid entries and returns the rest fully normalized", () => {
-    const out = normalizeEntriesForRedirect([{ from: "GH", to: "github.com" }, null, ["GL", "gitlab.com"]]);
+    const out = normalizeEntriesForRedirect([
+      { from: "GH", to: "github.com" },
+      null,
+      ["GL", "gitlab.com"],
+    ]);
     expect(out).toHaveLength(2);
     const froms = out.map((e) => e.from);
     expect(froms).toContain("||gh^");

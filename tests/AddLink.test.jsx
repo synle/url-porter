@@ -17,7 +17,8 @@ chrome.runtime.getURL = vi.fn((p) => `chrome-extension://test/${p}`);
 vi.stubGlobal("chrome", chrome);
 
 if (!globalThis.crypto) globalThis.crypto = {};
-if (!globalThis.crypto.randomUUID) globalThis.crypto.randomUUID = () => "uuid-" + Math.random().toString(36).slice(2);
+if (!globalThis.crypto.randomUUID)
+  globalThis.crypto.randomUUID = () => "uuid-" + Math.random().toString(36).slice(2);
 
 const AddLink = (await import("../src/pages/addlink/AddLink.jsx")).default;
 
@@ -26,7 +27,9 @@ describe("AddLink", () => {
     reset();
     chrome.tabs.create.mockClear();
     chrome.tabs.query.mockClear();
-    chrome.tabs.query.mockImplementation(async () => [{ url: "https://example.com/page", title: "Example" }]);
+    chrome.tabs.query.mockImplementation(async () => [
+      { url: "https://example.com/page", title: "Example" },
+    ]);
     chrome.runtime.sendMessage.mockClear();
     window.history.replaceState({}, "", "/");
     window.close = vi.fn();
@@ -42,22 +45,31 @@ describe("AddLink", () => {
   it("prefills from active tab when no query params", async () => {
     render(<AddLink />);
     await waitFor(() => expect(chrome.tabs.query).toHaveBeenCalled());
-    await waitFor(() => expect(screen.queryAllByDisplayValue("https://example.com/page").length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(screen.queryAllByDisplayValue("https://example.com/page").length).toBeGreaterThan(0),
+    );
   });
 
   it("prefills from ?url= and ?title= query params", async () => {
     window.history.replaceState(
       {},
       "",
-      "/?url=" + encodeURIComponent("https://foo.test/path") + "&title=" + encodeURIComponent("Foo Title"),
+      "/?url=" +
+        encodeURIComponent("https://foo.test/path") +
+        "&title=" +
+        encodeURIComponent("Foo Title"),
     );
     render(<AddLink />);
-    await waitFor(() => expect(screen.queryAllByDisplayValue("https://foo.test/path").length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(screen.queryAllByDisplayValue("https://foo.test/path").length).toBeGreaterThan(0),
+    );
     expect(screen.queryAllByDisplayValue("Foo Title").length).toBeGreaterThan(0);
   });
 
   it("skips prefill for chrome:// URLs", async () => {
-    chrome.tabs.query.mockImplementation(async () => [{ url: "chrome://settings/", title: "Settings" }]);
+    chrome.tabs.query.mockImplementation(async () => [
+      { url: "chrome://settings/", title: "Settings" },
+    ]);
     render(<AddLink />);
     await waitFor(() => expect(chrome.tabs.query).toHaveBeenCalled());
     // The "Full URL" field should remain empty
@@ -74,7 +86,9 @@ describe("AddLink", () => {
     fireEvent.change(inputs[1], { target: { value: "https://target.test" } });
     const submit = screen.getByRole("button", { name: /^Add Link$/i });
     fireEvent.click(submit);
-    await waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }));
+    await waitFor(() =>
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }),
+    );
   });
 
   it("shows duplicate dialog when alias already exists", async () => {
@@ -98,7 +112,9 @@ describe("AddLink", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Add Link$/i }));
     await screen.findByText("Duplicate Alias");
     fireEvent.click(screen.getByRole("button", { name: /Update Existing Link/i }));
-    await waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }));
+    await waitFor(() =>
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }),
+    );
   });
 
   it("shows error when alias is missing", async () => {
@@ -136,14 +152,18 @@ describe("AddLink", () => {
     render(<AddLink />);
     await screen.findByRole("heading", { name: /Add Link/i });
     fireEvent.click(screen.getByRole("button", { name: /Open Settings/i }));
-    expect(chrome.tabs.create).toHaveBeenCalledWith({ url: "chrome-extension://test/pages/options/options.html" });
+    expect(chrome.tabs.create).toHaveBeenCalledWith({
+      url: "chrome-extension://test/pages/options/options.html",
+    });
   });
 
   it("opens Add Link page in new tab from icon", async () => {
     render(<AddLink />);
     await screen.findByRole("heading", { name: /Add Link/i });
     fireEvent.click(screen.getByRole("button", { name: /Open in New Tab/i }));
-    expect(chrome.tabs.create).toHaveBeenCalledWith({ url: "chrome-extension://test/pages/addlink/addlink.html" });
+    expect(chrome.tabs.create).toHaveBeenCalledWith({
+      url: "chrome-extension://test/pages/addlink/addlink.html",
+    });
   });
 
   it("opens Sync dialog from Sync icon", async () => {

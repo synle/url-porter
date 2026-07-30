@@ -88,13 +88,24 @@ function NewTabContent() {
             Welcome!
           </Typography>
           <Typography color="text.secondary" sx={{ mb: 3 }}>
-            No homepage URL is configured yet. Set up your custom homepage and redirect rules in the options page.
+            No homepage URL is configured yet. Set up your custom homepage and redirect rules in the
+            options page.
           </Typography>
           <Box display="flex" gap={2} justifyContent="center">
-            <Button variant="contained" size="large" startIcon={<SettingsIcon />} href="../options/options.html">
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<SettingsIcon />}
+              href="../options/options.html"
+            >
               Open Settings
             </Button>
-            <Button variant="outlined" size="large" startIcon={<AddLinkIcon />} href="../addlink/addlink.html">
+            <Button
+              variant="outlined"
+              size="large"
+              startIcon={<AddLinkIcon />}
+              href="../addlink/addlink.html"
+            >
               Add Link
             </Button>
           </Box>

@@ -60,7 +60,9 @@ function isValidPositiveNumber(value) {
 
 describe("buildExportPayload", () => {
   it("produces the correct shape with homepage and configs", () => {
-    const payload = buildExportPayload("https://example.com", [{ from: "gh", to: "https://github.com" }]);
+    const payload = buildExportPayload("https://example.com", [
+      { from: "gh", to: "https://github.com" },
+    ]);
     expect(payload.homepage).toBe("https://example.com");
     expect(payload.configs).toEqual([{ from: "gh", to: "https://github.com" }]);
   });
@@ -113,7 +115,9 @@ describe("buildExportPayload", () => {
 
   it("round-trips full config with all settings through JSON", () => {
     const payload = buildExportPayload("https://home.com", [{ from: "a", to: "https://a.com" }], {
-      bookmarkRules: [{ id: "r1", name: "globex wiki", historyKeywords: ["globex.com"], enabled: true }],
+      bookmarkRules: [
+        { id: "r1", name: "globex wiki", historyKeywords: ["globex.com"], enabled: true },
+      ],
       bookmarkFolderName: "custom-folder",
       historyAliasLimit: 2000,
       historyEntryLimit: 10,
@@ -243,8 +247,12 @@ describe("validateImportPayload with full config fields", () => {
 
 describe("buildExportPayload with bookmarkRules", () => {
   it("includes bookmarkRules when provided", () => {
-    const rules = [{ id: "r1", name: "initech docs", historyKeywords: ["initech.com"], enabled: true }];
-    const payload = buildExportPayload("https://home.com", [{ from: "a", to: "https://a.com" }], { bookmarkRules: rules });
+    const rules = [
+      { id: "r1", name: "initech docs", historyKeywords: ["initech.com"], enabled: true },
+    ];
+    const payload = buildExportPayload("https://home.com", [{ from: "a", to: "https://a.com" }], {
+      bookmarkRules: rules,
+    });
     expect(payload.bookmarkRules).toEqual(rules);
   });
 

@@ -27,7 +27,10 @@ describe("NewTab", () => {
     storageData.homepageUrl = "https://home.example.com";
     render(<NewTab />);
     await waitFor(() => expect(chrome.tabs.update).toHaveBeenCalled());
-    expect(chrome.tabs.update).toHaveBeenCalledWith(42, expect.objectContaining({ url: "https://home.example.com" }));
+    expect(chrome.tabs.update).toHaveBeenCalledWith(
+      42,
+      expect.objectContaining({ url: "https://home.example.com" }),
+    );
   });
 
   it("falls back to tab-less update when query throws", async () => {
@@ -35,7 +38,9 @@ describe("NewTab", () => {
     chrome.tabs.query.mockRejectedValueOnce(new Error("no permission"));
     render(<NewTab />);
     await waitFor(() => expect(chrome.tabs.update).toHaveBeenCalled());
-    expect(chrome.tabs.update).toHaveBeenCalledWith(expect.objectContaining({ url: "https://home.example.com" }));
+    expect(chrome.tabs.update).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://home.example.com" }),
+    );
   });
 
   it("shows the welcome content when no homepage is configured", async () => {

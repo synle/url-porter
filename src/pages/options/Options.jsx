@@ -105,8 +105,18 @@ import {
   cleanUrl,
   validateAlias,
 } from "../../helpers/configUtils.js";
-import { ALIAS_PLACEHOLDER, ALIAS_HELPER_TEXT, URL_PLACEHOLDER, URL_HELPER_TEXT } from "../../helpers/fieldHelpers.js";
-import { checkBrokenLinks, findDuplicateAliases, findRedirectChains, findOverlappingAliases } from "../../helpers/configAnalysis.js";
+import {
+  ALIAS_PLACEHOLDER,
+  ALIAS_HELPER_TEXT,
+  URL_PLACEHOLDER,
+  URL_HELPER_TEXT,
+} from "../../helpers/fieldHelpers.js";
+import {
+  checkBrokenLinks,
+  findDuplicateAliases,
+  findRedirectChains,
+  findOverlappingAliases,
+} from "../../helpers/configAnalysis.js";
 import {
   addHistoryEntry,
   getHistoryAliasLimit,
@@ -133,7 +143,12 @@ function OptionsContent() {
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
   const [jsonErrorDialogOpen, setJsonErrorDialogOpen] = useState(false);
-  const [duplicateDialog, setDuplicateDialog] = useState({ open: false, index: -1, oldTo: "", context: "" });
+  const [duplicateDialog, setDuplicateDialog] = useState({
+    open: false,
+    index: -1,
+    oldTo: "",
+    context: "",
+  });
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
   // Form state
@@ -293,7 +308,12 @@ function OptionsContent() {
     const duplicate = findDuplicateEntry(configEntries, linkFrom);
     if (duplicate) {
       setAddDialogOpen(false);
-      setDuplicateDialog({ open: true, index: duplicate.index, oldTo: duplicate.entry.to, context: "add" });
+      setDuplicateDialog({
+        open: true,
+        index: duplicate.index,
+        oldTo: duplicate.entry.to,
+        context: "add",
+      });
       return;
     }
 
@@ -331,7 +351,12 @@ function OptionsContent() {
     const duplicate = findDuplicateEntry(configEntries, editFrom, editIndex);
     if (duplicate) {
       setEditDialogOpen(false);
-      setDuplicateDialog({ open: true, index: duplicate.index, oldTo: duplicate.entry.to, context: "edit" });
+      setDuplicateDialog({
+        open: true,
+        index: duplicate.index,
+        oldTo: duplicate.entry.to,
+        context: "edit",
+      });
       return;
     }
 
@@ -690,7 +715,9 @@ function OptionsContent() {
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      entries = entries.filter((e) => (e.from || "").toLowerCase().includes(q) || (e.to || "").toLowerCase().includes(q));
+      entries = entries.filter(
+        (e) => (e.from || "").toLowerCase().includes(q) || (e.to || "").toLowerCase().includes(q),
+      );
     }
 
     entries.sort((a, b) => {
@@ -720,7 +747,9 @@ function OptionsContent() {
    * @param {number} origIndex - The original index of the entry in configEntries.
    */
   const toggleSelect = (origIndex) => {
-    setSelected((prev) => (prev.includes(origIndex) ? prev.filter((i) => i !== origIndex) : [...prev, origIndex]));
+    setSelected((prev) =>
+      prev.includes(origIndex) ? prev.filter((i) => i !== origIndex) : [...prev, origIndex],
+    );
   };
 
   /**
@@ -783,16 +812,24 @@ function OptionsContent() {
           </Button>
           <Button
             color="inherit"
-            startIcon={linkCheckRunning ? <CircularProgress size={18} color="inherit" /> : <LinkOffIcon />}
+            startIcon={
+              linkCheckRunning ? <CircularProgress size={18} color="inherit" /> : <LinkOffIcon />
+            }
             onClick={handleCheckLinks}
             disabled={linkCheckRunning}
           >
-            {linkCheckRunning ? `${linkCheckProgress.checked}/${linkCheckProgress.total}` : "Check Links"}
+            {linkCheckRunning
+              ? `${linkCheckProgress.checked}/${linkCheckProgress.total}`
+              : "Check Links"}
           </Button>
           <Button color="inherit" startIcon={<HealthAndSafetyIcon />} onClick={handleConfigHealth}>
             Config Health
           </Button>
-          <Button color="inherit" startIcon={<DeleteForeverIcon />} onClick={() => setResetDialogOpen(true)}>
+          <Button
+            color="inherit"
+            startIcon={<DeleteForeverIcon />}
+            onClick={() => setResetDialogOpen(true)}
+          >
             Reset All
           </Button>
         </Toolbar>
@@ -940,7 +977,12 @@ function OptionsContent() {
                 </Select>
               </FormControl>
               {selected.length > 0 && (
-                <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setMassDeleteDialogOpen(true)}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  onClick={() => setMassDeleteDialogOpen(true)}
+                >
                   Delete ({selected.length})
                 </Button>
               )}
@@ -953,15 +995,26 @@ function OptionsContent() {
                   <TableRow>
                     <TableCell padding="checkbox">
                       <Checkbox
-                        indeterminate={selected.length > 0 && selected.length < filteredEntries.length}
-                        checked={filteredEntries.length > 0 && filteredEntries.every((e) => selected.includes(e._origIndex))}
+                        indeterminate={
+                          selected.length > 0 && selected.length < filteredEntries.length
+                        }
+                        checked={
+                          filteredEntries.length > 0 &&
+                          filteredEntries.every((e) => selected.includes(e._origIndex))
+                        }
                         onChange={toggleSelectAll}
                       />
                     </TableCell>
-                    <TableCell onClick={() => handleSort("from")} sx={{ cursor: "pointer", fontWeight: "bold", userSelect: "none" }}>
+                    <TableCell
+                      onClick={() => handleSort("from")}
+                      sx={{ cursor: "pointer", fontWeight: "bold", userSelect: "none" }}
+                    >
                       From{sortIndicator("from")}
                     </TableCell>
-                    <TableCell onClick={() => handleSort("to")} sx={{ cursor: "pointer", fontWeight: "bold", userSelect: "none" }}>
+                    <TableCell
+                      onClick={() => handleSort("to")}
+                      sx={{ cursor: "pointer", fontWeight: "bold", userSelect: "none" }}
+                    >
                       To{sortIndicator("to")}
                     </TableCell>
                     <TableCell align="right" sx={{ fontWeight: "bold" }}>
@@ -974,7 +1027,9 @@ function OptionsContent() {
                     <TableRow>
                       <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
                         <Typography color="text.secondary">
-                          {searchQuery ? "No matching links found." : "No links configured. Click + to add one."}
+                          {searchQuery
+                            ? "No matching links found."
+                            : "No links configured. Click + to add one."}
                         </Typography>
                       </TableCell>
                     </TableRow>
@@ -982,7 +1037,10 @@ function OptionsContent() {
                     filteredEntries.map((entry) => (
                       <TableRow key={entry._origIndex} hover>
                         <TableCell padding="checkbox">
-                          <Checkbox checked={selected.includes(entry._origIndex)} onChange={() => toggleSelect(entry._origIndex)} />
+                          <Checkbox
+                            checked={selected.includes(entry._origIndex)}
+                            onChange={() => toggleSelect(entry._origIndex)}
+                          />
                         </TableCell>
                         <TableCell
                           sx={{
@@ -1007,11 +1065,17 @@ function OptionsContent() {
                           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                             {brokenLinks[entry._origIndex] && (
                               <Tooltip title={`Broken: ${brokenLinks[entry._origIndex]}`}>
-                                <WarningAmberIcon fontSize="small" color="warning" sx={{ flexShrink: 0 }} />
+                                <WarningAmberIcon
+                                  fontSize="small"
+                                  color="warning"
+                                  sx={{ flexShrink: 0 }}
+                                />
                               </Tooltip>
                             )}
                             <Tooltip title={entry.to || ""}>
-                              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{entry.to}</span>
+                              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                                {entry.to}
+                              </span>
                             </Tooltip>
                           </Box>
                         </TableCell>
@@ -1066,7 +1130,10 @@ function OptionsContent() {
               sx={(theme) => ({
                 mb: 2,
                 border: 1,
-                borderColor: theme.palette.mode === "light" ? "rgba(0, 0, 0, 0.23)" : "rgba(255, 255, 255, 0.23)",
+                borderColor:
+                  theme.palette.mode === "light"
+                    ? "rgba(0, 0, 0, 0.23)"
+                    : "rgba(255, 255, 255, 0.23)",
                 borderRadius: 1,
                 overflow: "auto",
                 maxHeight: "calc(100vh - 250px)",
@@ -1077,7 +1144,10 @@ function OptionsContent() {
                   minHeight: 400,
                 },
                 "&:hover": {
-                  borderColor: theme.palette.mode === "light" ? "rgba(0, 0, 0, 0.87)" : "rgba(255, 255, 255, 0.87)",
+                  borderColor:
+                    theme.palette.mode === "light"
+                      ? "rgba(0, 0, 0, 0.87)"
+                      : "rgba(255, 255, 255, 0.87)",
                 },
                 "&:focus-within": {
                   borderColor: theme.palette.primary.main,
@@ -1102,7 +1172,11 @@ function OptionsContent() {
                     }),
               })}
             >
-              <Typography component="legend" variant="caption" sx={{ ml: 1, px: 0.5, color: "text.secondary" }}>
+              <Typography
+                component="legend"
+                variant="caption"
+                sx={{ ml: 1, px: 0.5, color: "text.secondary" }}
+              >
                 Full Config JSON
               </Typography>
               <Editor
@@ -1119,7 +1193,12 @@ function OptionsContent() {
               />
             </Box>
             <Box display="flex" justifyContent="flex-end" mt={1}>
-              <Button variant="contained" startIcon={<SaveIcon />} onClick={handleAdvancedSave} size="large">
+              <Button
+                variant="contained"
+                startIcon={<SaveIcon />}
+                onClick={handleAdvancedSave}
+                size="large"
+              >
                 Save
               </Button>
             </Box>
@@ -1180,7 +1259,12 @@ function OptionsContent() {
       </Dialog>
 
       {/* Edit Link Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -1238,7 +1322,9 @@ function OptionsContent() {
       <Dialog open={massDeleteDialogOpen} onClose={() => setMassDeleteDialogOpen(false)}>
         <DialogTitle>Delete Selected Links</DialogTitle>
         <DialogContent>
-          <DialogContentText>Are you sure you want to delete {selected.length} selected link(s)?</DialogContentText>
+          <DialogContentText>
+            Are you sure you want to delete {selected.length} selected link(s)?
+          </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setMassDeleteDialogOpen(false)}>Cancel</Button>
@@ -1263,7 +1349,9 @@ function OptionsContent() {
       <Dialog open={unsavedDialogOpen} onClose={() => setUnsavedDialogOpen(false)}>
         <DialogTitle>Unsaved Changes</DialogTitle>
         <DialogContent>
-          <DialogContentText>You have unsaved changes in the editor. Switching modes will discard them. Continue?</DialogContentText>
+          <DialogContentText>
+            You have unsaved changes in the editor. Switching modes will discard them. Continue?
+          </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setUnsavedDialogOpen(false)}>Cancel</Button>
@@ -1284,7 +1372,10 @@ function OptionsContent() {
       <Dialog open={jsonErrorDialogOpen} onClose={() => setJsonErrorDialogOpen(false)}>
         <DialogTitle>Invalid JSON</DialogTitle>
         <DialogContent>
-          <DialogContentText>Invalid JSON. Please fix errors before saving. The editor highlights syntax errors inline.</DialogContentText>
+          <DialogContentText>
+            Invalid JSON. Please fix errors before saving. The editor highlights syntax errors
+            inline.
+          </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button variant="contained" onClick={() => setJsonErrorDialogOpen(false)}>
@@ -1298,7 +1389,8 @@ function OptionsContent() {
         <DialogTitle>Reset All Settings</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            This will permanently delete all your redirect links and clear your homepage URL. This action cannot be undone.
+            This will permanently delete all your redirect links and clear your homepage URL. This
+            action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -1319,8 +1411,9 @@ function OptionsContent() {
         <DialogTitle>Duplicate Alias</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            An alias matching <strong>{(duplicateDialog.context === "edit" ? editFrom : linkFrom).trim()}</strong> already exists and points
-            to:
+            An alias matching{" "}
+            <strong>{(duplicateDialog.context === "edit" ? editFrom : linkFrom).trim()}</strong>{" "}
+            already exists and points to:
           </DialogContentText>
           <Typography
             variant="body2"
@@ -1335,7 +1428,9 @@ function OptionsContent() {
           >
             {duplicateDialog.oldTo}
           </Typography>
-          <DialogContentText sx={{ mt: 2 }}>Do you want to update it to point to the new URL instead?</DialogContentText>
+          <DialogContentText sx={{ mt: 2 }}>
+            Do you want to update it to point to the new URL instead?
+          </DialogContentText>
           <Typography
             variant="body2"
             sx={{
@@ -1351,7 +1446,11 @@ function OptionsContent() {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDuplicateDialog({ open: false, index: -1, oldTo: "", context: "" })}>Cancel</Button>
+          <Button
+            onClick={() => setDuplicateDialog({ open: false, index: -1, oldTo: "", context: "" })}
+          >
+            Cancel
+          </Button>
           <Button variant="contained" onClick={handleDuplicateUpdate}>
             Update Existing Link
           </Button>
@@ -1359,7 +1458,12 @@ function OptionsContent() {
       </Dialog>
 
       {/* Config Health Dialog */}
-      <Dialog open={healthDialogOpen} onClose={() => setHealthDialogOpen(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={healthDialogOpen}
+        onClose={() => setHealthDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>Config Health</DialogTitle>
         <DialogContent>
           {healthResults &&
@@ -1373,7 +1477,10 @@ function OptionsContent() {
 
           {healthResults?.duplicates.length > 0 && (
             <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}
+              >
                 <ContentCopyIcon fontSize="small" color="error" />
                 Duplicate Aliases ({healthResults.duplicates.length})
               </Typography>
@@ -1382,7 +1489,10 @@ function OptionsContent() {
               </Typography>
               <List dense>
                 {healthResults.duplicates.map((group) => (
-                  <ListItem key={group.alias} sx={{ flexDirection: "column", alignItems: "flex-start" }}>
+                  <ListItem
+                    key={group.alias}
+                    sx={{ flexDirection: "column", alignItems: "flex-start" }}
+                  >
                     <ListItemText
                       primary={<Chip label={group.alias} variant="outlined" />}
                       secondary={group.entries.map((e) => `→ ${e.to}`).join(" | ")}
@@ -1395,13 +1505,16 @@ function OptionsContent() {
 
           {healthResults?.chains.length > 0 && (
             <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}
+              >
                 <CallSplitIcon fontSize="small" color="warning" />
                 Redirect Chains ({healthResults.chains.length})
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                These entries redirect to another alias instead of a final URL. The bookmark reconciler resolves these, but the browser
-                redirect may require two hops.
+                These entries redirect to another alias instead of a final URL. The bookmark
+                reconciler resolves these, but the browser redirect may require two hops.
               </Typography>
               <List dense>
                 {healthResults.chains.map((chain) => (
@@ -1409,7 +1522,10 @@ function OptionsContent() {
                     <ListItemIcon sx={{ minWidth: 32 }}>
                       <CallSplitIcon fontSize="small" />
                     </ListItemIcon>
-                    <ListItemText primary={chain.chain.join(" → ")} secondary={`Entry #${chain.index + 1}`} />
+                    <ListItemText
+                      primary={chain.chain.join(" → ")}
+                      secondary={`Entry #${chain.index + 1}`}
+                    />
                   </ListItem>
                 ))}
               </List>
@@ -1418,7 +1534,10 @@ function OptionsContent() {
 
           {healthResults?.overlaps.length > 0 && (
             <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}
+              >
                 <CompareArrowsIcon fontSize="small" color="info" />
                 Overlapping Aliases ({healthResults.overlaps.length})
               </Typography>
@@ -1434,7 +1553,8 @@ function OptionsContent() {
                     <ListItemText
                       primary={
                         <>
-                          <Chip label={pair.aliasA} variant="outlined" /> is contained in <Chip label={pair.aliasB} variant="outlined" />
+                          <Chip label={pair.aliasA} variant="outlined" /> is contained in{" "}
+                          <Chip label={pair.aliasB} variant="outlined" />
                         </>
                       }
                     />

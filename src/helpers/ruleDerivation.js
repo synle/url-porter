@@ -20,7 +20,9 @@ export function escapeRegex(str) {
 export function extractDomainFromRegex(pattern) {
   if (!pattern) return "";
   // Match a hostname pattern: word chars and escaped/literal dots, at least one dot required
-  const match = pattern.match(/(?:\/\/)?([a-zA-Z0-9][-a-zA-Z0-9]*(?:\\?\.[a-zA-Z0-9][-a-zA-Z0-9]*)+)/);
+  const match = pattern.match(
+    /(?:\/\/)?([a-zA-Z0-9][-a-zA-Z0-9]*(?:\\?\.[a-zA-Z0-9][-a-zA-Z0-9]*)+)/,
+  );
   if (!match) return "";
   // Unescape regex dots
   const domain = match[1].replace(/\\\./g, ".");

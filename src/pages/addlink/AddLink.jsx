@@ -30,7 +30,14 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import SyncIcon from "@mui/icons-material/Sync";
 import { ThemeContextProvider } from "../../theme.jsx";
 import { getConfig, setConfig } from "../../helpers/storage.js";
-import { normalizeFrom, normalizeTo, findDuplicateEntry, cleanAlias, cleanUrl, validateAlias } from "../../helpers/configUtils.js";
+import {
+  normalizeFrom,
+  normalizeTo,
+  findDuplicateEntry,
+  cleanAlias,
+  cleanUrl,
+  validateAlias,
+} from "../../helpers/configUtils.js";
 import { ALIAS_PLACEHOLDER, URL_PLACEHOLDER } from "../../helpers/fieldHelpers.js";
 import { addHistoryEntry } from "../../helpers/historyUtils.js";
 import SyncDialog from "../../components/SyncDialog.jsx";
@@ -71,7 +78,11 @@ function AddLinkContent() {
     // For popup: query the active tab to get current page URL
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab?.url && !tab.url.startsWith("chrome://") && !tab.url.startsWith("chrome-extension://")) {
+      if (
+        tab?.url &&
+        !tab.url.startsWith("chrome://") &&
+        !tab.url.startsWith("chrome-extension://")
+      ) {
         setLinkTo(tab.url);
         if (tab.title) {
           setLinkFrom(tab.title);
@@ -287,7 +298,12 @@ function AddLinkContent() {
       </Container>
 
       {/* Duplicate Alias Dialog */}
-      <Dialog open={duplicateDialog.open} onClose={() => setDuplicateDialog({ open: false, index: -1, oldTo: "" })} maxWidth="sm" fullWidth>
+      <Dialog
+        open={duplicateDialog.open}
+        onClose={() => setDuplicateDialog({ open: false, index: -1, oldTo: "" })}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Duplicate Alias</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -306,7 +322,9 @@ function AddLinkContent() {
           >
             {duplicateDialog.oldTo}
           </Typography>
-          <DialogContentText sx={{ mt: 2 }}>Do you want to update it to point to the new URL instead?</DialogContentText>
+          <DialogContentText sx={{ mt: 2 }}>
+            Do you want to update it to point to the new URL instead?
+          </DialogContentText>
           <Typography
             variant="body2"
             sx={{
@@ -322,7 +340,9 @@ function AddLinkContent() {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDuplicateDialog({ open: false, index: -1, oldTo: "" })}>Cancel</Button>
+          <Button onClick={() => setDuplicateDialog({ open: false, index: -1, oldTo: "" })}>
+            Cancel
+          </Button>
           <Button variant="contained" onClick={handleUpdateExisting}>
             Update Existing Link
           </Button>

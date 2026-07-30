@@ -5,7 +5,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createChromeMock } from "./_chromeMock.js";
 
-const { chrome, mockBookmarks, addMockFolder, addMockBookmark, reset, setHistory } = createChromeMock();
+const { chrome, mockBookmarks, addMockFolder, addMockBookmark, reset, setHistory } =
+  createChromeMock();
 vi.stubGlobal("chrome", chrome);
 
 const { reconcileFigmaMocks } = await import("../src/helpers/figmaMockUtils.js");
@@ -17,7 +18,13 @@ describe("figmaMockUtils — reconcileFigmaMocks", () => {
 
   it("skips reconcile when url-porter folder is missing", async () => {
     setHistory({
-      "figma.com": [{ url: "https://www.figma.com/design/ABC123/My-Mock-Name", title: "Mock", lastVisitTime: 1 }],
+      "figma.com": [
+        {
+          url: "https://www.figma.com/design/ABC123/My-Mock-Name",
+          title: "Mock",
+          lastVisitTime: 1,
+        },
+      ],
     });
     await reconcileFigmaMocks();
     // No url-porter folder, no subfolder should be created
@@ -28,10 +35,22 @@ describe("figmaMockUtils — reconcileFigmaMocks", () => {
     addMockFolder("2", "url-porter");
     setHistory({
       "figma.com": [
-        { url: "https://www.figma.com/design/ABC123/My-Cool-Mock?node-id=1", title: "Design", lastVisitTime: 100 },
+        {
+          url: "https://www.figma.com/design/ABC123/My-Cool-Mock?node-id=1",
+          title: "Design",
+          lastVisitTime: 100,
+        },
         { url: "https://www.figma.com/file/XYZ789/Old-File", title: "Old File", lastVisitTime: 50 },
-        { url: "https://www.figma.com/proto/PROTO1/Prototype-Name", title: "Proto", lastVisitTime: 200 },
-        { url: "https://www.figma.com/board/BOARD1/Board-Name", title: "Board", lastVisitTime: 300 },
+        {
+          url: "https://www.figma.com/proto/PROTO1/Prototype-Name",
+          title: "Proto",
+          lastVisitTime: 200,
+        },
+        {
+          url: "https://www.figma.com/board/BOARD1/Board-Name",
+          title: "Board",
+          lastVisitTime: 300,
+        },
       ],
     });
     await reconcileFigmaMocks();
@@ -49,7 +68,13 @@ describe("figmaMockUtils — reconcileFigmaMocks", () => {
     // pre-existing bookmark outside porter
     addMockBookmark("1", "Old Mock", "https://www.figma.com/design/ABC123/Renamed-Slug", 100);
     setHistory({
-      "figma.com": [{ url: "https://www.figma.com/design/ABC123/My-Cool-Mock?node-id=1", title: "Mock", lastVisitTime: 200 }],
+      "figma.com": [
+        {
+          url: "https://www.figma.com/design/ABC123/My-Cool-Mock?node-id=1",
+          title: "Mock",
+          lastVisitTime: 200,
+        },
+      ],
     });
     await reconcileFigmaMocks();
     const folder = mockBookmarks.find((b) => b.title === "figma mocks" && b.parentId === porter.id);
@@ -74,7 +99,9 @@ describe("figmaMockUtils — reconcileFigmaMocks", () => {
 
   it("returns early when no figma URLs are found", async () => {
     addMockFolder("2", "url-porter");
-    setHistory({ "figma.com": [{ url: "https://example.com/not-figma", title: "x", lastVisitTime: 1 }] });
+    setHistory({
+      "figma.com": [{ url: "https://example.com/not-figma", title: "x", lastVisitTime: 1 }],
+    });
     await reconcileFigmaMocks();
     expect(mockBookmarks.find((b) => b.title === "figma mocks")).toBeUndefined();
   });
@@ -84,7 +111,9 @@ describe("figmaMockUtils — reconcileFigmaMocks", () => {
     const stale = addMockFolder(porter.id, "figma mocks");
     addMockBookmark(stale.id, "Stale", "https://www.figma.com/design/STALE/Stale-Slug", 1);
     setHistory({
-      "figma.com": [{ url: "https://www.figma.com/design/NEW/Fresh-Slug", title: "Fresh", lastVisitTime: 100 }],
+      "figma.com": [
+        { url: "https://www.figma.com/design/NEW/Fresh-Slug", title: "Fresh", lastVisitTime: 100 },
+      ],
     });
     await reconcileFigmaMocks();
     const folders = mockBookmarks.filter((b) => !b.url && b.title === "figma mocks");

@@ -1,7 +1,22 @@
 /** Sync settings dialog for fetching config from a remote server URL. */
 import { useState, useEffect } from "react";
-import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, TextField, Button } from "@mui/material";
-import { getSyncUrl, setSyncUrlToStorage, setConfig, saveHomepageUrl, isValidUrl, DEFAULT_SYNC_URL } from "../helpers/storage.js";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  TextField,
+  Button,
+} from "@mui/material";
+import {
+  getSyncUrl,
+  setSyncUrlToStorage,
+  setConfig,
+  saveHomepageUrl,
+  isValidUrl,
+  DEFAULT_SYNC_URL,
+} from "../helpers/storage.js";
 
 /**
  * Dialog component for syncing settings from a remote server URL.
@@ -59,7 +74,9 @@ export default function SyncDialog({ open, onClose, onSuccess, onError }) {
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Sync Settings</DialogTitle>
       <DialogContent>
-        <DialogContentText sx={{ mb: 2 }}>Enter the URL of your settings configuration file.</DialogContentText>
+        <DialogContentText sx={{ mb: 2 }}>
+          Enter the URL of your settings configuration file.
+        </DialogContentText>
         <TextField
           label="Server URL"
           type="url"

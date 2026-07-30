@@ -19,7 +19,8 @@
 import { getBookmarkFolderName } from "./storage.js";
 import { sanitizeBookmarkTitle } from "./configUtils.js";
 
-const FIGMA_MOCK_REGEX = /^https?:\/\/(?:www\.)?figma\.com\/(design|file|proto|board)\/([^/?#]+)\/([^/?#]+)/;
+const FIGMA_MOCK_REGEX =
+  /^https?:\/\/(?:www\.)?figma\.com\/(design|file|proto|board)\/([^/?#]+)\/([^/?#]+)/;
 const SUBFOLDER_NAME = "figma mocks";
 
 /**
@@ -64,7 +65,11 @@ function parseFigmaMock(url) {
 async function getFigmaFromHistory() {
   const mocks = new Map();
   try {
-    const items = await chrome.history.search({ text: "figma.com", maxResults: 10000, startTime: 0 });
+    const items = await chrome.history.search({
+      text: "figma.com",
+      maxResults: 10000,
+      startTime: 0,
+    });
     for (const item of items) {
       const parsed = parseFigmaMock(item.url);
       if (parsed) {
@@ -135,7 +140,10 @@ export async function reconcileFigmaMocks() {
   }
 
   // Gather mocks from history and bookmarks
-  const [historyMocks, bookmarkMocks] = await Promise.all([getFigmaFromHistory(), getFigmaFromBookmarks(porterFolder.id)]);
+  const [historyMocks, bookmarkMocks] = await Promise.all([
+    getFigmaFromHistory(),
+    getFigmaFromBookmarks(porterFolder.id),
+  ]);
 
   // Merge (dedup by file ID)
   const allMocks = new Map([...historyMocks, ...bookmarkMocks]);
@@ -164,10 +172,16 @@ export async function reconcileFigmaMocks() {
   const githubFolder = updatedChildren.find((c) => !c.url && c.title === "github repos");
   const insertIndex = githubFolder ? updatedChildren.indexOf(githubFolder) + 1 : 1;
 
-  const subfolder = await chrome.bookmarks.create({ parentId: porterFolder.id, title: SUBFOLDER_NAME, index: insertIndex });
+  const subfolder = await chrome.bookmarks.create({
+    parentId: porterFolder.id,
+    title: SUBFOLDER_NAME,
+    index: insertIndex,
+  });
 
   // Sort all mocks by title (case-insensitive)
-  const sortedMocks = [...allMocks.values()].sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()));
+  const sortedMocks = [...allMocks.values()].sort((a, b) =>
+    a.title.toLowerCase().localeCompare(b.title.toLowerCase()),
+  );
 
   // Create bookmarks
   let added = 0;

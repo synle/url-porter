@@ -15,7 +15,14 @@ import { getBookmarkFolderName, getBookmarkRules } from "./storage.js";
 import { sanitizeBookmarkTitle } from "./configUtils.js";
 
 /** @type {string[]} Folder names reserved by hardcoded reconcilers. */
-const RESERVED_FOLDER_NAMES = ["prs", "github repos", "figma mocks", "jira tickets", "google drive", "onedrive"];
+const RESERVED_FOLDER_NAMES = [
+  "prs",
+  "github repos",
+  "figma mocks",
+  "jira tickets",
+  "google drive",
+  "onedrive",
+];
 
 /**
  * Validate a bookmark rule for completeness and regex correctness.
@@ -77,7 +84,8 @@ function parseUrl(url, urlMatchRegex, dedupeKeyRegex) {
   if (!url || !urlMatchRegex.test(url)) return null;
   const cleanUrl = url.split("?")[0].split("#")[0].replace(/\/+$/, "");
   const dedupeMatch = url.match(dedupeKeyRegex);
-  const dedupeKey = dedupeMatch && dedupeMatch[1] ? dedupeMatch[1].toLowerCase() : cleanUrl.toLowerCase();
+  const dedupeKey =
+    dedupeMatch && dedupeMatch[1] ? dedupeMatch[1].toLowerCase() : cleanUrl.toLowerCase();
   return { dedupeKey, url: cleanUrl };
 }
 
@@ -109,7 +117,9 @@ function cleanTitle(pageTitle, titleStripRegexes) {
 async function getFromHistory(historyKeywords, urlMatchRegex, dedupeKeyRegex, titleStripRegexes) {
   const items = new Map();
   try {
-    const searches = historyKeywords.map((keyword) => chrome.history.search({ text: keyword.trim(), maxResults: 10000, startTime: 0 }));
+    const searches = historyKeywords.map((keyword) =>
+      chrome.history.search({ text: keyword.trim(), maxResults: 10000, startTime: 0 }),
+    );
     const results = await Promise.all(searches);
     for (const historyItems of results) {
       for (const item of historyItems) {
@@ -243,7 +253,9 @@ export async function reconcileBookmarkRule(rule) {
     }
   }
 
-  console.log(`${logPrefix} found ${allItems.size} unique items (history: ${historyItems.size}, bookmarks: ${bookmarkItems.size})`);
+  console.log(
+    `${logPrefix} found ${allItems.size} unique items (history: ${historyItems.size}, bookmarks: ${bookmarkItems.size})`,
+  );
 
   if (allItems.size === 0) return;
 

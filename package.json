@@ -1,7 +1,33 @@
 {
   "name": "url-porter",
+  "version": "1.88.0",
+  "description": "This extension lets you configure redirect rules and set a custom homepage.",
+  "license": "ISC",
+  "author": "Sy Le",
   "type": "module",
   "main": "background.js",
+  "scripts": {
+    "dev": "npm run build:types && vite build --watch",
+    "build": "npm run build:types && vite build",
+    "build:types": "tsc",
+    "bundle": "node scripts/bundle.js",
+    "package": "npm run build && npm run bundle",
+    "package-syle": "VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL=https://synle.github.io/fav/url-porter.json npm run package",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/",
+    "format": "oxfmt --write .",
+    "validate": "npm test && npm run lint && npm run build && npm run format",
+    "format:check": "oxfmt --check ."
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.0.0",
+    "@mui/material": "^9.0.0",
+    "prismjs": "^1.30.0",
+    "react-simple-code-editor": "^0.14.1"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@testing-library/jest-dom": "^6.9.1",
@@ -13,7 +39,7 @@
     "eslint-plugin-react": "^7.37.5",
     "globals": "^17.4.0",
     "jsdom": "^29.1.1",
-    "prettier": "3.8.2",
+    "oxfmt": "^0.61.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "sass": "^1.99.0",
@@ -22,32 +48,7 @@
     "vite-plugin-web-extension": "^4.5.1",
     "vitest": "^4.1.5"
   },
-  "scripts": {
-    "dev": "npm run build:types && vite build --watch",
-    "build": "npm run build:types && vite build",
-    "build:types": "tsc",
-    "bundle": "node scripts/bundle.js",
-    "package": "npm run build && npm run bundle",
-    "package-syle": "VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL=https://synle.github.io/fav/url-porter.json npm run package",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "lint": "eslint src/",
-    "format": "prettier --write --print-width 140 --ignore-unknown --no-error-on-unmatched-pattern --cache '**/*.{js,jsx,ts,tsx,mjs,cjs,json,html,css,scss,less,md,yml,yaml,graphql,vue,xml}'",
-    "validate": "npm test && npm run lint && npm run build && npm run format"
-  },
-  "author": "Sy Le",
-  "license": "ISC",
-  "description": "This extension lets you configure redirect rules and set a custom homepage.",
-  "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^9.0.0",
-    "@mui/material": "^9.0.0",
-    "prismjs": "^1.30.0",
-    "react-simple-code-editor": "^0.14.1"
-  },
   "volta": {
     "node": "20.19.1"
-  },
-  "version": "1.88.0"
+  }
 }

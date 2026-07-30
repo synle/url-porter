@@ -11,7 +11,9 @@ describe("groupHistoryItems", () => {
   });
 
   it("groups a single URL without query string as-is", () => {
-    const result = groupHistoryItems([{ url: "https://example.com/page", title: "Acme Page", visitCount: 5, lastVisitTime: 1000 }]);
+    const result = groupHistoryItems([
+      { url: "https://example.com/page", title: "Acme Page", visitCount: 5, lastVisitTime: 1000 },
+    ]);
     expect(result).toHaveLength(1);
     expect(result[0].strippedUrl).toBe("https://example.com/page");
     expect(result[0].title).toBe("Acme Page");
@@ -22,8 +24,18 @@ describe("groupHistoryItems", () => {
 
   it("groups URLs with same origin+pathname but different query strings", () => {
     const result = groupHistoryItems([
-      { url: "https://globex.com/search?q=foo", title: "Globex - foo", visitCount: 3, lastVisitTime: 1000 },
-      { url: "https://globex.com/search?q=bar", title: "Globex - bar", visitCount: 7, lastVisitTime: 2000 },
+      {
+        url: "https://globex.com/search?q=foo",
+        title: "Globex - foo",
+        visitCount: 3,
+        lastVisitTime: 1000,
+      },
+      {
+        url: "https://globex.com/search?q=bar",
+        title: "Globex - bar",
+        visitCount: 7,
+        lastVisitTime: 2000,
+      },
     ]);
     expect(result).toHaveLength(1);
     expect(result[0].strippedUrl).toBe("https://globex.com/search");
@@ -33,8 +45,18 @@ describe("groupHistoryItems", () => {
 
   it("groups URLs with same origin+pathname but different hash fragments", () => {
     const result = groupHistoryItems([
-      { url: "https://initech.com/docs#section1", title: "Initech Docs S1", visitCount: 2, lastVisitTime: 500 },
-      { url: "https://initech.com/docs#section2", title: "Initech Docs S2", visitCount: 4, lastVisitTime: 1500 },
+      {
+        url: "https://initech.com/docs#section1",
+        title: "Initech Docs S1",
+        visitCount: 2,
+        lastVisitTime: 500,
+      },
+      {
+        url: "https://initech.com/docs#section2",
+        title: "Initech Docs S2",
+        visitCount: 4,
+        lastVisitTime: 1500,
+      },
     ]);
     expect(result).toHaveLength(1);
     expect(result[0].strippedUrl).toBe("https://initech.com/docs");
@@ -48,7 +70,12 @@ describe("groupHistoryItems", () => {
     const result = groupHistoryItems([
       { url: "https://acme.com/page?v=1", title: "Old Title", visitCount: 1, lastVisitTime: 100 },
       { url: "https://acme.com/page?v=2", title: "New Title", visitCount: 1, lastVisitTime: 9999 },
-      { url: "https://acme.com/page?v=3", title: "Middle Title", visitCount: 1, lastVisitTime: 500 },
+      {
+        url: "https://acme.com/page?v=3",
+        title: "Middle Title",
+        visitCount: 1,
+        lastVisitTime: 500,
+      },
     ]);
     expect(result[0].title).toBe("New Title");
   });
@@ -79,7 +106,9 @@ describe("groupHistoryItems", () => {
   });
 
   it("skips URLs that fail URL parsing", () => {
-    const result = groupHistoryItems([{ url: "not-a-valid-url", title: "Bad URL", visitCount: 1, lastVisitTime: 1 }]);
+    const result = groupHistoryItems([
+      { url: "not-a-valid-url", title: "Bad URL", visitCount: 1, lastVisitTime: 1 },
+    ]);
     expect(result).toHaveLength(0);
   });
 

@@ -84,7 +84,9 @@ function buildTree() {
    * @returns {Array} Child nodes with nested children.
    */
   function childrenOf(parentId) {
-    return mockBookmarks.filter((b) => b.parentId === parentId).map((b) => ({ ...b, children: b.url ? undefined : childrenOf(b.id) }));
+    return mockBookmarks
+      .filter((b) => b.parentId === parentId)
+      .map((b) => ({ ...b, children: b.url ? undefined : childrenOf(b.id) }));
   }
   return { id: "0", children: childrenOf("0") };
 }
@@ -110,7 +112,8 @@ function sampleRule(overrides = {}) {
 }
 
 // Import after mocking
-const { validateRule, reconcileBookmarkRule, reconcileAllBookmarkRules } = await import("../src/helpers/genericBookmarkRuleUtils.js");
+const { validateRule, reconcileBookmarkRule, reconcileAllBookmarkRules } =
+  await import("../src/helpers/genericBookmarkRuleUtils.js");
 
 describe("validateRule", () => {
   it("accepts a valid rule", () => {
@@ -131,7 +134,14 @@ describe("validateRule", () => {
   });
 
   it("rejects reserved folder names", () => {
-    for (const name of ["prs", "github repos", "figma mocks", "jira tickets", "google drive", "onedrive"]) {
+    for (const name of [
+      "prs",
+      "github repos",
+      "figma mocks",
+      "jira tickets",
+      "google drive",
+      "onedrive",
+    ]) {
       const result = validateRule(sampleRule({ name }));
       expect(result.valid).toBe(false);
       expect(result.error).toContain("reserved");
@@ -199,8 +209,16 @@ describe("reconcileBookmarkRule", () => {
 
   it("creates subfolder and populates bookmarks from history", async () => {
     chrome.history.search.mockResolvedValue([
-      { url: "https://acme.example.com/docs/getting-started", title: "Getting Started - Acme Docs", lastVisitTime: 1000 },
-      { url: "https://acme.example.com/docs/api-reference", title: "API Reference - Acme Docs", lastVisitTime: 2000 },
+      {
+        url: "https://acme.example.com/docs/getting-started",
+        title: "Getting Started - Acme Docs",
+        lastVisitTime: 1000,
+      },
+      {
+        url: "https://acme.example.com/docs/api-reference",
+        title: "API Reference - Acme Docs",
+        lastVisitTime: 2000,
+      },
     ]);
 
     await reconcileBookmarkRule(sampleRule());
@@ -220,8 +238,16 @@ describe("reconcileBookmarkRule", () => {
 
   it("deduplicates entries keeping latest visitTime", async () => {
     chrome.history.search.mockResolvedValue([
-      { url: "https://acme.example.com/docs/intro?v=1", title: "Intro Old - Acme Docs", lastVisitTime: 1000 },
-      { url: "https://acme.example.com/docs/intro?v=2", title: "Intro New - Acme Docs", lastVisitTime: 2000 },
+      {
+        url: "https://acme.example.com/docs/intro?v=1",
+        title: "Intro Old - Acme Docs",
+        lastVisitTime: 1000,
+      },
+      {
+        url: "https://acme.example.com/docs/intro?v=2",
+        title: "Intro New - Acme Docs",
+        lastVisitTime: 2000,
+      },
     ]);
 
     await reconcileBookmarkRule(sampleRule());
@@ -253,7 +279,9 @@ describe("reconcileBookmarkRule", () => {
 
     // The bookmark inside url-porter should not have been picked up
     // No subfolder should be created since there are 0 results
-    const subfolder = mockBookmarks.find((b) => b.title === "acme docs" && b.parentId === "10" && b.id !== "50");
+    const subfolder = mockBookmarks.find(
+      (b) => b.title === "acme docs" && b.parentId === "10" && b.id !== "50",
+    );
     expect(subfolder).toBeUndefined();
   });
 
@@ -271,7 +299,9 @@ describe("reconcileBookmarkRule", () => {
 
     await reconcileBookmarkRule(sampleRule());
 
-    const subfolder = mockBookmarks.find((b) => b.title === "acme docs" && b.parentId === "10" && !b.url);
+    const subfolder = mockBookmarks.find(
+      (b) => b.title === "acme docs" && b.parentId === "10" && !b.url,
+    );
     expect(subfolder).toBeTruthy();
 
     const children = mockBookmarks.filter((b) => b.parentId === subfolder.id);
@@ -287,7 +317,11 @@ describe("reconcileBookmarkRule", () => {
     );
 
     chrome.history.search.mockResolvedValue([
-      { url: "https://acme.example.com/docs/new-entry", title: "New Entry - Acme Docs", lastVisitTime: 1000 },
+      {
+        url: "https://acme.example.com/docs/new-entry",
+        title: "New Entry - Acme Docs",
+        lastVisitTime: 1000,
+      },
     ]);
 
     await reconcileBookmarkRule(sampleRule());
@@ -306,9 +340,21 @@ describe("reconcileBookmarkRule", () => {
 
   it("sorts by visitTime descending by default", async () => {
     chrome.history.search.mockResolvedValue([
-      { url: "https://acme.example.com/docs/first", title: "First - Acme Docs", lastVisitTime: 1000 },
-      { url: "https://acme.example.com/docs/second", title: "Second - Acme Docs", lastVisitTime: 3000 },
-      { url: "https://acme.example.com/docs/third", title: "Third - Acme Docs", lastVisitTime: 2000 },
+      {
+        url: "https://acme.example.com/docs/first",
+        title: "First - Acme Docs",
+        lastVisitTime: 1000,
+      },
+      {
+        url: "https://acme.example.com/docs/second",
+        title: "Second - Acme Docs",
+        lastVisitTime: 3000,
+      },
+      {
+        url: "https://acme.example.com/docs/third",
+        title: "Third - Acme Docs",
+        lastVisitTime: 2000,
+      },
     ]);
 
     await reconcileBookmarkRule(sampleRule({ sortField: "visitTime", sortDirection: "desc" }));
@@ -320,9 +366,21 @@ describe("reconcileBookmarkRule", () => {
 
   it("sorts by title ascending", async () => {
     chrome.history.search.mockResolvedValue([
-      { url: "https://acme.example.com/docs/zebra", title: "Zebra - Acme Docs", lastVisitTime: 1000 },
-      { url: "https://acme.example.com/docs/alpha", title: "Alpha - Acme Docs", lastVisitTime: 2000 },
-      { url: "https://acme.example.com/docs/middle", title: "Middle - Acme Docs", lastVisitTime: 3000 },
+      {
+        url: "https://acme.example.com/docs/zebra",
+        title: "Zebra - Acme Docs",
+        lastVisitTime: 1000,
+      },
+      {
+        url: "https://acme.example.com/docs/alpha",
+        title: "Alpha - Acme Docs",
+        lastVisitTime: 2000,
+      },
+      {
+        url: "https://acme.example.com/docs/middle",
+        title: "Middle - Acme Docs",
+        lastVisitTime: 3000,
+      },
     ]);
 
     await reconcileBookmarkRule(sampleRule({ sortField: "title", sortDirection: "asc" }));
@@ -343,7 +401,10 @@ describe("reconcileBookmarkRule", () => {
 
   it("does nothing when url-porter folder is missing", async () => {
     mockBookmarks.length = 0;
-    mockBookmarks.push({ id: "0", title: "root" }, { id: "2", parentId: "0", title: "Other Bookmarks" });
+    mockBookmarks.push(
+      { id: "0", title: "root" },
+      { id: "2", parentId: "0", title: "Other Bookmarks" },
+    );
 
     chrome.history.search.mockResolvedValue([
       { url: "https://acme.example.com/docs/test", title: "Test - Acme Docs", lastVisitTime: 1000 },

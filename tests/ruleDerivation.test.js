@@ -4,7 +4,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { escapeRegex, deriveRuleFromUrl, extractDomainFromRegex } from "../src/helpers/ruleDerivation.js";
+import {
+  escapeRegex,
+  deriveRuleFromUrl,
+  extractDomainFromRegex,
+} from "../src/helpers/ruleDerivation.js";
 
 describe("escapeRegex", () => {
   it("returns plain strings unchanged", () => {
@@ -59,7 +63,10 @@ describe("deriveRuleFromUrl", () => {
   });
 
   it("uses first path segment for pattern", () => {
-    const result = deriveRuleFromUrl("https://stackoverflow.com/questions/12345/some-title", fixedDate);
+    const result = deriveRuleFromUrl(
+      "https://stackoverflow.com/questions/12345/some-title",
+      fixedDate,
+    );
     expect(result.urlMatchPattern).toBe("^https?://stackoverflow\\.com/questions/[^/?#]+");
     expect(result.dedupeKeyPattern).toBe("stackoverflow\\.com/questions/([^/?#]+)");
   });
@@ -133,7 +140,9 @@ describe("deriveRuleFromUrl", () => {
 
 describe("extractDomainFromRegex", () => {
   it("extracts domain from a typical URL match pattern", () => {
-    expect(extractDomainFromRegex("^https?://leetcode\\.com/problems/[^/?#]+")).toBe("leetcode.com");
+    expect(extractDomainFromRegex("^https?://leetcode\\.com/problems/[^/?#]+")).toBe(
+      "leetcode.com",
+    );
   });
 
   it("extracts domain with subdomain", () => {

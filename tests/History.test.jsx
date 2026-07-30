@@ -23,9 +23,16 @@ function seedHistory() {
   storageData.linkHistory = {
     "||alpha^": [
       { from: "||alpha^", to: "https://alpha.test", action: "added", date: "2025-01-02T00:00:00Z" },
-      { from: "||alpha^", to: "https://alpha-old.test", action: "edited", date: "2025-01-01T00:00:00Z" },
+      {
+        from: "||alpha^",
+        to: "https://alpha-old.test",
+        action: "edited",
+        date: "2025-01-01T00:00:00Z",
+      },
     ],
-    "||beta^": [{ from: "||beta^", to: "https://beta.test", action: "deleted", date: "2025-01-03T00:00:00Z" }],
+    "||beta^": [
+      { from: "||beta^", to: "https://beta.test", action: "deleted", date: "2025-01-03T00:00:00Z" },
+    ],
   };
 }
 
@@ -66,7 +73,9 @@ describe("History page", () => {
     seedHistory();
     render(<History />);
     await waitFor(() => expect(screen.queryByText("https://alpha.test")).toBeTruthy());
-    fireEvent.change(screen.getByPlaceholderText("Search history..."), { target: { value: "zzzzz" } });
+    fireEvent.change(screen.getByPlaceholderText("Search history..."), {
+      target: { value: "zzzzz" },
+    });
     expect(await screen.findByText(/No matching history entries/i)).toBeTruthy();
   });
 
@@ -89,7 +98,9 @@ describe("History page", () => {
     fireEvent.click(screen.getByRole("button", { name: /Restore All/i }));
     const confirmButtons = screen.getAllByRole("button", { name: /Restore All/i });
     fireEvent.click(confirmButtons[confirmButtons.length - 1]);
-    await waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }));
+    await waitFor(() =>
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }),
+    );
   });
 
   it("toggles selection of all entries via header checkbox", async () => {
@@ -116,7 +127,9 @@ describe("History page", () => {
     fireEvent.click(checkboxes[1]);
     const restoreBtn = await screen.findByRole("button", { name: /Restore \(1\)/i });
     fireEvent.click(restoreBtn);
-    await waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }));
+    await waitFor(() =>
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }),
+    );
   });
 
   it("navigates to Options page when back button clicked", async () => {
@@ -131,7 +144,9 @@ describe("History page", () => {
     render(<History />);
     await screen.findByText("Link History");
     fireEvent.click(screen.getByRole("button", { name: /Add Link/i }));
-    expect(chrome.tabs.create).toHaveBeenCalledWith({ url: "chrome-extension://test/pages/addlink/addlink.html" });
+    expect(chrome.tabs.create).toHaveBeenCalledWith({
+      url: "chrome-extension://test/pages/addlink/addlink.html",
+    });
   });
 
   it("restores a single entry via the inline restore button", async () => {
@@ -143,6 +158,8 @@ describe("History page", () => {
     const tooltipBtns = screen.getAllByRole("button", { name: /Restore$/i });
     expect(tooltipBtns.length).toBeGreaterThan(0);
     fireEvent.click(tooltipBtns[0]);
-    await waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }));
+    await waitFor(() =>
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }),
+    );
   });
 });

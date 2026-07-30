@@ -31,7 +31,8 @@ function detectStatus() {
   if (closedIcon) return "closed";
 
   const openIcon = document.querySelector(".octicon-git-pull-request");
-  if (openIcon && !document.querySelector(".octicon-git-merge, .octicon-git-pull-request-closed")) return "open";
+  if (openIcon && !document.querySelector(".octicon-git-merge, .octicon-git-pull-request-closed"))
+    return "open";
 
   return null;
 }
@@ -71,7 +72,9 @@ function reportStatus() {
   const url = window.location.href.split("?")[0].split("#")[0].replace(/\/+$/, "");
   // Normalize to canonical PR URL (strip /files, /commits, etc.)
   // Supports github.com, *.githubprivate.com, and *.ghe.com (GitHub Enterprise)
-  const match = url.match(/^(https?:\/\/(?:github\.com|[^/]+\.githubprivate\.com|[^/]+\.ghe\.com)\/[^/]+\/[^/]+\/pull\/\d+)/);
+  const match = url.match(
+    /^(https?:\/\/(?:github\.com|[^/]+\.githubprivate\.com|[^/]+\.ghe\.com)\/[^/]+\/[^/]+\/pull\/\d+)/,
+  );
   if (!match) return;
 
   const canonicalUrl = match[1];

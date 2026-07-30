@@ -9,7 +9,10 @@ try {
   const rawData = fs.readFileSync(INPUT_FILE, "utf8");
 
   // Strip comments (single-line // and multi-line /* */) so JSON.parse works
-  const jsonWithoutComments = rawData.replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, g) => (g ? "" : m));
+  const jsonWithoutComments = rawData.replace(
+    /\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g,
+    (m, g) => (g ? "" : m),
+  );
   const parsedData = JSON.parse(jsonWithoutComments);
 
   // Support both { configs: [...] } and bare array formats

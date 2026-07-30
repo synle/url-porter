@@ -50,11 +50,15 @@ describe("HistoryStatsSection", () => {
     chrome.history.search.mockRejectedValueOnce(new Error("history denied"));
     const snackbar = vi.fn();
     render(<HistoryStatsSection showSnackbar={snackbar} />);
-    await waitFor(() => expect(snackbar).toHaveBeenCalledWith(expect.stringContaining("history denied"), "error"));
+    await waitFor(() =>
+      expect(snackbar).toHaveBeenCalledWith(expect.stringContaining("history denied"), "error"),
+    );
   });
 
   it("refresh button re-fetches history", async () => {
-    chrome.history.search.mockResolvedValue([{ url: "https://acme.com/a", title: "A", visitCount: 10, lastVisitTime: 100 }]);
+    chrome.history.search.mockResolvedValue([
+      { url: "https://acme.com/a", title: "A", visitCount: 10, lastVisitTime: 100 },
+    ]);
     render(<HistoryStatsSection showSnackbar={() => {}} />);
     await screen.findByText(/Browse History Stats/i);
     await waitFor(() => expect(chrome.history.search).toHaveBeenCalledTimes(1));

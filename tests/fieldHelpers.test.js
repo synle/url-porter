@@ -3,7 +3,12 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { ALIAS_PLACEHOLDER, ALIAS_HELPER_TEXT, URL_PLACEHOLDER, URL_HELPER_TEXT } from "../src/helpers/fieldHelpers.js";
+import {
+  ALIAS_PLACEHOLDER,
+  ALIAS_HELPER_TEXT,
+  URL_PLACEHOLDER,
+  URL_HELPER_TEXT,
+} from "../src/helpers/fieldHelpers.js";
 
 describe("fieldHelpers", () => {
   it("exposes a non-empty alias placeholder", () => {

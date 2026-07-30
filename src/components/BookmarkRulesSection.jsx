@@ -136,7 +136,10 @@ export default function BookmarkRulesSection({ showSnackbar }) {
               key={rule.id}
               secondaryAction={
                 <Box>
-                  <Switch checked={rule.enabled !== false} onChange={() => handleToggleEnabled(rule.id)} />
+                  <Switch
+                    checked={rule.enabled !== false}
+                    onChange={() => handleToggleEnabled(rule.id)}
+                  />
                   <IconButton onClick={() => openDialog(rule)}>
                     <EditIcon />
                   </IconButton>
@@ -180,7 +183,8 @@ export default function BookmarkRulesSection({ showSnackbar }) {
         <DialogTitle>Delete Bookmark Rule</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this bookmark rule? The bookmark subfolder will remain until the next reconciliation.
+            Are you sure you want to delete this bookmark rule? The bookmark subfolder will remain
+            until the next reconciliation.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

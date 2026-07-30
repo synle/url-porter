@@ -16,7 +16,8 @@ chrome.runtime.getURL = vi.fn((p) => `chrome-extension://test/${p}`);
 vi.stubGlobal("chrome", chrome);
 
 if (!globalThis.crypto) globalThis.crypto = {};
-if (!globalThis.crypto.randomUUID) globalThis.crypto.randomUUID = () => "uuid-" + Math.random().toString(36).slice(2);
+if (!globalThis.crypto.randomUUID)
+  globalThis.crypto.randomUUID = () => "uuid-" + Math.random().toString(36).slice(2);
 
 // Stub URL methods used by export. Always reassign so we can assert calls.
 globalThis.URL.createObjectURL = vi.fn(() => "blob:test");
@@ -79,7 +80,9 @@ describe("Options page", () => {
     await waitFor(() => expect(screen.queryByText("https://abc.test")).toBeTruthy());
     // Iterate top-bar header buttons (those with text labels) and fire click.
     // We swallow any side effects since this is a smoke test for coverage.
-    const headerBtns = screen.queryAllByRole("button").filter((b) => (b.textContent || "").trim().length > 0);
+    const headerBtns = screen
+      .queryAllByRole("button")
+      .filter((b) => (b.textContent || "").trim().length > 0);
     for (const btn of headerBtns.slice(0, 5)) {
       try {
         fireEvent.click(btn);
@@ -266,7 +269,9 @@ describe("Options page", () => {
       // Click the dialog's primary action (last button is typically Add/Save).
       const buttons = dialog.querySelectorAll("button");
       fireEvent.click(buttons[buttons.length - 1]);
-      await waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }));
+      await waitFor(() =>
+        expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }),
+      );
     }
   });
 
@@ -283,7 +288,9 @@ describe("Options page", () => {
       fireEvent.change(inputs[1], { target: { value: "https://updated.test" } });
       const buttons = dialog.querySelectorAll("button");
       fireEvent.click(buttons[buttons.length - 1]);
-      await waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }));
+      await waitFor(() =>
+        expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }),
+      );
     }
   });
 
@@ -297,7 +304,9 @@ describe("Options page", () => {
     const dialog = dialogTitle.closest('[role="dialog"]');
     const buttons = dialog.querySelectorAll("button");
     fireEvent.click(buttons[buttons.length - 1]);
-    await waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }));
+    await waitFor(() =>
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }),
+    );
   });
 
   it("closes Reset All dialog via Cancel", async () => {
@@ -319,7 +328,9 @@ describe("Options page", () => {
     const dialog = title.closest('[role="dialog"]');
     const buttons = dialog.querySelectorAll("button");
     fireEvent.click(buttons[buttons.length - 1]);
-    await waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }));
+    await waitFor(() =>
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }),
+    );
   });
 
   it("selects all rows then mass-deletes", async () => {
@@ -329,13 +340,17 @@ describe("Options page", () => {
     fireEvent.click(checkboxes[0]); // select all
     const massDeleteBtn = await screen.findByRole("button", { name: /Delete \(/i });
     fireEvent.click(massDeleteBtn);
-    const title = await screen.findByText(/Delete Multiple Links|Delete \d+|selected/i).catch(() => null);
+    const title = await screen
+      .findByText(/Delete Multiple Links|Delete \d+|selected/i)
+      .catch(() => null);
     if (title) {
       const dialog = title.closest('[role="dialog"]');
       if (dialog) {
         const buttons = dialog.querySelectorAll("button");
         fireEvent.click(buttons[buttons.length - 1]);
-        await waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }));
+        await waitFor(() =>
+          expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }),
+        );
       }
     }
   });
@@ -348,7 +363,9 @@ describe("Options page", () => {
     // Click Save button.
     const saveBtn = await screen.findByRole("button", { name: /^Save$/i });
     fireEvent.click(saveBtn);
-    await waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }));
+    await waitFor(() =>
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" }),
+    );
   });
 
   it("triggers Export and creates a download blob", async () => {

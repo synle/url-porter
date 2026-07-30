@@ -78,7 +78,9 @@ function buildTree() {
    * @returns {Array} Child nodes with nested children.
    */
   function childrenOf(parentId) {
-    return mockBookmarks.filter((b) => b.parentId === parentId).map((b) => ({ ...b, children: b.url ? undefined : childrenOf(b.id) }));
+    return mockBookmarks
+      .filter((b) => b.parentId === parentId)
+      .map((b) => ({ ...b, children: b.url ? undefined : childrenOf(b.id) }));
   }
   return {
     id: "0",
@@ -151,12 +153,16 @@ describe("jiraTicketUtils — feedback loop prevention", () => {
     });
 
     await reconcileJiraTickets();
-    const firstCreated = mockBookmarks.filter((b) => b.url?.includes("FALCON-8817") && b.parentId !== "1");
+    const firstCreated = mockBookmarks.filter(
+      (b) => b.url?.includes("FALCON-8817") && b.parentId !== "1",
+    );
     expect(firstCreated.length).toBeGreaterThan(0);
     const firstTitle = firstCreated[firstCreated.length - 1].title;
 
     await reconcileJiraTickets();
-    const secondCreated = mockBookmarks.filter((b) => b.url?.includes("FALCON-8817") && b.parentId !== "1");
+    const secondCreated = mockBookmarks.filter(
+      (b) => b.url?.includes("FALCON-8817") && b.parentId !== "1",
+    );
     const secondTitle = secondCreated[secondCreated.length - 1].title;
 
     expect(secondTitle).toBe(firstTitle);
@@ -184,7 +190,9 @@ describe("jiraTicketUtils — feedback loop prevention", () => {
 
     await reconcileJiraTickets();
 
-    const created = mockBookmarks.filter((b) => b.url?.includes("PLUTO-4401") && b.parentId !== "1");
+    const created = mockBookmarks.filter(
+      (b) => b.url?.includes("PLUTO-4401") && b.parentId !== "1",
+    );
     expect(created.length).toBeGreaterThan(0);
     const title = created[created.length - 1].title;
 
@@ -228,10 +236,26 @@ describe("jiraTicketUtils — feedback loop prevention", () => {
     chrome.history.search.mockImplementation(async ({ text }) => {
       if (text === "jira") {
         return [
-          { url: "https://jira.acme-corp.example.com:8443/browse/FALCON-1001", title: "In progress ticket", lastVisitTime: Date.now() },
-          { url: "https://jira.acme-corp.example.com:8443/browse/FALCON-1002", title: "Done ticket", lastVisitTime: Date.now() },
-          { url: "https://jira.acme-corp.example.com:8443/browse/FALCON-1003", title: "Todo ticket", lastVisitTime: Date.now() },
-          { url: "https://jira.acme-corp.example.com:8443/browse/FALCON-1004", title: "Blocked ticket", lastVisitTime: Date.now() },
+          {
+            url: "https://jira.acme-corp.example.com:8443/browse/FALCON-1001",
+            title: "In progress ticket",
+            lastVisitTime: Date.now(),
+          },
+          {
+            url: "https://jira.acme-corp.example.com:8443/browse/FALCON-1002",
+            title: "Done ticket",
+            lastVisitTime: Date.now(),
+          },
+          {
+            url: "https://jira.acme-corp.example.com:8443/browse/FALCON-1003",
+            title: "Todo ticket",
+            lastVisitTime: Date.now(),
+          },
+          {
+            url: "https://jira.acme-corp.example.com:8443/browse/FALCON-1004",
+            title: "Blocked ticket",
+            lastVisitTime: Date.now(),
+          },
         ];
       }
       return [];
@@ -239,7 +263,9 @@ describe("jiraTicketUtils — feedback loop prevention", () => {
 
     await reconcileJiraTickets();
 
-    const created = mockBookmarks.filter((b) => b.url?.includes("FALCON-100") && b.parentId !== "1");
+    const created = mockBookmarks.filter(
+      (b) => b.url?.includes("FALCON-100") && b.parentId !== "1",
+    );
     const titles = Object.fromEntries(created.map((b) => [b.url.match(/FALCON-\d+/)[0], b.title]));
 
     expect(titles["FALCON-1001"]).toMatch(/^\uD83D\uDD35 /); // 🔵 in_progress
@@ -276,7 +302,10 @@ describe("jiraTicketUtils — feedback loop prevention", () => {
 
     await reconcileJiraTickets();
 
-    const created = mockBookmarks.filter((b) => b.url?.includes("FALCON-2001") && b.parentId !== "1" && b.parentId !== projectFolder.id);
+    const created = mockBookmarks.filter(
+      (b) =>
+        b.url?.includes("FALCON-2001") && b.parentId !== "1" && b.parentId !== projectFolder.id,
+    );
     expect(created.length).toBeGreaterThan(0);
     expect(created[created.length - 1].title).toMatch(/^\u2705 /); // ✅ preserved from old bookmark
   });
@@ -300,7 +329,9 @@ describe("jiraTicketUtils — feedback loop prevention", () => {
 
     await reconcileJiraTickets();
 
-    const created = mockBookmarks.filter((b) => b.url?.includes("FALCON-3001") && b.parentId !== "1");
+    const created = mockBookmarks.filter(
+      (b) => b.url?.includes("FALCON-3001") && b.parentId !== "1",
+    );
     expect(created.length).toBeGreaterThan(0);
     const title = created[created.length - 1].title;
     expect(title).toMatch(/^FALCON-3001/); // no emoji prefix

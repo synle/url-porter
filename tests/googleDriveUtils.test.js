@@ -5,7 +5,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createChromeMock } from "./_chromeMock.js";
 
-const { chrome, mockBookmarks, addMockFolder, addMockBookmark, reset, setHistory } = createChromeMock();
+const { chrome, mockBookmarks, addMockFolder, addMockBookmark, reset, setHistory } =
+  createChromeMock();
 vi.stubGlobal("chrome", chrome);
 
 const { reconcileGoogleDrive } = await import("../src/helpers/googleDriveUtils.js");
@@ -17,7 +18,9 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
 
   it("skips reconcile when url-porter folder is missing", async () => {
     setHistory({
-      "docs.google.com": [{ url: "https://docs.google.com/document/d/DOC1/edit", title: "Doc", lastVisitTime: 1 }],
+      "docs.google.com": [
+        { url: "https://docs.google.com/document/d/DOC1/edit", title: "Doc", lastVisitTime: 1 },
+      ],
     });
     await reconcileGoogleDrive();
     expect(mockBookmarks.find((b) => b.title === "google drive")).toBeUndefined();
@@ -25,7 +28,9 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
 
   it("returns early when nothing parseable is found", async () => {
     addMockFolder("2", "url-porter");
-    setHistory({ "docs.google.com": [{ url: "https://example.com/", title: "x", lastVisitTime: 1 }] });
+    setHistory({
+      "docs.google.com": [{ url: "https://example.com/", title: "x", lastVisitTime: 1 }],
+    });
     await reconcileGoogleDrive();
     expect(mockBookmarks.find((b) => b.title === "google drive")).toBeUndefined();
   });
@@ -34,7 +39,11 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
     addMockFolder("2", "url-porter");
     setHistory({
       "docs.google.com": [
-        { url: "https://docs.google.com/document/d/DOC1/edit", title: "Document Title - Google Docs", lastVisitTime: 100 },
+        {
+          url: "https://docs.google.com/document/d/DOC1/edit",
+          title: "Document Title - Google Docs",
+          lastVisitTime: 100,
+        },
         {
           url: "https://docs.google.com/spreadsheets/d/SHEET1/edit#gid=0",
           title: "Spreadsheet - Google Sheets",
@@ -45,11 +54,23 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
           title: "Deck - Google Slides",
           lastVisitTime: 300,
         },
-        { url: "https://docs.google.com/forms/d/FORM1/edit", title: "Survey - Google Forms", lastVisitTime: 50 },
+        {
+          url: "https://docs.google.com/forms/d/FORM1/edit",
+          title: "Survey - Google Forms",
+          lastVisitTime: 50,
+        },
       ],
       "drive.google.com": [
-        { url: "https://drive.google.com/file/d/FILE1/view", title: "File - Google Drive", lastVisitTime: 400 },
-        { url: "https://drive.google.com/open?id=OPEN1", title: "Open - Google Drive", lastVisitTime: 500 },
+        {
+          url: "https://drive.google.com/file/d/FILE1/view",
+          title: "File - Google Drive",
+          lastVisitTime: 400,
+        },
+        {
+          url: "https://drive.google.com/open?id=OPEN1",
+          title: "Open - Google Drive",
+          lastVisitTime: 500,
+        },
       ],
     });
     await reconcileGoogleDrive();
@@ -67,9 +88,20 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
 
   it("dedupes by docId between history and bookmarks", async () => {
     addMockFolder("2", "url-porter");
-    addMockBookmark("1", "Existing Doc - Google Docs", "https://docs.google.com/document/d/SAMEID/edit", 100);
+    addMockBookmark(
+      "1",
+      "Existing Doc - Google Docs",
+      "https://docs.google.com/document/d/SAMEID/edit",
+      100,
+    );
     setHistory({
-      "docs.google.com": [{ url: "https://docs.google.com/document/d/SAMEID/edit", title: "Newer - Google Docs", lastVisitTime: 200 }],
+      "docs.google.com": [
+        {
+          url: "https://docs.google.com/document/d/SAMEID/edit",
+          title: "Newer - Google Docs",
+          lastVisitTime: 200,
+        },
+      ],
     });
     await reconcileGoogleDrive();
     const folder = mockBookmarks.find((b) => b.title === "google drive");
@@ -80,7 +112,9 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
   it("falls back to docId when title is missing", async () => {
     addMockFolder("2", "url-porter");
     setHistory({
-      "docs.google.com": [{ url: "https://docs.google.com/document/d/DOCONLY/edit", title: "", lastVisitTime: 10 }],
+      "docs.google.com": [
+        { url: "https://docs.google.com/document/d/DOCONLY/edit", title: "", lastVisitTime: 10 },
+      ],
     });
     await reconcileGoogleDrive();
     const folder = mockBookmarks.find((b) => b.title === "google drive");
@@ -93,7 +127,13 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
     const stale = addMockFolder(porter.id, "google drive");
     addMockBookmark(stale.id, "Stale", "https://docs.google.com/document/d/STALE/edit", 1);
     setHistory({
-      "docs.google.com": [{ url: "https://docs.google.com/document/d/FRESH/edit", title: "Fresh", lastVisitTime: 100 }],
+      "docs.google.com": [
+        {
+          url: "https://docs.google.com/document/d/FRESH/edit",
+          title: "Fresh",
+          lastVisitTime: 100,
+        },
+      ],
     });
     await reconcileGoogleDrive();
     const folders = mockBookmarks.filter((b) => !b.url && b.title === "google drive");
@@ -109,7 +149,9 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
     addMockFolder(porter.id, "github repos");
     addMockFolder(porter.id, "jira tickets");
     setHistory({
-      "docs.google.com": [{ url: "https://docs.google.com/document/d/X/edit", title: "X", lastVisitTime: 1 }],
+      "docs.google.com": [
+        { url: "https://docs.google.com/document/d/X/edit", title: "X", lastVisitTime: 1 },
+      ],
     });
     await reconcileGoogleDrive();
     const create = chrome.bookmarks.create.mock.calls.find((c) => c[0].title === "google drive");
@@ -122,7 +164,9 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
     addMockFolder(porter.id, "github repos");
     addMockFolder(porter.id, "figma mocks");
     setHistory({
-      "docs.google.com": [{ url: "https://docs.google.com/document/d/X/edit", title: "X", lastVisitTime: 1 }],
+      "docs.google.com": [
+        { url: "https://docs.google.com/document/d/X/edit", title: "X", lastVisitTime: 1 },
+      ],
     });
     await reconcileGoogleDrive();
     const create = chrome.bookmarks.create.mock.calls.find((c) => c[0].title === "google drive");
@@ -134,7 +178,9 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
     addMockFolder(porter.id, "prs");
     addMockFolder(porter.id, "github repos");
     setHistory({
-      "docs.google.com": [{ url: "https://docs.google.com/document/d/X/edit", title: "X", lastVisitTime: 1 }],
+      "docs.google.com": [
+        { url: "https://docs.google.com/document/d/X/edit", title: "X", lastVisitTime: 1 },
+      ],
     });
     await reconcileGoogleDrive();
     const create = chrome.bookmarks.create.mock.calls.find((c) => c[0].title === "google drive");
@@ -168,7 +214,9 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
     addMockFolder("2", "url-porter");
     chrome.bookmarks.getTree.mockRejectedValueOnce(new Error("tree boom"));
     setHistory({
-      "docs.google.com": [{ url: "https://docs.google.com/document/d/X/edit", title: "X", lastVisitTime: 1 }],
+      "docs.google.com": [
+        { url: "https://docs.google.com/document/d/X/edit", title: "X", lastVisitTime: 1 },
+      ],
     });
     await reconcileGoogleDrive();
     const folder = mockBookmarks.find((b) => b.title === "google drive");

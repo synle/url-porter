@@ -42,7 +42,14 @@ describe("BookmarkRuleForm", () => {
       sortDirection: "asc",
       enabled: false,
     };
-    render(<BookmarkRuleForm rule={rule} onSave={() => {}} onCancel={() => {}} showSnackbar={() => {}} />);
+    render(
+      <BookmarkRuleForm
+        rule={rule}
+        onSave={() => {}}
+        onCancel={() => {}}
+        showSnackbar={() => {}}
+      />,
+    );
     expect(screen.getAllByDisplayValue("my-rule")[0]).toBeTruthy();
     expect(screen.getAllByDisplayValue("a.com, b.com")[0]).toBeTruthy();
     expect(screen.getByRole("button", { name: /Save/i })).toBeTruthy();
@@ -60,7 +67,14 @@ describe("BookmarkRuleForm", () => {
 
   it("blocks duplicate names against existingNames", () => {
     const showSnackbar = vi.fn();
-    render(<BookmarkRuleForm existingNames={["my-rule"]} onSave={() => {}} onCancel={() => {}} showSnackbar={showSnackbar} />);
+    render(
+      <BookmarkRuleForm
+        existingNames={["my-rule"]}
+        onSave={() => {}}
+        onCancel={() => {}}
+        showSnackbar={showSnackbar}
+      />,
+    );
     const nameInput = screen.getAllByDisplayValue("leetcode problems")[0];
     fireEvent.change(nameInput, { target: { value: "my-rule" } });
     const buttons = screen.getAllByRole("button");

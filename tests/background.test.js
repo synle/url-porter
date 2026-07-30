@@ -36,7 +36,9 @@ function buildTree() {
    * @returns {Array<object>}
    */
   function childrenOf(parentId) {
-    return mockBookmarks.filter((b) => b.parentId === parentId).map((b) => ({ ...b, children: b.url ? undefined : childrenOf(b.id) }));
+    return mockBookmarks
+      .filter((b) => b.parentId === parentId)
+      .map((b) => ({ ...b, children: b.url ? undefined : childrenOf(b.id) }));
   }
   return [
     {
@@ -184,10 +186,12 @@ function resetState() {
   }
   clearMocksDeep(chrome);
   // updateDynamicRules implementation may have been overridden — restore default.
-  chrome.declarativeNetRequest.updateDynamicRules.mockImplementation(async ({ removeRuleIds = [], addRules = [] }) => {
-    dynamicRules = dynamicRules.filter((r) => !removeRuleIds.includes(r.id));
-    dynamicRules.push(...addRules);
-  });
+  chrome.declarativeNetRequest.updateDynamicRules.mockImplementation(
+    async ({ removeRuleIds = [], addRules = [] }) => {
+      dynamicRules = dynamicRules.filter((r) => !removeRuleIds.includes(r.id));
+      dynamicRules.push(...addRules);
+    },
+  );
   vi.clearAllTimers();
 }
 
@@ -210,8 +214,12 @@ describe("background — onInstalled", () => {
 
   it("creates context menus and sets default omnibox suggestion", async () => {
     await listeners.onInstalled[0]();
-    expect(chrome.contextMenus.create).toHaveBeenCalledWith(expect.objectContaining({ id: "add-to-url-porter" }));
-    expect(chrome.contextMenus.create).toHaveBeenCalledWith(expect.objectContaining({ id: "add-bookmark-rule" }));
+    expect(chrome.contextMenus.create).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "add-to-url-porter" }),
+    );
+    expect(chrome.contextMenus.create).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "add-bookmark-rule" }),
+    );
     expect(chrome.omnibox.setDefaultSuggestion).toHaveBeenCalled();
   });
 });
@@ -222,7 +230,10 @@ describe("background — context menu click", () => {
   });
 
   it("opens addlink page when 'add-to-url-porter' clicked", () => {
-    listeners.contextMenuClick[0]({ menuItemId: "add-to-url-porter" }, { url: "https://example.com/page", title: "Example" });
+    listeners.contextMenuClick[0](
+      { menuItemId: "add-to-url-porter" },
+      { url: "https://example.com/page", title: "Example" },
+    );
     expect(chrome.tabs.create).toHaveBeenCalledWith({
       url: expect.stringContaining("addlink.html?url="),
     });
@@ -232,7 +243,10 @@ describe("background — context menu click", () => {
   });
 
   it("opens addrule page when 'add-bookmark-rule' clicked", () => {
-    listeners.contextMenuClick[0]({ menuItemId: "add-bookmark-rule" }, { url: "https://example.com/" });
+    listeners.contextMenuClick[0](
+      { menuItemId: "add-bookmark-rule" },
+      { url: "https://example.com/" },
+    );
     expect(chrome.tabs.create).toHaveBeenCalledWith({
       url: expect.stringContaining("addrule.html?url="),
     });
@@ -262,14 +276,22 @@ describe("background — message handler", () => {
   });
 
   it("handles Myevent.prStatus", async () => {
-    listeners.message[0]({ type: "Myevent.prStatus", url: "https://github.com/a/b/pull/1", status: "merged" }, {}, () => {});
+    listeners.message[0](
+      { type: "Myevent.prStatus", url: "https://github.com/a/b/pull/1", status: "merged" },
+      {},
+      () => {},
+    );
     await vi.advanceTimersByTimeAsync(2000);
     expect(storageData.prStatuses["https://github.com/a/b/pull/1"]).toBe("merged");
   });
 
   it("handles Myevent.jiraStatus", async () => {
     listeners.message[0](
-      { type: "Myevent.jiraStatus", url: "https://acme.atlassian.net/browse/FOO-1", status: "in_progress" },
+      {
+        type: "Myevent.jiraStatus",
+        url: "https://acme.atlassian.net/browse/FOO-1",
+        status: "in_progress",
+      },
       {},
       () => {},
     );
@@ -281,7 +303,12 @@ describe("background — message handler", () => {
     // Set up a porter folder with a nested bookmark
     const porter = { id: "100", parentId: "2", title: "url-porter" };
     const sub = { id: "101", parentId: "100", title: "prs" };
-    const bookmark = { id: "102", parentId: "101", title: "PR 1", url: "https://github.com/a/b/pull/1" };
+    const bookmark = {
+      id: "102",
+      parentId: "101",
+      title: "PR 1",
+      url: "https://github.com/a/b/pull/1",
+    };
     mockBookmarks.push(porter, sub, bookmark);
 
     const response = await new Promise((resolve) => {
@@ -448,13 +475,15 @@ describe("background — updateRedirectRules", () => {
       { from: "bad", to: "https://bad.com" },
     ];
     let callCount = 0;
-    chrome.declarativeNetRequest.updateDynamicRules.mockImplementation(async ({ removeRuleIds = [], addRules = [] }) => {
-      callCount++;
-      // First call: bulk remove. After that, per-rule add. Reject the second add.
-      if (callCount === 3) throw new Error("invalid pattern");
-      dynamicRules = dynamicRules.filter((r) => !removeRuleIds.includes(r.id));
-      dynamicRules.push(...addRules);
-    });
+    chrome.declarativeNetRequest.updateDynamicRules.mockImplementation(
+      async ({ removeRuleIds = [], addRules = [] }) => {
+        callCount++;
+        // First call: bulk remove. After that, per-rule add. Reject the second add.
+        if (callCount === 3) throw new Error("invalid pattern");
+        dynamicRules = dynamicRules.filter((r) => !removeRuleIds.includes(r.id));
+        dynamicRules.push(...addRules);
+      },
+    );
     listeners.message[0]({ type: "Myevent.updateConfig" }, {}, () => {});
     await vi.advanceTimersByTimeAsync(2000);
     expect(dynamicRules.length).toBe(1);

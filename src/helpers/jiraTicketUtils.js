@@ -83,7 +83,15 @@ function buildTitle(ticketKey, pageTitle, status) {
   let title = ticketKey;
   if (pageTitle) {
     // Strip leading ticket key and surrounding brackets/dashes from page title
-    let detail = pageTitle.replace(new RegExp(`^\\[?${ticketKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\]?\\s*[-:]?\\s*`, "i"), "").trim();
+    let detail = pageTitle
+      .replace(
+        new RegExp(
+          `^\\[?${ticketKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\]?\\s*[-:]?\\s*`,
+          "i",
+        ),
+        "",
+      )
+      .trim();
     // Also strip any remaining [PROJECT-NUMBER] bracket pattern (e.g. when ticketKey is just the number)
     detail = detail.replace(/^\[?[A-Z][A-Z0-9]+-\d+\]?\s*[-:]?\s*/i, "").trim();
     // Strip common Jira suffixes like "- Jira", "- LinkedIn JIRA", "- JIRA Service Management"
@@ -235,7 +243,10 @@ export async function reconcileJiraTickets() {
   }
 
   // Gather tickets from history and bookmarks (skip url-porter folder to avoid feedback loop)
-  const [historyTickets, bookmarkTickets] = await Promise.all([getTicketsFromHistory(), getTicketsFromBookmarks(porterFolder.id)]);
+  const [historyTickets, bookmarkTickets] = await Promise.all([
+    getTicketsFromHistory(),
+    getTicketsFromBookmarks(porterFolder.id),
+  ]);
 
   // Merge — bookmark data wins for date if present, but prefer history for page title
   const allTickets = new Map();
@@ -295,7 +306,11 @@ export async function reconcileJiraTickets() {
     insertIndex = 2;
   }
 
-  const subfolder = await chrome.bookmarks.create({ parentId: porterFolder.id, title: SUBFOLDER_NAME, index: insertIndex });
+  const subfolder = await chrome.bookmarks.create({
+    parentId: porterFolder.id,
+    title: SUBFOLDER_NAME,
+    index: insertIndex,
+  });
 
   // Group by project
   const byProject = new Map();
@@ -341,7 +356,9 @@ export async function reconcileJiraTickets() {
 
   // Misc folder for projects with few tickets
   if (miscTickets.length > 0) {
-    miscTickets.sort((a, b) => a.project.localeCompare(b.project) || b.ticketKey.localeCompare(a.ticketKey));
+    miscTickets.sort(
+      (a, b) => a.project.localeCompare(b.project) || b.ticketKey.localeCompare(a.ticketKey),
+    );
     const miscFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: "misc" });
     for (const entry of miscTickets) {
       const status = storedStatuses[entry.url] || oldBookmarkStatuses[entry.url] || null;
@@ -351,5 +368,11 @@ export async function reconcileJiraTickets() {
     }
   }
 
-  console.log("[jiraTicketUtils] reconcileJiraTickets: done. added:", added, "across", sortedProjects.length, "projects");
+  console.log(
+    "[jiraTicketUtils] reconcileJiraTickets: done. added:",
+    added,
+    "across",
+    sortedProjects.length,
+    "projects",
+  );
 }

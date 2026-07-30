@@ -6,7 +6,9 @@
  */
 
 /** Default sync server URL, overridable at build time via env var. */
-const DEFAULT_SYNC_URL = import.meta.env.VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL || "https://synle.github.io/fav/url-porter.json";
+const DEFAULT_SYNC_URL =
+  import.meta.env.VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL ||
+  "https://synle.github.io/fav/url-porter.json";
 
 export { DEFAULT_SYNC_URL };
 
@@ -41,7 +43,9 @@ export function getConfig() {
  * @returns {string} Comment-free JSON
  */
 export function stripJsonComments(jsonString) {
-  return jsonString.replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, g) => (g ? "" : m)).trim();
+  return jsonString
+    .replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, g) => (g ? "" : m))
+    .trim();
 }
 
 /**

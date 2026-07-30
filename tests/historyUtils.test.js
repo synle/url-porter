@@ -30,7 +30,9 @@ describe("historyUtils", () => {
     });
 
     it("returns the stored grouped map", async () => {
-      storageData.linkHistory = { foo: [{ from: "foo", to: "https://f.com", action: "added", date: "2026" }] };
+      storageData.linkHistory = {
+        foo: [{ from: "foo", to: "https://f.com", action: "added", date: "2026" }],
+      };
       const result = await getHistory();
       expect(result.foo).toBeDefined();
       expect(result.foo[0].to).toBe("https://f.com");

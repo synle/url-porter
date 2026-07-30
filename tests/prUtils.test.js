@@ -81,7 +81,9 @@ function buildTree() {
    * @returns {Array} Child nodes with nested children.
    */
   function childrenOf(parentId) {
-    return mockBookmarks.filter((b) => b.parentId === parentId).map((b) => ({ ...b, children: b.url ? undefined : childrenOf(b.id) }));
+    return mockBookmarks
+      .filter((b) => b.parentId === parentId)
+      .map((b) => ({ ...b, children: b.url ? undefined : childrenOf(b.id) }));
   }
   return {
     id: "0",
@@ -347,7 +349,9 @@ describe("prUtils — PR status icons", () => {
 
     await reconcilePrs();
 
-    const bm = findCreatedPrBookmark("https://globex.visualstudio.com/phoenix/_git/api-server/pullrequest/1234");
+    const bm = findCreatedPrBookmark(
+      "https://globex.visualstudio.com/phoenix/_git/api-server/pullrequest/1234",
+    );
     expect(bm).toBeDefined();
     expect(bm.title).toMatch(/^\u274C 1234 /);
   });
@@ -402,7 +406,9 @@ describe("prUtils — PR status icons", () => {
 
     await reconcilePrs();
 
-    const bm = findCreatedPrBookmark("https://globex.ghe.com/multiproduct/tde-tool-backend/pull/306");
+    const bm = findCreatedPrBookmark(
+      "https://globex.ghe.com/multiproduct/tde-tool-backend/pull/306",
+    );
     expect(bm).toBeDefined();
     expect(bm.title).toMatch(/^\u2705 306 /);
     expect(bm.title).toContain("TdeToolBackend/Multiproduct");
@@ -430,7 +436,9 @@ describe("prUtils — PR status icons", () => {
 
     await reconcilePrs();
 
-    const bm = findCreatedPrBookmark("https://dev.azure.com/initech/alpha/_git/backend/pullrequest/567");
+    const bm = findCreatedPrBookmark(
+      "https://dev.azure.com/initech/alpha/_git/backend/pullrequest/567",
+    );
     expect(bm).toBeDefined();
     expect(bm.title).toMatch(/^\u2705 567 /);
     expect(bm.title).toContain("Backend/InitechAlpha");
@@ -509,10 +517,26 @@ describe("prUtils — PR status icons", () => {
     chrome.history.search.mockImplementation(async ({ text }) => {
       if (text === "github.com/pull") {
         return [
-          { url: "https://github.com/acme/widget/pull/10", title: "PR 10", lastVisitTime: new Date("2026-03-10").getTime() },
-          { url: "https://github.com/acme/widget/pull/20", title: "PR 20", lastVisitTime: new Date("2026-03-12").getTime() },
-          { url: "https://github.com/acme/widget/pull/30", title: "PR 30", lastVisitTime: new Date("2026-03-14").getTime() },
-          { url: "https://github.com/acme/widget/pull/40", title: "PR 40", lastVisitTime: new Date("2026-03-16").getTime() },
+          {
+            url: "https://github.com/acme/widget/pull/10",
+            title: "PR 10",
+            lastVisitTime: new Date("2026-03-10").getTime(),
+          },
+          {
+            url: "https://github.com/acme/widget/pull/20",
+            title: "PR 20",
+            lastVisitTime: new Date("2026-03-12").getTime(),
+          },
+          {
+            url: "https://github.com/acme/widget/pull/30",
+            title: "PR 30",
+            lastVisitTime: new Date("2026-03-14").getTime(),
+          },
+          {
+            url: "https://github.com/acme/widget/pull/40",
+            title: "PR 40",
+            lastVisitTime: new Date("2026-03-16").getTime(),
+          },
         ];
       }
       return [];

@@ -46,7 +46,10 @@ function attemptErrorReload(storageKey, tag) {
   if (reloadCount < RELOAD_DELAYS.length) {
     const delay = RELOAD_DELAYS[reloadCount];
     sessionStorage.setItem(storageKey, String(reloadCount + 1));
-    console.log(tag, `error page detected, reload attempt ${reloadCount + 1}/${RELOAD_DELAYS.length} in ${delay / 1000}s...`);
+    console.log(
+      tag,
+      `error page detected, reload attempt ${reloadCount + 1}/${RELOAD_DELAYS.length} in ${delay / 1000}s...`,
+    );
     setTimeout(() => window.location.reload(), delay);
     return true;
   }

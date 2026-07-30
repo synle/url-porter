@@ -79,7 +79,9 @@ function HistoryContent() {
     const q = searchQuery.toLowerCase();
     return entries.filter(
       (e) =>
-        (e.from || "").toLowerCase().includes(q) || (e.to || "").toLowerCase().includes(q) || (e.action || "").toLowerCase().includes(q),
+        (e.from || "").toLowerCase().includes(q) ||
+        (e.to || "").toLowerCase().includes(q) ||
+        (e.action || "").toLowerCase().includes(q),
     );
   }, [entries, searchQuery]);
 
@@ -194,7 +196,9 @@ function HistoryContent() {
    * @returns {void}
    */
   const toggleSelect = (index) => {
-    setSelected((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]));
+    setSelected((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index],
+    );
   };
 
   /**
@@ -230,7 +234,12 @@ function HistoryContent() {
           >
             Add Link
           </Button>
-          <Button color="inherit" startIcon={<RestoreIcon />} onClick={() => setRestoreAllDialogOpen(true)} disabled={entries.length === 0}>
+          <Button
+            color="inherit"
+            startIcon={<RestoreIcon />}
+            onClick={() => setRestoreAllDialogOpen(true)}
+            disabled={entries.length === 0}
+          >
             Restore All
           </Button>
           <Button
@@ -262,7 +271,12 @@ function HistoryContent() {
             }}
           />
           {selected.length > 0 && (
-            <Button variant="contained" startIcon={<RestoreIcon />} onClick={handleRestoreSelected} sx={{ whiteSpace: "nowrap" }}>
+            <Button
+              variant="contained"
+              startIcon={<RestoreIcon />}
+              onClick={handleRestoreSelected}
+              sx={{ whiteSpace: "nowrap" }}
+            >
               Restore ({selected.length})
             </Button>
           )}
@@ -275,7 +289,10 @@ function HistoryContent() {
                 <TableCell padding="checkbox">
                   <Checkbox
                     indeterminate={selected.length > 0 && selected.length < filteredEntries.length}
-                    checked={filteredEntries.length > 0 && filteredEntries.every((_, i) => selected.includes(i))}
+                    checked={
+                      filteredEntries.length > 0 &&
+                      filteredEntries.every((_, i) => selected.includes(i))
+                    }
                     onChange={toggleSelectAll}
                   />
                 </TableCell>
@@ -292,7 +309,9 @@ function HistoryContent() {
               {filteredEntries.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                    <Typography color="text.secondary">{searchQuery ? "No matching history entries." : "No history yet."}</Typography>
+                    <Typography color="text.secondary">
+                      {searchQuery ? "No matching history entries." : "No history yet."}
+                    </Typography>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -326,7 +345,11 @@ function HistoryContent() {
                       </Tooltip>
                     </TableCell>
                     <TableCell>
-                      <Chip label={entry.action} color={ACTION_COLORS[entry.action] || "default"} size="small" />
+                      <Chip
+                        label={entry.action}
+                        color={ACTION_COLORS[entry.action] || "default"}
+                        size="small"
+                      />
                     </TableCell>
                     <TableCell sx={{ whiteSpace: "nowrap" }}>{formatDate(entry.date)}</TableCell>
                     <TableCell align="right">
@@ -346,7 +369,9 @@ function HistoryContent() {
       <Dialog open={clearDialogOpen} onClose={() => setClearDialogOpen(false)}>
         <DialogTitle>Clear All History</DialogTitle>
         <DialogContent>
-          <DialogContentText>This will permanently delete all history entries. This action cannot be undone.</DialogContentText>
+          <DialogContentText>
+            This will permanently delete all history entries. This action cannot be undone.
+          </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setClearDialogOpen(false)}>Cancel</Button>
@@ -361,8 +386,8 @@ function HistoryContent() {
         <DialogTitle>Restore All Links</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            This will restore all {entries.length} history entry(ies) into your link configuration. Existing aliases will be updated, new
-            ones will be added.
+            This will restore all {entries.length} history entry(ies) into your link configuration.
+            Existing aliases will be updated, new ones will be added.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

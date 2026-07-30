@@ -4,7 +4,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { findDuplicateAliases, findRedirectChains, findOverlappingAliases, checkBrokenLinks } from "../src/helpers/configAnalysis.js";
+import {
+  findDuplicateAliases,
+  findRedirectChains,
+  findOverlappingAliases,
+  checkBrokenLinks,
+} from "../src/helpers/configAnalysis.js";
 
 describe("findDuplicateAliases", () => {
   it("returns empty for no duplicates", () => {
@@ -215,7 +220,10 @@ describe("checkBrokenLinks", () => {
     expect(result).toEqual([]);
     // Only the second entry's URL should be fetched
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-    expect(globalThis.fetch).toHaveBeenCalledWith("https://aaa.com", { method: "HEAD", mode: "no-cors" });
+    expect(globalThis.fetch).toHaveBeenCalledWith("https://aaa.com", {
+      method: "HEAD",
+      mode: "no-cors",
+    });
   });
 
   it("flags 404 responses as broken links", async () => {

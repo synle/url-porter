@@ -30,7 +30,14 @@ describe("BookmarkRulesSection", () => {
 
   it("renders the rule list when rules exist", async () => {
     storageData.bookmarkRules = [
-      { id: "1", name: "leet", historyKeywords: ["leet.com"], sortField: "visitTime", sortDirection: "desc", enabled: true },
+      {
+        id: "1",
+        name: "leet",
+        historyKeywords: ["leet.com"],
+        sortField: "visitTime",
+        sortDirection: "desc",
+        enabled: true,
+      },
     ];
     render(<BookmarkRulesSection showSnackbar={() => {}} />);
     expect(await screen.findByText("leet")).toBeTruthy();
@@ -44,7 +51,14 @@ describe("BookmarkRulesSection", () => {
 
   it("toggles a rule's enabled state", async () => {
     storageData.bookmarkRules = [
-      { id: "1", name: "leet", historyKeywords: ["x"], sortField: "visitTime", sortDirection: "desc", enabled: true },
+      {
+        id: "1",
+        name: "leet",
+        historyKeywords: ["x"],
+        sortField: "visitTime",
+        sortDirection: "desc",
+        enabled: true,
+      },
     ];
     const snackbar = vi.fn();
     render(<BookmarkRulesSection showSnackbar={snackbar} />);
@@ -58,7 +72,14 @@ describe("BookmarkRulesSection", () => {
 
   it("opens delete confirmation and removes a rule on confirm", async () => {
     storageData.bookmarkRules = [
-      { id: "1", name: "to-delete", historyKeywords: ["x"], sortField: "visitTime", sortDirection: "desc", enabled: true },
+      {
+        id: "1",
+        name: "to-delete",
+        historyKeywords: ["x"],
+        sortField: "visitTime",
+        sortDirection: "desc",
+        enabled: true,
+      },
     ];
     const snackbar = vi.fn();
     render(<BookmarkRulesSection showSnackbar={snackbar} />);
@@ -71,10 +92,14 @@ describe("BookmarkRulesSection", () => {
     const deleteBtn = buttons[buttons.length - 1]; // Add Rule is first, list buttons after — but with MUI, hard to tell. Use the actual delete by query.
     void deleteBtn;
     // Instead, find all buttons and pick the one that's an icon-button on the list (skip Add Rule).
-    const ruleButtons = screen.getAllByRole("button").filter((b) => b.textContent === "" || b.querySelector("svg"));
+    const ruleButtons = screen
+      .getAllByRole("button")
+      .filter((b) => b.textContent === "" || b.querySelector("svg"));
     // The delete IconButton is the last per row (after toggle + edit). Find by aria-label or position.
     // Click the last icon button (delete).
-    const iconButtons = screen.getAllByRole("button").filter((b) => b.querySelector("svg") && !b.textContent.match(/Add/i));
+    const iconButtons = screen
+      .getAllByRole("button")
+      .filter((b) => b.querySelector("svg") && !b.textContent.match(/Add/i));
     fireEvent.click(iconButtons[iconButtons.length - 1]);
     // Confirm delete
     const confirmBtn = await screen.findByRole("button", { name: /^Delete$/i });

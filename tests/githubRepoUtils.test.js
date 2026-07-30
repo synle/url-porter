@@ -5,7 +5,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createChromeMock } from "./_chromeMock.js";
 
-const { chrome, mockBookmarks, addMockFolder, addMockBookmark, reset, setHistory, storageData } = createChromeMock();
+const { chrome, mockBookmarks, addMockFolder, addMockBookmark, reset, setHistory, storageData } =
+  createChromeMock();
 vi.stubGlobal("chrome", chrome);
 
 const { reconcileGitHubRepos } = await import("../src/helpers/githubRepoUtils.js");
@@ -45,7 +46,9 @@ describe("githubRepoUtils — reconcileGitHubRepos", () => {
     await reconcileGitHubRepos();
     const repoFolder = mockBookmarks.find((b) => b.title === "github repos");
     // Should contain only the real repo (single repo → goes under misc since threshold=3)
-    const allBookmarks = mockBookmarks.filter((b) => b.url && b.parentId !== "1" && b.parentId !== "2");
+    const allBookmarks = mockBookmarks.filter(
+      (b) => b.url && b.parentId !== "1" && b.parentId !== "2",
+    );
     const inside = allBookmarks.filter((b) => {
       // chase parent until we hit github repos
       let cur = b;
@@ -122,13 +125,19 @@ describe("githubRepoUtils — reconcileGitHubRepos", () => {
     addMockFolder("2", "url-porter");
     addMockBookmark("1", "Existing", "https://github.com/acme/widget/issues/5", 100);
     setHistory({
-      "github.com": [{ url: "https://github.com/acme/widget/pulls", title: "newer", lastVisitTime: 200 }],
+      "github.com": [
+        { url: "https://github.com/acme/widget/pulls", title: "newer", lastVisitTime: 200 },
+      ],
     });
     await reconcileGitHubRepos();
     const repoFolder = mockBookmarks.find((b) => b.title === "github repos");
     // Should have just one entry under github repos (deduped by canonical URL)
     const allBms = mockBookmarks.filter(
-      (b) => b.url && b.url.includes("/acme/widget") && !b.url.includes("pulls") && !b.url.includes("issues"),
+      (b) =>
+        b.url &&
+        b.url.includes("/acme/widget") &&
+        !b.url.includes("pulls") &&
+        !b.url.includes("issues"),
     );
     expect(allBms.length).toBe(1);
   });

@@ -25,7 +25,9 @@ import { normalizeEntry, normalizeFrom, stripAlias } from "./configUtils.js";
  * @returns {Promise<BrokenLinkResult[]>} Array of broken link results (only failures)
  */
 export async function checkBrokenLinks(entries, onProgress) {
-  const normalized = entries.map((e, i) => ({ entry: normalizeEntry(e), index: i })).filter((x) => x.entry);
+  const normalized = entries
+    .map((e, i) => ({ entry: normalizeEntry(e), index: i }))
+    .filter((x) => x.entry);
 
   // Build a set of known aliases so we can skip short links that redirect to another alias
   const aliasSet = new Set();

@@ -190,7 +190,10 @@ export async function reconcileGitHubRepos() {
   }
 
   // Gather repos from history and bookmarks
-  const [historyRepos, bookmarkRepos] = await Promise.all([getReposFromHistory(), getReposFromBookmarks(porterFolder.id)]);
+  const [historyRepos, bookmarkRepos] = await Promise.all([
+    getReposFromHistory(),
+    getReposFromBookmarks(porterFolder.id),
+  ]);
 
   // Merge (dedup by URL — flatten)
   const allRepos = new Map([...historyRepos, ...bookmarkRepos]);
@@ -217,7 +220,11 @@ export async function reconcileGitHubRepos() {
   const updatedChildren2 = await chrome.bookmarks.getChildren(porterFolder.id);
   const prsFolder = updatedChildren2.find((c) => !c.url && c.title === "prs");
   const insertIndex = prsFolder ? updatedChildren2.indexOf(prsFolder) + 1 : 0;
-  const subfolder = await chrome.bookmarks.create({ parentId: porterFolder.id, title: SUBFOLDER_NAME, index: insertIndex });
+  const subfolder = await chrome.bookmarks.create({
+    parentId: porterFolder.id,
+    title: SUBFOLDER_NAME,
+    index: insertIndex,
+  });
 
   // Sort all repos by repo name (case-insensitive), then by org
   const sortedRepos = [...allRepos.values()].sort((a, b) => {
@@ -237,7 +244,9 @@ export async function reconcileGitHubRepos() {
 
   // Split orgs into real groups (threshold+ repos) and misc (< threshold repos)
   const orgThreshold = await getGithubOrgThreshold();
-  const sortedOrgs = [...byOrg.keys()].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  const sortedOrgs = [...byOrg.keys()].sort((a, b) =>
+    a.toLowerCase().localeCompare(b.toLowerCase()),
+  );
   const miscRepos = [];
   const realOrgs = [];
   for (const org of sortedOrgs) {
@@ -253,7 +262,11 @@ export async function reconcileGitHubRepos() {
   for (const org of realOrgs) {
     const orgFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: org });
     for (const { repo, url } of byOrg.get(org)) {
-      await chrome.bookmarks.create({ parentId: orgFolder.id, title: sanitizeBookmarkTitle(repo), url });
+      await chrome.bookmarks.create({
+        parentId: orgFolder.id,
+        title: sanitizeBookmarkTitle(repo),
+        url,
+      });
       added++;
     }
   }
@@ -261,14 +274,26 @@ export async function reconcileGitHubRepos() {
   // Create misc folder for small groups
   if (miscRepos.length > 0) {
     miscRepos.sort(
-      (a, b) => a.org.toLowerCase().localeCompare(b.org.toLowerCase()) || a.repo.toLowerCase().localeCompare(b.repo.toLowerCase()),
+      (a, b) =>
+        a.org.toLowerCase().localeCompare(b.org.toLowerCase()) ||
+        a.repo.toLowerCase().localeCompare(b.repo.toLowerCase()),
     );
     const miscFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: "misc" });
     for (const { org, repo, url } of miscRepos) {
-      await chrome.bookmarks.create({ parentId: miscFolder.id, title: sanitizeBookmarkTitle(`${repo} (${org})`), url });
+      await chrome.bookmarks.create({
+        parentId: miscFolder.id,
+        title: sanitizeBookmarkTitle(`${repo} (${org})`),
+        url,
+      });
       added++;
     }
   }
 
-  console.log("[githubRepoUtils] reconcileGitHubRepos: done. added:", added, "across", sortedOrgs.length, "org folders");
+  console.log(
+    "[githubRepoUtils] reconcileGitHubRepos: done. added:",
+    added,
+    "across",
+    sortedOrgs.length,
+    "org folders",
+  );
 }

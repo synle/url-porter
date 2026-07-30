@@ -5,7 +5,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createChromeMock } from "./_chromeMock.js";
 
-const { chrome, mockBookmarks, addMockFolder, addMockBookmark, reset, setHistory } = createChromeMock();
+const { chrome, mockBookmarks, addMockFolder, addMockBookmark, reset, setHistory } =
+  createChromeMock();
 vi.stubGlobal("chrome", chrome);
 
 const { reconcileOnedrive } = await import("../src/helpers/onedriveUtils.js");
@@ -17,7 +18,9 @@ describe("onedriveUtils — reconcileOnedrive", () => {
 
   it("skips reconcile when url-porter folder is missing", async () => {
     setHistory({
-      "onedrive.live.com": [{ url: "https://onedrive.live.com/edit.aspx?resid=ABC", title: "Doc", lastVisitTime: 1 }],
+      "onedrive.live.com": [
+        { url: "https://onedrive.live.com/edit.aspx?resid=ABC", title: "Doc", lastVisitTime: 1 },
+      ],
     });
     await reconcileOnedrive();
     expect(mockBookmarks.find((b) => b.title === "onedrive")).toBeUndefined();
@@ -25,7 +28,9 @@ describe("onedriveUtils — reconcileOnedrive", () => {
 
   it("returns early when nothing parseable is found", async () => {
     addMockFolder("2", "url-porter");
-    setHistory({ "sharepoint.com": [{ url: "https://example.com/", title: "x", lastVisitTime: 1 }] });
+    setHistory({
+      "sharepoint.com": [{ url: "https://example.com/", title: "x", lastVisitTime: 1 }],
+    });
     await reconcileOnedrive();
     expect(mockBookmarks.find((b) => b.title === "onedrive")).toBeUndefined();
   });
@@ -77,7 +82,13 @@ describe("onedriveUtils — reconcileOnedrive", () => {
   it("falls back to clean URL when SharePoint Doc.aspx has no sourcedoc", async () => {
     addMockFolder("2", "url-porter");
     setHistory({
-      "sharepoint.com": [{ url: "https://acme.sharepoint.com/sites/X/_layouts/15/Doc.aspx", title: "Doc", lastVisitTime: 1 }],
+      "sharepoint.com": [
+        {
+          url: "https://acme.sharepoint.com/sites/X/_layouts/15/Doc.aspx",
+          title: "Doc",
+          lastVisitTime: 1,
+        },
+      ],
     });
     await reconcileOnedrive();
     const folder = mockBookmarks.find((b) => b.title === "onedrive");
@@ -100,7 +111,13 @@ describe("onedriveUtils — reconcileOnedrive", () => {
     addMockFolder("2", "url-porter");
     addMockBookmark("1", "Bookmark", "https://acme.sharepoint.com/:w:/g/personal/u/SAMEID", 100);
     setHistory({
-      "sharepoint.com": [{ url: "https://acme.sharepoint.com/:w:/g/personal/u/SAMEID?web=1", title: "Newer", lastVisitTime: 200 }],
+      "sharepoint.com": [
+        {
+          url: "https://acme.sharepoint.com/:w:/g/personal/u/SAMEID?web=1",
+          title: "Newer",
+          lastVisitTime: 200,
+        },
+      ],
     });
     await reconcileOnedrive();
     const folder = mockBookmarks.find((b) => b.title === "onedrive");
@@ -111,7 +128,9 @@ describe("onedriveUtils — reconcileOnedrive", () => {
   it("falls back to dedupeKey when title is missing", async () => {
     addMockFolder("2", "url-porter");
     setHistory({
-      "sharepoint.com": [{ url: "https://acme.sharepoint.com/:w:/g/p/u/NOTITLE", title: "", lastVisitTime: 1 }],
+      "sharepoint.com": [
+        { url: "https://acme.sharepoint.com/:w:/g/p/u/NOTITLE", title: "", lastVisitTime: 1 },
+      ],
     });
     await reconcileOnedrive();
     const folder = mockBookmarks.find((b) => b.title === "onedrive");
@@ -124,7 +143,9 @@ describe("onedriveUtils — reconcileOnedrive", () => {
     const stale = addMockFolder(porter.id, "onedrive");
     addMockBookmark(stale.id, "Stale", "https://acme.sharepoint.com/:w:/g/p/u/STALE", 1);
     setHistory({
-      "sharepoint.com": [{ url: "https://acme.sharepoint.com/:w:/g/p/u/FRESH", title: "Fresh", lastVisitTime: 100 }],
+      "sharepoint.com": [
+        { url: "https://acme.sharepoint.com/:w:/g/p/u/FRESH", title: "Fresh", lastVisitTime: 100 },
+      ],
     });
     await reconcileOnedrive();
     const folders = mockBookmarks.filter((b) => !b.url && b.title === "onedrive");
@@ -163,7 +184,9 @@ describe("onedriveUtils — reconcileOnedrive", () => {
     addMockFolder(porter.id, "jira tickets");
     addMockFolder(porter.id, "google drive");
     setHistory({
-      "sharepoint.com": [{ url: "https://acme.sharepoint.com/:w:/g/p/u/X", title: "X", lastVisitTime: 1 }],
+      "sharepoint.com": [
+        { url: "https://acme.sharepoint.com/:w:/g/p/u/X", title: "X", lastVisitTime: 1 },
+      ],
     });
     await reconcileOnedrive();
     const create = chrome.bookmarks.create.mock.calls.find((c) => c[0].title === "onedrive");

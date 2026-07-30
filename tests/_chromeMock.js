@@ -44,7 +44,9 @@ export function createChromeMock(opts = {}) {
      * @returns {Array} Child nodes with nested children.
      */
     function childrenOf(parentId) {
-      return mockBookmarks.filter((b) => b.parentId === parentId).map((b) => ({ ...b, children: b.url ? undefined : childrenOf(b.id) }));
+      return mockBookmarks
+        .filter((b) => b.parentId === parentId)
+        .map((b) => ({ ...b, children: b.url ? undefined : childrenOf(b.id) }));
     }
     return {
       id: "0",
@@ -102,7 +104,14 @@ export function createChromeMock(opts = {}) {
     storage: {
       local: {
         get: vi.fn((key, callback) => {
-          const keys = typeof key === "string" ? [key] : Array.isArray(key) ? key : key && typeof key === "object" ? Object.keys(key) : [];
+          const keys =
+            typeof key === "string"
+              ? [key]
+              : Array.isArray(key)
+                ? key
+                : key && typeof key === "object"
+                  ? Object.keys(key)
+                  : [];
           const result = {};
           for (const k of keys) {
             if (storageData[k] !== undefined) result[k] = storageData[k];
@@ -128,7 +137,8 @@ export function createChromeMock(opts = {}) {
       },
       sync: {
         get: vi.fn((key, callback) => {
-          const keys = typeof key === "string" ? [key] : Array.isArray(key) ? key : Object.keys(key);
+          const keys =
+            typeof key === "string" ? [key] : Array.isArray(key) ? key : Object.keys(key);
           const result = {};
           for (const k of keys) {
             if (storageData[k] !== undefined) result[k] = storageData[k];

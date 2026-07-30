@@ -59,7 +59,9 @@ describe("SyncDialog", () => {
 
   it("invokes onError when response shape is invalid", async () => {
     const onError = vi.fn();
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ randomKey: true }) });
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ randomKey: true }) });
     render(<SyncDialog open={true} onClose={() => {}} onSuccess={() => {}} onError={onError} />);
     fireEvent.click(await screen.findByRole("button", { name: /Sync Now/i }));
     await waitFor(() => expect(onError).toHaveBeenCalled());
@@ -70,7 +72,10 @@ describe("SyncDialog", () => {
     const onClose = vi.fn();
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ homepage: "https://home.example.com", configs: [{ from: "x", to: "https://x.com" }] }),
+      json: async () => ({
+        homepage: "https://home.example.com",
+        configs: [{ from: "x", to: "https://x.com" }],
+      }),
     });
     render(<SyncDialog open={true} onClose={onClose} onSuccess={onSuccess} onError={() => {}} />);
     fireEvent.click(await screen.findByRole("button", { name: /Sync Now/i }));

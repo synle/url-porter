@@ -1,11 +1,28 @@
 /** Reusable form for creating/editing a bookmark reconciler rule. */
 import { useState, useEffect } from "react";
-import { Box, TextField, Select, MenuItem, FormControl, InputLabel, Switch, FormControlLabel, Button } from "@mui/material";
+import {
+  Box,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Switch,
+  FormControlLabel,
+  Button,
+} from "@mui/material";
 import { validateRule } from "../helpers/genericBookmarkRuleUtils.js";
 import { extractDomainFromRegex } from "../helpers/ruleDerivation.js";
 
 /** @type {string[]} Folder names reserved by hardcoded reconcilers. */
-const RESERVED_NAMES = ["prs", "github repos", "figma mocks", "jira tickets", "google drive", "onedrive"];
+const RESERVED_NAMES = [
+  "prs",
+  "github repos",
+  "figma mocks",
+  "jira tickets",
+  "google drive",
+  "onedrive",
+];
 
 /** @type {object} Default example values shown when adding a new rule without URL context. */
 const DEFAULT_EXAMPLE = {
@@ -27,7 +44,13 @@ const DEFAULT_EXAMPLE = {
  * @param {(message: string, severity?: string) => void} props.showSnackbar - Callback to display feedback
  * @returns {React.ReactElement}
  */
-export default function BookmarkRuleForm({ rule, existingNames = [], onSave, onCancel, showSnackbar }) {
+export default function BookmarkRuleForm({
+  rule,
+  existingNames = [],
+  onSave,
+  onCancel,
+  showSnackbar,
+}) {
   const [formName, setFormName] = useState(DEFAULT_EXAMPLE.name);
   const [formKeywords, setFormKeywords] = useState(DEFAULT_EXAMPLE.historyKeywords);
   const [formUrlMatch, setFormUrlMatch] = useState(DEFAULT_EXAMPLE.urlMatchPattern);
@@ -80,7 +103,9 @@ export default function BookmarkRuleForm({ rule, existingNames = [], onSave, onC
     }
 
     const duplicate = existingNames.find(
-      (n) => n.toLowerCase() === name.toLowerCase() && n.toLowerCase() !== (rule?.name || "").toLowerCase(),
+      (n) =>
+        n.toLowerCase() === name.toLowerCase() &&
+        n.toLowerCase() !== (rule?.name || "").toLowerCase(),
     );
     if (duplicate) {
       showSnackbar(`A rule named "${name}" already exists.`, "error");
@@ -175,20 +200,33 @@ export default function BookmarkRuleForm({ rule, existingNames = [], onSave, onC
       <Box display="flex" gap={2} mb={2}>
         <FormControl sx={{ flex: 1 }}>
           <InputLabel>Sort By</InputLabel>
-          <Select value={formSortField} label="Sort By" onChange={(e) => setFormSortField(e.target.value)}>
+          <Select
+            value={formSortField}
+            label="Sort By"
+            onChange={(e) => setFormSortField(e.target.value)}
+          >
             <MenuItem value="visitTime">Visit Time</MenuItem>
             <MenuItem value="title">Title</MenuItem>
           </Select>
         </FormControl>
         <FormControl sx={{ flex: 1 }}>
           <InputLabel>Sort Direction</InputLabel>
-          <Select value={formSortDirection} label="Sort Direction" onChange={(e) => setFormSortDirection(e.target.value)}>
+          <Select
+            value={formSortDirection}
+            label="Sort Direction"
+            onChange={(e) => setFormSortDirection(e.target.value)}
+          >
             <MenuItem value="desc">Newest / Z-A</MenuItem>
             <MenuItem value="asc">Oldest / A-Z</MenuItem>
           </Select>
         </FormControl>
       </Box>
-      <FormControlLabel control={<Switch checked={formEnabled} onChange={(e) => setFormEnabled(e.target.checked)} />} label="Enabled" />
+      <FormControlLabel
+        control={
+          <Switch checked={formEnabled} onChange={(e) => setFormEnabled(e.target.checked)} />
+        }
+        label="Enabled"
+      />
       <Box display="flex" gap={1} justifyContent="flex-end" mt={2}>
         <Button onClick={onCancel}>Cancel</Button>
         <Button variant="contained" onClick={handleSave}>

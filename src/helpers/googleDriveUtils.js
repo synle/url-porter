@@ -17,7 +17,8 @@
 import { getBookmarkFolderName } from "./storage.js";
 import { sanitizeBookmarkTitle } from "./configUtils.js";
 
-const DOCS_REGEX = /^https?:\/\/docs\.google\.com\/(document|spreadsheets|presentation|forms)\/d\/([^/?#]+)/;
+const DOCS_REGEX =
+  /^https?:\/\/docs\.google\.com\/(document|spreadsheets|presentation|forms)\/d\/([^/?#]+)/;
 const DRIVE_FILE_REGEX = /^https?:\/\/drive\.google\.com\/file\/d\/([^/?#]+)/;
 const DRIVE_OPEN_REGEX = /^https?:\/\/drive\.google\.com\/open\?id=([^&#]+)/;
 const SUBFOLDER_NAME = "google drive";
@@ -170,7 +171,10 @@ export async function reconcileGoogleDrive() {
     return;
   }
 
-  const [historyDocs, bookmarkDocs] = await Promise.all([getDocsFromHistory(), getDocsFromBookmarks(porterFolder.id)]);
+  const [historyDocs, bookmarkDocs] = await Promise.all([
+    getDocsFromHistory(),
+    getDocsFromBookmarks(porterFolder.id),
+  ]);
 
   // Merge — history wins for visitTime, prefer richer title
   const allDocs = new Map();
@@ -226,7 +230,11 @@ export async function reconcileGoogleDrive() {
     insertIndex = 3;
   }
 
-  const subfolder = await chrome.bookmarks.create({ parentId: porterFolder.id, title: SUBFOLDER_NAME, index: insertIndex });
+  const subfolder = await chrome.bookmarks.create({
+    parentId: porterFolder.id,
+    title: SUBFOLDER_NAME,
+    index: insertIndex,
+  });
 
   // Sort by most recently visited (newest first)
   const sorted = [...allDocs.values()].sort((a, b) => (b.visitTime || 0) - (a.visitTime || 0));

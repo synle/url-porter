@@ -9,7 +9,13 @@
  */
 
 import { normalizeEntriesForRedirect, normalizeEntry, stripAlias } from "../helpers/configUtils.js";
-import { getConfig, getBookmarkFolderName, setPrStatus, setJiraStatus, getBookmarkRules } from "../helpers/storage.js";
+import {
+  getConfig,
+  getBookmarkFolderName,
+  setPrStatus,
+  setJiraStatus,
+  getBookmarkRules,
+} from "../helpers/storage.js";
 import { reconcileBookmarks } from "../helpers/bookmarkUtils.js";
 import { reconcilePrs } from "../helpers/prUtils.js";
 import { reconcileGitHubRepos } from "../helpers/githubRepoUtils.js";
@@ -50,7 +56,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "add-to-url-porter") {
     const url = encodeURIComponent(tab.url || "");
     const title = encodeURIComponent(tab.title || "");
-    const addLinkUrl = chrome.runtime.getURL(`pages/addlink/addlink.html?url=${url}&title=${title}`);
+    const addLinkUrl = chrome.runtime.getURL(
+      `pages/addlink/addlink.html?url=${url}&title=${title}`,
+    );
     chrome.tabs.create({ url: addLinkUrl });
   }
   if (info.menuItemId === "add-bookmark-rule") {
@@ -147,7 +155,9 @@ async function getNestedBookmarks() {
   try {
     const name = await getBookmarkFolderName();
     const results = await chrome.bookmarks.search({ title: name });
-    const porterFolder = results.find((node) => !node.url && (node.parentId === "1" || node.parentId === "2"));
+    const porterFolder = results.find(
+      (node) => !node.url && (node.parentId === "1" || node.parentId === "2"),
+    );
     if (!porterFolder) return [];
 
     const children = await chrome.bookmarks.getChildren(porterFolder.id);
@@ -283,7 +293,10 @@ async function updateRedirectRules() {
     let added = 0;
     for (const rule of rules) {
       try {
-        await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: [], addRules: [rule] });
+        await chrome.declarativeNetRequest.updateDynamicRules({
+          removeRuleIds: [],
+          addRules: [rule],
+        });
         added++;
       } catch (error) {
         const from = rule.condition.urlFilter;
@@ -305,8 +318,15 @@ async function reconcileBookmarksFromStorage() {
   console.log("[background] reconcileBookmarksFromStorage: starting...");
   try {
     const raw = await getConfig();
-    console.log("[background] reconcileBookmarksFromStorage: got config with", raw?.length, "entries");
-    console.log("[background] reconcileBookmarksFromStorage: raw config:", JSON.stringify(raw, null, 2));
+    console.log(
+      "[background] reconcileBookmarksFromStorage: got config with",
+      raw?.length,
+      "entries",
+    );
+    console.log(
+      "[background] reconcileBookmarksFromStorage: raw config:",
+      JSON.stringify(raw, null, 2),
+    );
     await reconcileBookmarks(raw);
     console.log("[background] reconcileBookmarksFromStorage: bookmarks reconciled successfully");
     await reconcilePrs();
@@ -322,7 +342,9 @@ async function reconcileBookmarksFromStorage() {
     await reconcileOnedrive();
     console.log("[background] reconcileBookmarksFromStorage: onedrive reconciled successfully");
     await reconcileAllBookmarkRules();
-    console.log("[background] reconcileBookmarksFromStorage: custom bookmark rules reconciled successfully");
+    console.log(
+      "[background] reconcileBookmarksFromStorage: custom bookmark rules reconciled successfully",
+    );
   } catch (error) {
     console.error("[background] reconcileBookmarksFromStorage: FAILED:", error, error?.stack);
   }
@@ -380,7 +402,9 @@ let bucketReconcileTimer = null;
 
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
   if (changeInfo.status !== "complete" || !tab.url) return;
-  const isTracked = TRACKED_SITE_PATTERNS.some((re) => re.test(tab.url)) || customTrackedPatterns.some((re) => re.test(tab.url));
+  const isTracked =
+    TRACKED_SITE_PATTERNS.some((re) => re.test(tab.url)) ||
+    customTrackedPatterns.some((re) => re.test(tab.url));
   if (!isTracked) return;
   // Debounce — wait 8s after last tracked navigation to batch rapid browsing
   // (e.g. opening a folder with 20+ tabs at once)
@@ -401,5 +425,10 @@ chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
  * @returns {string} The XML-escaped string.
  */
 function escapeXml(str) {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }

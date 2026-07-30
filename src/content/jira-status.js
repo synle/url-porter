@@ -23,11 +23,15 @@ function detectStatus() {
   if (cloudStatus) candidates.push(cloudStatus.textContent.trim().toLowerCase());
 
   // Jira Server / Data Center
-  const serverStatus = document.querySelector("#status-val, #status-val .jira-issue-status-lozenge");
+  const serverStatus = document.querySelector(
+    "#status-val, #status-val .jira-issue-status-lozenge",
+  );
   if (serverStatus) candidates.push(serverStatus.textContent.trim().toLowerCase());
 
   // Generic lozenge fallback (works across versions)
-  const lozenges = document.querySelectorAll(".jira-issue-status-lozenge, .status-lozenge, .ghx-label, [class*='StatusLozenge']");
+  const lozenges = document.querySelectorAll(
+    ".jira-issue-status-lozenge, .status-lozenge, .ghx-label, [class*='StatusLozenge']",
+  );
   for (const el of lozenges) {
     candidates.push(el.textContent.trim().toLowerCase());
   }
@@ -117,7 +121,9 @@ function getCanonicalUrl() {
 function isErrorPage() {
   const body = document.body ? document.body.textContent : "";
   return (
-    body.includes("We couldn\u2019t connect") || body.includes("We couldn't connect") || body.includes("Something went wrong on our end")
+    body.includes("We couldn\u2019t connect") ||
+    body.includes("We couldn't connect") ||
+    body.includes("Something went wrong on our end")
   );
 }
 

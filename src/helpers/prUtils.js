@@ -21,9 +21,12 @@
 import { getBookmarkFolderName, getPrStatuses } from "./storage.js";
 import { sanitizeBookmarkTitle } from "./configUtils.js";
 
-const GITHUB_PR_REGEX = /^https?:\/\/(github\.com|[^/?#]+\.githubprivate\.com|[^/?#]+\.ghe\.com)\/([^/?#]+)\/([^/?#]+)\/pull\/(\d+)/;
-const AZURE_PR_REGEX = /^https?:\/\/([^/?#]+)\.visualstudio\.com\/([^/?#]+)\/_git\/([^/?#]+)\/pullrequest\/(\d+)/;
-const AZURE_DEV_PR_REGEX = /^https?:\/\/dev\.azure\.com\/([^/?#]+)\/([^/?#]+)\/_git\/([^/?#]+)\/pullrequest\/(\d+)/;
+const GITHUB_PR_REGEX =
+  /^https?:\/\/(github\.com|[^/?#]+\.githubprivate\.com|[^/?#]+\.ghe\.com)\/([^/?#]+)\/([^/?#]+)\/pull\/(\d+)/;
+const AZURE_PR_REGEX =
+  /^https?:\/\/([^/?#]+)\.visualstudio\.com\/([^/?#]+)\/_git\/([^/?#]+)\/pullrequest\/(\d+)/;
+const AZURE_DEV_PR_REGEX =
+  /^https?:\/\/dev\.azure\.com\/([^/?#]+)\/([^/?#]+)\/_git\/([^/?#]+)\/pullrequest\/(\d+)/;
 const SUBFOLDER_NAME = "prs";
 
 /** @type {Object<string, string>} Status emoji prefixes for bookmark titles. */
@@ -301,7 +304,10 @@ export async function reconcilePrs() {
     return;
   }
 
-  const [historyPrs, bookmarkPrs] = await Promise.all([getPrsFromHistory(), getPrsFromBookmarks(porterFolder.id)]);
+  const [historyPrs, bookmarkPrs] = await Promise.all([
+    getPrsFromHistory(),
+    getPrsFromBookmarks(porterFolder.id),
+  ]);
 
   // Merge — prefer richer page title, keep most recent visitTime
   const allPrs = new Map();
@@ -321,7 +327,15 @@ export async function reconcilePrs() {
     }
   }
 
-  console.log("[prUtils] reconcilePrs: found", allPrs.size, "unique PRs (history:", historyPrs.size, "bookmarks:", bookmarkPrs.size, ")");
+  console.log(
+    "[prUtils] reconcilePrs: found",
+    allPrs.size,
+    "unique PRs (history:",
+    historyPrs.size,
+    "bookmarks:",
+    bookmarkPrs.size,
+    ")",
+  );
 
   if (allPrs.size === 0) return;
 
@@ -340,7 +354,11 @@ export async function reconcilePrs() {
   }
 
   // Place at index 0 (above github repos)
-  const subfolder = await chrome.bookmarks.create({ parentId: porterFolder.id, title: SUBFOLDER_NAME, index: 0 });
+  const subfolder = await chrome.bookmarks.create({
+    parentId: porterFolder.id,
+    title: SUBFOLDER_NAME,
+    index: 0,
+  });
 
   // Sort by date (newest first)
   const sorted = [...allPrs.values()].sort((a, b) => (b.visitTime || 0) - (a.visitTime || 0));

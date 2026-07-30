@@ -5,10 +5,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createChromeMock } from "./_chromeMock.js";
 
-const { chrome, mockBookmarks, addMockFolder, addMockBookmark, reset, storageData } = createChromeMock();
+const { chrome, mockBookmarks, addMockFolder, addMockBookmark, reset, storageData } =
+  createChromeMock();
 vi.stubGlobal("chrome", chrome);
 
-const { reconcileBookmarks, bookmarkTitleFromEntry } = await import("../src/helpers/bookmarkUtils.js");
+const { reconcileBookmarks, bookmarkTitleFromEntry } =
+  await import("../src/helpers/bookmarkUtils.js");
 
 describe("bookmarkUtils", () => {
   beforeEach(() => {

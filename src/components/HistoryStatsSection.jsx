@@ -1,6 +1,18 @@
 /** Browser history stats section showing most frequently visited URLs. */
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Box, Typography, TextField, Paper, IconButton, InputAdornment, Collapse, Link, Button, Chip, Divider } from "@mui/material";
+import {
+  Box,
+  Typography,
+  TextField,
+  Paper,
+  IconButton,
+  InputAdornment,
+  Collapse,
+  Link,
+  Button,
+  Chip,
+  Divider,
+} from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
@@ -39,7 +51,11 @@ export default function HistoryStatsSection({ showSnackbar }) {
 
   /** Load persisted settings from storage. */
   const loadSettings = useCallback(async () => {
-    const [months, threshold, max] = await Promise.all([getStatsLookbackMonths(), getStatsVisitThreshold(), getStatsMaxResults()]);
+    const [months, threshold, max] = await Promise.all([
+      getStatsLookbackMonths(),
+      getStatsVisitThreshold(),
+      getStatsMaxResults(),
+    ]);
     setLookbackMonthsState(months);
     setVisitThresholdState(threshold);
     setMaxResultsState(max);
@@ -89,7 +105,9 @@ export default function HistoryStatsSection({ showSnackbar }) {
     // Apply search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      entries = entries.filter((e) => e.strippedUrl.toLowerCase().includes(q) || (e.title || "").toLowerCase().includes(q));
+      entries = entries.filter(
+        (e) => e.strippedUrl.toLowerCase().includes(q) || (e.title || "").toLowerCase().includes(q),
+      );
     }
 
     // Sort
@@ -246,7 +264,12 @@ export default function HistoryStatsSection({ showSnackbar }) {
           slotProps={{ input: { inputProps: { min: 1 } } }}
           sx={{ width: 80 }}
         />
-        <Button startIcon={<RefreshIcon />} onClick={() => fetchHistoryStats()} disabled={loading} variant="outlined">
+        <Button
+          startIcon={<RefreshIcon />}
+          onClick={() => fetchHistoryStats()}
+          disabled={loading}
+          variant="outlined"
+        >
           {loading ? "Loading..." : "Refresh"}
         </Button>
         <Button
@@ -262,8 +285,21 @@ export default function HistoryStatsSection({ showSnackbar }) {
       {/* List */}
       <Paper>
         {/* Header */}
-        <Box display="flex" alignItems="center" gap={1} px={2} py={1} sx={{ borderBottom: 1, borderColor: "divider" }}>
-          <Typography variant="body2" fontWeight="bold" onClick={() => handleSort("strippedUrl")} sx={sortableHeaderSx} flexGrow={1}>
+        <Box
+          display="flex"
+          alignItems="center"
+          gap={1}
+          px={2}
+          py={1}
+          sx={{ borderBottom: 1, borderColor: "divider" }}
+        >
+          <Typography
+            variant="body2"
+            fontWeight="bold"
+            onClick={() => handleSort("strippedUrl")}
+            sx={sortableHeaderSx}
+            flexGrow={1}
+          >
             URL{sortIndicator("strippedUrl")}
           </Typography>
           <Typography
@@ -288,7 +324,11 @@ export default function HistoryStatsSection({ showSnackbar }) {
         {filteredEntries.length === 0 ? (
           <Box py={4} textAlign="center">
             <Typography color="text.secondary">
-              {loading ? "Loading history..." : searchQuery ? "No matching URLs." : "No history data found."}
+              {loading
+                ? "Loading history..."
+                : searchQuery
+                  ? "No matching URLs."
+                  : "No history data found."}
             </Typography>
           </Box>
         ) : (
@@ -298,7 +338,14 @@ export default function HistoryStatsSection({ showSnackbar }) {
             return (
               <Box key={entry.strippedUrl}>
                 {idx > 0 && <Divider />}
-                <Box display="flex" alignItems="center" gap={1} px={2} py={0.75} sx={{ "&:hover": { bgcolor: "action.hover" } }}>
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  gap={1}
+                  px={2}
+                  py={0.75}
+                  sx={{ "&:hover": { bgcolor: "action.hover" } }}
+                >
                   <Box flexGrow={1} flexShrink={1} minWidth={0}>
                     <Link
                       href={entry.strippedUrl}
@@ -306,7 +353,12 @@ export default function HistoryStatsSection({ showSnackbar }) {
                       rel="noopener noreferrer"
                       underline="hover"
                       variant="body2"
-                      sx={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                      sx={{
+                        display: "block",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
                     >
                       {entry.strippedUrl}
                     </Link>
@@ -329,7 +381,11 @@ export default function HistoryStatsSection({ showSnackbar }) {
                       {entry.totalVisitCount}
                     </Typography>
                     <IconButton>
-                      {isExpanded ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
+                      {isExpanded ? (
+                        <KeyboardArrowUpIcon fontSize="small" />
+                      ) : (
+                        <KeyboardArrowDownIcon fontSize="small" />
+                      )}
                     </IconButton>
                   </Box>
                   <Typography variant="body2" sx={{ width: 95, flexShrink: 0 }}>
@@ -343,7 +399,12 @@ export default function HistoryStatsSection({ showSnackbar }) {
                         .sort((a, b) => b.visitCount - a.visitCount)
                         .map((v) => (
                           <Box key={v.url} sx={{ mb: 0.5 }}>
-                            <Link href={v.url} target="_blank" rel="noopener noreferrer" variant="body2">
+                            <Link
+                              href={v.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              variant="body2"
+                            >
                               {v.url}
                             </Link>
                             <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>

@@ -236,7 +236,9 @@ function openMarkdownPreview(modal) {
  */
 function injectPreviewButton(modal) {
   if (modal.querySelector(".url-porter-preview-btn")) return;
-  const closeBtn = Array.from(modal.querySelectorAll('[role="button"]')).find((b) => b.textContent.trim() === "Close");
+  const closeBtn = Array.from(modal.querySelectorAll('[role="button"]')).find(
+    (b) => b.textContent.trim() === "Close",
+  );
   if (!closeBtn) return;
   const btn = document.createElement("div");
   btn.textContent = "Preview";

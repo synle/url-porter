@@ -39,7 +39,9 @@ function detectStatus() {
  */
 function isAzureErrorPage() {
   const body = document.body ? document.body.textContent : "";
-  return body.includes("Azure DevOps Services Unavailable") || body.includes("something went wrong");
+  return (
+    body.includes("Azure DevOps Services Unavailable") || body.includes("something went wrong")
+  );
 }
 
 /**

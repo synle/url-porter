@@ -57,7 +57,9 @@ export async function getHistoryAsFlat() {
  */
 export async function getHistoryAliasLimit() {
   const result = await chrome.storage.local.get(ALIAS_LIMIT_KEY);
-  return typeof result[ALIAS_LIMIT_KEY] === "number" ? result[ALIAS_LIMIT_KEY] : DEFAULT_ALIAS_LIMIT;
+  return typeof result[ALIAS_LIMIT_KEY] === "number"
+    ? result[ALIAS_LIMIT_KEY]
+    : DEFAULT_ALIAS_LIMIT;
 }
 
 /**
@@ -75,7 +77,9 @@ export async function setHistoryAliasLimit(n) {
  */
 export async function getHistoryEntryLimit() {
   const result = await chrome.storage.local.get(ENTRY_LIMIT_KEY);
-  return typeof result[ENTRY_LIMIT_KEY] === "number" ? result[ENTRY_LIMIT_KEY] : DEFAULT_ENTRY_LIMIT;
+  return typeof result[ENTRY_LIMIT_KEY] === "number"
+    ? result[ENTRY_LIMIT_KEY]
+    : DEFAULT_ENTRY_LIMIT;
 }
 
 /**

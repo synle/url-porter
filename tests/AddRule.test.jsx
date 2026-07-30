@@ -14,7 +14,8 @@ chrome.runtime.getURL = vi.fn((p) => `chrome-extension://test/${p}`);
 vi.stubGlobal("chrome", chrome);
 
 if (!globalThis.crypto) globalThis.crypto = {};
-if (!globalThis.crypto.randomUUID) globalThis.crypto.randomUUID = () => "uuid-" + Math.random().toString(36).slice(2);
+if (!globalThis.crypto.randomUUID)
+  globalThis.crypto.randomUUID = () => "uuid-" + Math.random().toString(36).slice(2);
 
 const AddRule = (await import("../src/pages/addrule/AddRule.jsx")).default;
 
@@ -24,7 +25,11 @@ describe("AddRule", () => {
     chrome.tabs.create.mockClear();
     chrome.runtime.sendMessage.mockClear();
     // Use jsdom-friendly location stub
-    window.history.replaceState({}, "", "/?url=" + encodeURIComponent("https://leetcode.com/problems/foo"));
+    window.history.replaceState(
+      {},
+      "",
+      "/?url=" + encodeURIComponent("https://leetcode.com/problems/foo"),
+    );
     window.close = vi.fn();
   });
   afterEach(() => cleanup());
@@ -37,7 +42,9 @@ describe("AddRule", () => {
   it("pre-fills rule fields when ?url= is present", async () => {
     render(<AddRule />);
     // deriveRuleFromUrl produces "leetcode.com mm/dd/yyyy" — name field will reflect.
-    await waitFor(() => expect(screen.queryAllByDisplayValue(/leetcode\.com/i).length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(screen.queryAllByDisplayValue(/leetcode\.com/i).length).toBeGreaterThan(0),
+    );
   });
 
   it("saves a new rule via the form and closes the window", async () => {

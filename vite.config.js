@@ -91,7 +91,10 @@ export default defineConfig({
           writeFileSync(resolve(__dirname, "dist/reload-timestamp.txt"), Date.now().toString());
 
           // Copy dev-reload script and inject import into background.js
-          copyFileSync(resolve(__dirname, "src/background/dev-reload.js"), resolve(__dirname, "dist/background/dev-reload.js"));
+          copyFileSync(
+            resolve(__dirname, "src/background/dev-reload.js"),
+            resolve(__dirname, "dist/background/dev-reload.js"),
+          );
           const bgPath = resolve(__dirname, "dist/background/background.js");
           const bgContent = readFileSync(bgPath, "utf-8");
           writeFileSync(bgPath, `import "./dev-reload.js";\n${bgContent}`);
@@ -103,10 +106,22 @@ export default defineConfig({
         copyFileSync(resolve(__dirname, "src/content/keep.css"), join(contentDir, "keep.css"));
         copyFileSync(resolve(__dirname, "src/content/keep.js"), join(contentDir, "keep.js"));
         copyFileSync(resolve(__dirname, "src/content/fav.js"), join(contentDir, "fav.js"));
-        copyFileSync(resolve(__dirname, "src/content/content-utils.js"), join(contentDir, "content-utils.js"));
-        copyFileSync(resolve(__dirname, "src/content/pr-status-github.js"), join(contentDir, "pr-status-github.js"));
-        copyFileSync(resolve(__dirname, "src/content/pr-status-azure.js"), join(contentDir, "pr-status-azure.js"));
-        copyFileSync(resolve(__dirname, "src/content/jira-status.js"), join(contentDir, "jira-status.js"));
+        copyFileSync(
+          resolve(__dirname, "src/content/content-utils.js"),
+          join(contentDir, "content-utils.js"),
+        );
+        copyFileSync(
+          resolve(__dirname, "src/content/pr-status-github.js"),
+          join(contentDir, "pr-status-github.js"),
+        );
+        copyFileSync(
+          resolve(__dirname, "src/content/pr-status-azure.js"),
+          join(contentDir, "pr-status-azure.js"),
+        );
+        copyFileSync(
+          resolve(__dirname, "src/content/jira-status.js"),
+          join(contentDir, "jira-status.js"),
+        );
       },
     },
     {
@@ -136,7 +151,10 @@ export default defineConfig({
 
               // Fix newtab.html link to options
               if (page === "newtab") {
-                content = content.replace(/href="\/src\/pages\/options\/options\.html"/g, 'href="../options/options.html"');
+                content = content.replace(
+                  /href="\/src\/pages\/options\/options\.html"/g,
+                  'href="../options/options.html"',
+                );
               }
 
               writeFileSync(destFile, content);

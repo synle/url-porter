@@ -32,19 +32,35 @@ export function bookmarkTitleFromEntry(entry) {
 async function findOrCreateFolder(folderName) {
   console.log("[bookmarkUtils] findOrCreateFolder: searching for existing folder:", folderName);
   const results = await chrome.bookmarks.search({ title: folderName });
-  console.log("[bookmarkUtils] findOrCreateFolder: search results:", JSON.stringify(results, null, 2));
+  console.log(
+    "[bookmarkUtils] findOrCreateFolder: search results:",
+    JSON.stringify(results, null, 2),
+  );
   // Accept folders (no url) whose parent is a top-level root folder
-  const existing = results.find((node) => !node.url && (node.parentId === "1" || node.parentId === "2"));
+  const existing = results.find(
+    (node) => !node.url && (node.parentId === "1" || node.parentId === "2"),
+  );
   if (existing) {
     const children = await chrome.bookmarks.getChildren(existing.id);
-    console.log("[bookmarkUtils] findOrCreateFolder: found existing folder_id:", existing.id, "total bookmarks:", children.length);
+    console.log(
+      "[bookmarkUtils] findOrCreateFolder: found existing folder_id:",
+      existing.id,
+      "total bookmarks:",
+      children.length,
+    );
     return existing;
   }
 
   // Create under "Other Bookmarks" (id "2" in Chrome)
-  console.log("[bookmarkUtils] findOrCreateFolder: no existing folder found, creating new one under Other Bookmarks");
+  console.log(
+    "[bookmarkUtils] findOrCreateFolder: no existing folder found, creating new one under Other Bookmarks",
+  );
   const folder = await chrome.bookmarks.create({ parentId: "2", title: folderName });
-  console.log("[bookmarkUtils] findOrCreateFolder: created folder_id:", folder.id, "total bookmarks: 0");
+  console.log(
+    "[bookmarkUtils] findOrCreateFolder: created folder_id:",
+    folder.id,
+    "total bookmarks: 0",
+  );
   return folder;
 }
 
@@ -98,7 +114,10 @@ function resolveShortLink(rawTo, aliasToRawUrl, maxDepth = 10) {
  */
 export async function reconcileBookmarks(configEntries) {
   console.log("[bookmarkUtils] reconcileBookmarks: called with", configEntries?.length, "entries");
-  console.log("[bookmarkUtils] reconcileBookmarks: raw configEntries:", JSON.stringify(configEntries, null, 2));
+  console.log(
+    "[bookmarkUtils] reconcileBookmarks: raw configEntries:",
+    JSON.stringify(configEntries, null, 2),
+  );
 
   const folderName = await getBookmarkFolderName();
   const folder = await findOrCreateFolder(folderName);
@@ -106,7 +125,10 @@ export async function reconcileBookmarks(configEntries) {
 
   const children = await chrome.bookmarks.getChildren(folder.id);
   console.log("[bookmarkUtils] reconcileBookmarks: existing bookmarks count:", children.length);
-  console.log("[bookmarkUtils] reconcileBookmarks: existing bookmarks:", JSON.stringify(children, null, 2));
+  console.log(
+    "[bookmarkUtils] reconcileBookmarks: existing bookmarks:",
+    JSON.stringify(children, null, 2),
+  );
 
   // Deduplicate existing bookmarks by title.
   // Later bookmarks (higher index) are the source of truth.
@@ -136,7 +158,11 @@ export async function reconcileBookmarks(configEntries) {
     await chrome.bookmarks.removeTree(id);
   }
   if (toRemove.length > 0) {
-    console.log("[bookmarkUtils] reconcileBookmarks: removed", toRemove.length, "duplicate bookmark(s)");
+    console.log(
+      "[bookmarkUtils] reconcileBookmarks: removed",
+      toRemove.length,
+      "duplicate bookmark(s)",
+    );
   }
 
   // Build map of existing bookmarks (post-dedup): title → { id, url }
@@ -160,7 +186,10 @@ export async function reconcileBookmarks(configEntries) {
     droppedCount,
   );
   if (droppedCount > 0) {
-    console.log("[bookmarkUtils] reconcileBookmarks: dropped entries:", JSON.stringify(droppedEntries, null, 2));
+    console.log(
+      "[bookmarkUtils] reconcileBookmarks: dropped entries:",
+      JSON.stringify(droppedEntries, null, 2),
+    );
   }
 
   // Build alias → raw `to` map for short link resolution
@@ -186,7 +215,10 @@ export async function reconcileBookmarks(configEntries) {
       desiredMap.set(title, resolvedUrl);
     }
   }
-  console.log("[bookmarkUtils] reconcileBookmarks: desired bookmarks:", JSON.stringify([...desiredMap.entries()], null, 2));
+  console.log(
+    "[bookmarkUtils] reconcileBookmarks: desired bookmarks:",
+    JSON.stringify([...desiredMap.entries()], null, 2),
+  );
 
   // Compare desired vs existing bookmarks
   const desiredTitles = new Set(desiredMap.keys());
@@ -208,13 +240,22 @@ export async function reconcileBookmarks(configEntries) {
     kept.length,
   );
   if (overlapping.length > 0) {
-    console.log("[bookmarkUtils] reconcileBookmarks: overlapping titles:", JSON.stringify(overlapping, null, 2));
+    console.log(
+      "[bookmarkUtils] reconcileBookmarks: overlapping titles:",
+      JSON.stringify(overlapping, null, 2),
+    );
   }
   if (toAdd.length > 0) {
-    console.log("[bookmarkUtils] reconcileBookmarks: titles to add:", JSON.stringify(toAdd, null, 2));
+    console.log(
+      "[bookmarkUtils] reconcileBookmarks: titles to add:",
+      JSON.stringify(toAdd, null, 2),
+    );
   }
   if (kept.length > 0) {
-    console.log("[bookmarkUtils] reconcileBookmarks: old bookmarks kept (not in config, NOT deleted):", JSON.stringify(kept, null, 2));
+    console.log(
+      "[bookmarkUtils] reconcileBookmarks: old bookmarks kept (not in config, NOT deleted):",
+      JSON.stringify(kept, null, 2),
+    );
   }
 
   // Update existing bookmarks in-place (preserves sort order)
@@ -222,10 +263,22 @@ export async function reconcileBookmarks(configEntries) {
     const existing = existingMap.get(title);
     if (existing) {
       if (existing.url !== url) {
-        console.log("[bookmarkUtils] reconcileBookmarks: UPDATING existing bookmark:", title, "from", existing.url, "→", url);
+        console.log(
+          "[bookmarkUtils] reconcileBookmarks: UPDATING existing bookmark:",
+          title,
+          "from",
+          existing.url,
+          "→",
+          url,
+        );
         await chrome.bookmarks.update(existing.id, { url });
       } else {
-        console.log("[bookmarkUtils] reconcileBookmarks: UNCHANGED existing bookmark:", title, "url:", url);
+        console.log(
+          "[bookmarkUtils] reconcileBookmarks: UNCHANGED existing bookmark:",
+          title,
+          "url:",
+          url,
+        );
       }
     }
   }
@@ -233,8 +286,17 @@ export async function reconcileBookmarks(configEntries) {
   // Add new bookmarks to the bottom of the folder
   for (const [title, url] of desiredMap) {
     if (!existingMap.has(title)) {
-      console.log("[bookmarkUtils] reconcileBookmarks: ADDING new bookmark to bottom:", title, "→", url);
-      await chrome.bookmarks.create({ parentId: folder.id, title: sanitizeBookmarkTitle(title), url });
+      console.log(
+        "[bookmarkUtils] reconcileBookmarks: ADDING new bookmark to bottom:",
+        title,
+        "→",
+        url,
+      );
+      await chrome.bookmarks.create({
+        parentId: folder.id,
+        title: sanitizeBookmarkTitle(title),
+        url,
+      });
     }
   }
 
