@@ -14,10 +14,12 @@ const TAG = "[url-porter:fav]";
 async function init() {
   try {
     const bookmarks = await chrome.runtime.sendMessage({ type: "Myevent.getBookmarks" });
-    console.log(TAG, "dispatching urlPorterBookmarks with", bookmarks.length, "items");
+    // The service worker returns undefined if it is not listening yet.
+    const items = Array.isArray(bookmarks) ? bookmarks : [];
+    console.log(TAG, "dispatching urlPorterBookmarks with", items.length, "items");
     document.dispatchEvent(
       new CustomEvent("urlPorterBookmarks", {
-        detail: bookmarks,
+        detail: items,
       }),
     );
   } catch (err) {

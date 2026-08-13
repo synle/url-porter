@@ -47,6 +47,20 @@ describe("AddRule", () => {
     );
   });
 
+  it("pre-fills from a URL containing a literal percent sign", async () => {
+    // URLSearchParams already decodes; an extra decodeURIComponent threw
+    // URIError here, so nothing was pre-filled at all.
+    window.history.replaceState(
+      {},
+      "",
+      "/?url=" + encodeURIComponent("https://acme.test/deals/50%"),
+    );
+    render(<AddRule />);
+    await waitFor(() =>
+      expect(screen.queryAllByDisplayValue(/acme\.test/i).length).toBeGreaterThan(0),
+    );
+  });
+
   it("saves a new rule via the form and closes the window", async () => {
     render(<AddRule />);
     await waitFor(() => expect(screen.queryByText("Add Bookmark Rule")).toBeTruthy());

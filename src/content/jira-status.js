@@ -9,6 +9,25 @@
 const TAG = "[url-porter:jira-status]";
 
 /**
+ * Whole-word matchers for the phrase checks.
+ *
+ * These replace `includes()` calls that matched their needle inside a larger
+ * word: "Unblocked" reported as blocked, "Incomplete" as closed, and
+ * "Inactive" as in progress. `\b` does not match between two word characters,
+ * so `\bblocked\b` rejects "unblocked" while still matching "blocked".
+ *
+ * Generic single words ("done", "open", "new", ...) stay exact-equality
+ * checks below on purpose — they are common enough in a ticket summary that
+ * a substring match against the page title would misclassify the ticket.
+ */
+const BLOCKED_RE = /\b(?:blocked|impediment)\b/;
+const CLOSED_PHRASE_RE =
+  /\bwon'?t (?:fix|do)\b|\b(?:cancell?ed|declined|duplicate|complete[ds]?|verified|released|deployed)\b/;
+const IN_PROGRESS_RE =
+  /\bin (?:progress|review|development|testing|qa)\b|\b(?:code review|under review|working|active)\b/;
+const NOT_STARTED_PHRASE_RE = /\bnot started\b|\bwaiting\b|\bready for\b/;
+
+/**
  * Detect the ticket status from the Jira page DOM.
  * @returns {"in_progress" | "closed" | "not_started" | "blocked" | null}
  */
@@ -44,58 +63,16 @@ function detectStatus() {
     if (!text) continue;
 
     // Blocked
-    if (text.includes("blocked") || text.includes("impediment")) return "blocked";
+    if (BLOCKED_RE.test(text)) return "blocked";
 
     // Closed / Done / Resolved / Won't Fix / Won't Do
-    if (
-      text === "done" ||
-      text === "closed" ||
-      text === "resolved" ||
-      text === "completed" ||
-      text.includes("won't fix") ||
-      text.includes("wont fix") ||
-      text.includes("won't do") ||
-      text.includes("wont do") ||
-      text.includes("cancelled") ||
-      text.includes("canceled") ||
-      text.includes("declined") ||
-      text.includes("duplicate") ||
-      text.includes("dev complete") ||
-      text.includes("complete") ||
-      text === "fixed" ||
-      text.includes("verified") ||
-      text.includes("released") ||
-      text.includes("deployed")
-    )
-      return "closed";
+    if (CLOSED_RE.test(text)) return "closed";
 
     // In progress
-    if (
-      text.includes("in progress") ||
-      text.includes("in review") ||
-      text.includes("in development") ||
-      text.includes("in testing") ||
-      text.includes("in qa") ||
-      text.includes("code review") ||
-      text.includes("under review") ||
-      text.includes("working") ||
-      text.includes("active")
-    )
-      return "in_progress";
+    if (IN_PROGRESS_RE.test(text)) return "in_progress";
 
     // Not started
-    if (
-      text === "to do" ||
-      text === "todo" ||
-      text === "open" ||
-      text === "new" ||
-      text === "backlog" ||
-      text === "created" ||
-      text.includes("not started") ||
-      text.includes("waiting") ||
-      text.includes("ready for")
-    )
-      return "not_started";
+    if (NOT_STARTED_RE.test(text)) return "not_started";
   }
 
   return null;
@@ -149,11 +126,14 @@ function reportStatus() {
 
   console.log(TAG, "detected status:", status, "for", canonicalUrl);
 
-  chrome.runtime.sendMessage({
-    type: "Myevent.jiraStatus",
-    url: canonicalUrl,
-    status,
-  });
+  sendToBackground(
+    {
+      type: "Myevent.jiraStatus",
+      url: canonicalUrl,
+      status,
+    },
+    TAG,
+  );
 }
 
 // Run after page load, with a delay to let Jira's SPA render.
@@ -163,11 +143,19 @@ setTimeout(reportStatus, 3000 + Math.random() * 3000);
 // Also observe for SPA navigation (Jira Cloud uses client-side routing)
 let lastUrl = window.location.href;
 const observer = new MutationObserver(() => {
+  // An orphaned script (extension reloaded/updated) would otherwise keep this
+  // observer running for the life of the tab, on every DOM mutation.
+  if (!isExtensionContextValid()) {
+    observer.disconnect();
+    return;
+  }
   if (window.location.href !== lastUrl) {
     lastUrl = window.location.href;
     setTimeout(reportStatus, 3000);
   }
 });
-observer.observe(document.body, { childList: true, subtree: true });
+if (document.body) {
+  observer.observe(document.body, { childList: true, subtree: true });
+}
 
 console.log(TAG, "content script loaded");

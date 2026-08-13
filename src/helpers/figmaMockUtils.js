@@ -17,7 +17,7 @@
  */
 
 import { getBookmarkFolderName } from "./storage.js";
-import { sanitizeBookmarkTitle } from "./configUtils.js";
+import { safeDecodeURIComponent, sanitizeBookmarkTitle } from "./configUtils.js";
 
 const FIGMA_MOCK_REGEX =
   /^https?:\/\/(?:www\.)?figma\.com\/(design|file|proto|board)\/([^/?#]+)\/([^/?#]+)/;
@@ -49,7 +49,7 @@ function parseFigmaMock(url) {
   const type = match[1];
   const fileId = match[2];
   const slug = match[3];
-  const title = toTitleCase(decodeURIComponent(slug));
+  const title = toTitleCase(safeDecodeURIComponent(slug));
   const canonicalUrl = `https://www.figma.com/${type}/${fileId}/${slug}`;
   return {
     title,

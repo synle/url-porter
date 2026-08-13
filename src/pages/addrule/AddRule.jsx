@@ -33,12 +33,14 @@ function AddRuleContent() {
     const rules = await getBookmarkRules();
     setExistingNames(rules.map((r) => r.name));
 
+    // `URLSearchParams.get()` already percent-decodes, so no manual
+    // decodeURIComponent — double-decoding throws URIError on a literal
+    // "%" in the URL and silently turns "%25" back into "%".
     const params = new URLSearchParams(window.location.search);
     const paramUrl = params.get("url");
 
     if (paramUrl) {
-      const decoded = decodeURIComponent(paramUrl);
-      const derived = deriveRuleFromUrl(decoded);
+      const derived = deriveRuleFromUrl(paramUrl);
       setPrefillRule({
         id: null,
         name: derived.name,

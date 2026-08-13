@@ -92,15 +92,44 @@ export async function setHistoryEntryLimit(n) {
 }
 
 /**
+ * Serializes `addHistoryEntry` read-modify-write cycles.
+ *
+ * Each call reads the whole history object, mutates it, and writes it back.
+ * Overlapping calls (a bulk import, or several rules saved at once) all read
+ * the same snapshot and the last write silently discards the others' entries.
+ * @type {Promise<void>}
+ */
+let historyWriteQueue = Promise.resolve();
+
+/**
  * Record a history entry for an alias change.
  * Enforces both per-alias and total-alias limits, evicting the
  * least-recently-touched aliases when the total limit is exceeded.
  *
+ * Concurrent calls are serialized so no entry is lost to a lost update.
+ *
  * @param {string} from - The alias (will be normalized)
  * @param {string} to - The destination URL
  * @param {"added"|"edited"|"deleted"} action - What happened
+ * @returns {Promise<void>}
  */
 export async function addHistoryEntry(from, to, action) {
+  // Chain onto the queue, and keep the queue alive even if this write throws.
+  const run = historyWriteQueue.then(() => writeHistoryEntry(from, to, action));
+  historyWriteQueue = run.catch(() => {});
+  return run;
+}
+
+/**
+ * Perform a single history read-modify-write cycle.
+ * Always call through `addHistoryEntry` so writes stay serialized.
+ *
+ * @param {string} from - The alias (will be normalized)
+ * @param {string} to - The destination URL
+ * @param {"added"|"edited"|"deleted"} action - What happened
+ * @returns {Promise<void>}
+ */
+async function writeHistoryEntry(from, to, action) {
   const history = await getHistory();
   const aliasLimit = await getHistoryAliasLimit();
   const entryLimit = await getHistoryEntryLimit();
@@ -124,7 +153,9 @@ export async function addHistoryEntry(from, to, action) {
     const byLastTouch = keys
       .map((k) => ({
         key: k,
-        lastTouch: (history[k][0] && history[k][0].date) || "",
+        // Stored history can hold a non-array value from an older build or a
+        // hand-edited import; treat it as untouched rather than throwing.
+        lastTouch: (Array.isArray(history[k]) && history[k][0]?.date) || "",
       }))
       .sort((a, b) => b.lastTouch.localeCompare(a.lastTouch));
 

@@ -61,15 +61,17 @@ function AddLinkContent() {
    */
   const detectContextAndPrefill = async () => {
     // Check for URL passed via query param (from context menu).
-    // Values are URI-encoded by the background script's context menu handler.
+    // `URLSearchParams.get()` already percent-decodes, so no manual
+    // decodeURIComponent — double-decoding throws URIError on a literal
+    // "%" in the URL and silently turns "%25" back into "%".
     const params = new URLSearchParams(window.location.search);
     const paramUrl = params.get("url");
     const paramTitle = params.get("title");
 
     if (paramUrl) {
-      setLinkTo(decodeURIComponent(paramUrl));
+      setLinkTo(paramUrl);
       if (paramTitle) {
-        setLinkFrom(decodeURIComponent(paramTitle));
+        setLinkFrom(paramTitle);
       }
       setTimeout(() => fromInputRef.current?.focus(), 100);
       return;

@@ -336,4 +336,30 @@ describe("jiraTicketUtils — feedback loop prevention", () => {
     const title = created[created.length - 1].title;
     expect(title).toMatch(/^FALCON-3001/); // no emoji prefix
   });
+
+  it("sorts misc tickets numerically, not lexicographically", async () => {
+    addMockFolder("2", "url-porter");
+    storageData.jiraStatuses = {};
+    // Two tickets is below the default threshold of 3, so they land in "misc".
+    const base = "https://jira.acme-corp.example.com:8443/browse/";
+    chrome.history.search.mockImplementation(async ({ text }) => {
+      if (text === "jira") {
+        return [
+          { url: `${base}ORBIT-9`, title: "[ORBIT-9] Older", lastVisitTime: 1 },
+          { url: `${base}ORBIT-10`, title: "[ORBIT-10] Newer", lastVisitTime: 2 },
+        ];
+      }
+      return [];
+    });
+
+    await reconcileJiraTickets();
+
+    const miscFolder = mockBookmarks.find((b) => !b.url && b.title === "misc");
+    expect(miscFolder).toBeDefined();
+    const order = mockBookmarks
+      .filter((b) => b.parentId === miscFolder.id && b.url)
+      .map((b) => b.url.split("/browse/")[1]);
+    // Newest first. localeCompare put "ORBIT-9" ahead of "ORBIT-10".
+    expect(order).toEqual(["ORBIT-10", "ORBIT-9"]);
+  });
 });

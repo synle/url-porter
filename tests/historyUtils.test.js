@@ -153,4 +153,34 @@ describe("historyUtils", () => {
       expect(storageData.linkHistory).toBeUndefined();
     });
   });
+
+  describe("concurrent writes", () => {
+    it("keeps every entry when calls overlap", async () => {
+      // Each call is a read-modify-write of the whole history object. Fired
+      // together they all used to read the same empty snapshot, so the last
+      // write discarded the others.
+      await Promise.all([
+        addHistoryEntry("alpha", "https://alpha.example.com", "added"),
+        addHistoryEntry("bravo", "https://bravo.example.com", "added"),
+        addHistoryEntry("charlie", "https://charlie.example.com", "added"),
+      ]);
+
+      const history = await getHistory();
+      expect(Object.keys(history).sort()).toEqual(["||alpha^", "||bravo^", "||charlie^"]);
+    });
+
+    it("keeps every entry when the same alias is written concurrently", async () => {
+      await Promise.all([
+        addHistoryEntry("dup", "https://one.example.com", "added"),
+        addHistoryEntry("dup", "https://two.example.com", "edited"),
+      ]);
+
+      const history = await getHistory();
+      expect(history["||dup^"]).toHaveLength(2);
+      expect(history["||dup^"].map((e) => e.to).sort()).toEqual([
+        "https://one.example.com",
+        "https://two.example.com",
+      ]);
+    });
+  });
 });

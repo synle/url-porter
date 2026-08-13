@@ -80,11 +80,14 @@ function reportStatus() {
   const canonicalUrl = match[1];
   console.log(TAG, "detected status:", status, "for", canonicalUrl);
 
-  chrome.runtime.sendMessage({
-    type: "Myevent.prStatus",
-    url: canonicalUrl,
-    status,
-  });
+  sendToBackground(
+    {
+      type: "Myevent.prStatus",
+      url: canonicalUrl,
+      status,
+    },
+    TAG,
+  );
 }
 
 // Run after page load, with a delay to let GitHub's SPA render.
@@ -94,11 +97,19 @@ setTimeout(reportStatus, 2000 + Math.random() * 3000);
 // Also observe for SPA navigation (GitHub uses turbo/pjax)
 let lastUrl = window.location.href;
 const observer = new MutationObserver(() => {
+  // An orphaned script (extension reloaded/updated) would otherwise keep this
+  // observer running for the life of the tab, on every DOM mutation.
+  if (!isExtensionContextValid()) {
+    observer.disconnect();
+    return;
+  }
   if (window.location.href !== lastUrl) {
     lastUrl = window.location.href;
     setTimeout(reportStatus, 2000);
   }
 });
-observer.observe(document.body, { childList: true, subtree: true });
+if (document.body) {
+  observer.observe(document.body, { childList: true, subtree: true });
+}
 
 console.log(TAG, "content script loaded");

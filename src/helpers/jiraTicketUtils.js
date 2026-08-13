@@ -357,7 +357,11 @@ export async function reconcileJiraTickets() {
   // Misc folder for projects with few tickets
   if (miscTickets.length > 0) {
     miscTickets.sort(
-      (a, b) => a.project.localeCompare(b.project) || b.ticketKey.localeCompare(a.ticketKey),
+      (a, b) =>
+        a.project.localeCompare(b.project) ||
+        // Numeric, matching the project-folder sort above. localeCompare is
+        // lexicographic, which ordered "ABC-9" ahead of "ABC-10".
+        parseInt(b.ticketKey.split("-")[1], 10) - parseInt(a.ticketKey.split("-")[1], 10),
     );
     const miscFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: "misc" });
     for (const entry of miscTickets) {

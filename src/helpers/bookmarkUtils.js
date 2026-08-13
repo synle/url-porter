@@ -133,9 +133,16 @@ export async function reconcileBookmarks(configEntries) {
   // Deduplicate existing bookmarks by title.
   // Later bookmarks (higher index) are the source of truth.
   // Earlier duplicates get removed.
+  //
+  // Subfolders are skipped entirely: the porter folder also holds the managed
+  // reconciler folders ("prs", "jira tickets", ...). Treating one as a bookmark
+  // let `removeTree` delete a whole managed folder when an alias shared its
+  // name, and made `bookmarks.update(id, { url })` throw "Can't set URL of a
+  // folder", which aborted this reconcile pass and every one queued behind it.
   const deduped = new Map(); // title → child node (keeps last seen)
   const toRemove = []; // duplicate bookmark IDs to delete
   for (const child of children) {
+    if (!child.url) continue; // folder, not a bookmark
     if (deduped.has(child.title)) {
       const older = deduped.get(child.title);
       console.log(

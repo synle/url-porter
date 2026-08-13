@@ -200,4 +200,27 @@ describe("githubRepoUtils — reconcileGitHubRepos", () => {
     const repoFolder = mockBookmarks.find((b) => b.title === "github repos");
     expect(repoFolder).toBeDefined();
   });
+
+  it("rejects reserved top-level routes that look like org/repo pairs", async () => {
+    addMockFolder("2", "url-porter");
+    setHistory({
+      "github.com": [
+        { url: "https://github.com/apps/some-app", title: "App", lastVisitTime: 1 },
+        { url: "https://github.com/codespaces/fuzzy-name", title: "Codespace", lastVisitTime: 2 },
+        { url: "https://github.com/advisories/GHSA-xxxx", title: "Advisory", lastVisitTime: 3 },
+        // Case-insensitive: the route is the same regardless of casing.
+        { url: "https://github.com/Settings/profile", title: "Settings", lastVisitTime: 4 },
+        { url: "https://github.com/acme/widget", title: "widget", lastVisitTime: 5 },
+      ],
+    });
+
+    await reconcileGitHubRepos();
+
+    const allUrls = mockBookmarks.filter((b) => b.url).map((b) => b.url);
+    expect(allUrls).toContain("https://github.com/acme/widget");
+    expect(allUrls.some((u) => u.includes("/apps/"))).toBe(false);
+    expect(allUrls.some((u) => u.includes("/codespaces/"))).toBe(false);
+    expect(allUrls.some((u) => u.includes("/advisories/"))).toBe(false);
+    expect(allUrls.some((u) => u.includes("/settings/"))).toBe(false);
+  });
 });

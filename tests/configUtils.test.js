@@ -17,6 +17,7 @@ import {
   normalizeEntryForRedirect,
   normalizeEntriesForRedirect,
   findDuplicateEntry,
+  safeDecodeURIComponent,
 } from "../src/helpers/configUtils.js";
 
 describe("sanitizeBookmarkTitle", () => {
@@ -317,5 +318,22 @@ describe("stripAlias", () => {
   it("returns empty for null/undefined", () => {
     expect(stripAlias(null)).toBe("");
     expect(stripAlias(undefined)).toBe("");
+  });
+});
+
+describe("safeDecodeURIComponent", () => {
+  it("decodes a well-formed percent-encoded string", () => {
+    expect(safeDecodeURIComponent("My%20Cool%20Mock")).toBe("My Cool Mock");
+  });
+
+  it("returns the input unchanged when a lone % makes it undecodable", () => {
+    // decodeURIComponent throws URIError: URI malformed on this input.
+    expect(safeDecodeURIComponent("100%-Redesign")).toBe("100%-Redesign");
+    expect(safeDecodeURIComponent("Bad%ZZ")).toBe("Bad%ZZ");
+  });
+
+  it("returns empty string for null/undefined", () => {
+    expect(safeDecodeURIComponent(null)).toBe("");
+    expect(safeDecodeURIComponent(undefined)).toBe("");
   });
 });

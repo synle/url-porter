@@ -112,5 +112,28 @@ describe("bookmarkUtils", () => {
       const folder = mockBookmarks.find((b) => !b.url && b.title === "my-shortcuts");
       expect(folder).toBeDefined();
     });
+
+    it("never updates or removes a managed subfolder that shares an alias name", async () => {
+      const porter = addMockFolder("2", "url-porter");
+      // The reconciler subfolders live alongside the config bookmarks.
+      const prsFolder = addMockFolder(porter.id, "prs");
+      addMockBookmark(prsFolder.id, "some pr", "https://github.com/acme/widget/pull/1", 100);
+
+      // A user alias whose bookmark title collides with that folder's name.
+      await reconcileBookmarks([{ from: "prs", to: "https://prs.example.com" }]);
+
+      // The folder survives intact — it must not be removeTree'd...
+      const survivingFolder = mockBookmarks.find((b) => b.id === prsFolder.id);
+      expect(survivingFolder).toBeDefined();
+      expect(survivingFolder.url).toBeUndefined();
+      expect(mockBookmarks.filter((b) => b.parentId === prsFolder.id)).toHaveLength(1);
+      // ...and bookmarks.update must never be aimed at a folder.
+      expect(chrome.bookmarks.update).not.toHaveBeenCalledWith(prsFolder.id, expect.anything());
+
+      // The alias still gets its own bookmark.
+      const created = mockBookmarks.find((b) => b.parentId === porter.id && b.url);
+      expect(created.title).toBe("prs");
+      expect(created.url).toBe("https://prs.example.com");
+    });
   });
 });

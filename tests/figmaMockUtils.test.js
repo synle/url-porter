@@ -168,4 +168,25 @@ describe("figmaMockUtils — reconcileFigmaMocks", () => {
     expect(bookmarks).toHaveLength(1);
     expect(bookmarks[0].url).toContain("/OUTSIDE/");
   });
+
+  it("keeps scanning after a slug that cannot be percent-decoded", async () => {
+    addMockFolder("2", "url-porter");
+    setHistory({
+      "figma.com": [
+        { url: "https://www.figma.com/design/AAA/Good-One", title: "A", lastVisitTime: 300 },
+        // A lone "%" makes decodeURIComponent throw URIError, which used to
+        // abort the whole history loop and drop every mock after this one.
+        { url: "https://www.figma.com/design/BAD/100%-Redesign", title: "B", lastVisitTime: 200 },
+        { url: "https://www.figma.com/design/CCC/Good-Two", title: "C", lastVisitTime: 100 },
+      ],
+    });
+
+    await reconcileFigmaMocks();
+
+    const folder = mockBookmarks.find((b) => !b.url && b.title === "figma mocks");
+    const urls = mockBookmarks.filter((b) => b.parentId === folder.id && b.url).map((b) => b.url);
+    expect(urls).toContain("https://www.figma.com/design/AAA/Good-One");
+    expect(urls).toContain("https://www.figma.com/design/CCC/Good-Two");
+    expect(urls).toContain("https://www.figma.com/design/BAD/100%-Redesign");
+  });
 });

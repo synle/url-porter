@@ -66,6 +66,27 @@ describe("AddLink", () => {
     expect(screen.queryAllByDisplayValue("Foo Title").length).toBeGreaterThan(0);
   });
 
+  it("prefills a URL containing a literal percent sign without corrupting it", async () => {
+    // URLSearchParams already decodes; an extra decodeURIComponent threw
+    // URIError here and left both fields empty.
+    const raw = "https://foo.test/discount/50%";
+    window.history.replaceState(
+      {},
+      "",
+      "/?url=" + encodeURIComponent(raw) + "&title=" + encodeURIComponent("50% off"),
+    );
+    render(<AddLink />);
+    await waitFor(() => expect(screen.queryAllByDisplayValue(raw).length).toBeGreaterThan(0));
+    expect(screen.queryAllByDisplayValue("50% off").length).toBeGreaterThan(0);
+  });
+
+  it("does not double-decode an escaped percent in the query param", async () => {
+    const raw = "https://foo.test/search?q=100%25";
+    window.history.replaceState({}, "", "/?url=" + encodeURIComponent(raw));
+    render(<AddLink />);
+    await waitFor(() => expect(screen.queryAllByDisplayValue(raw).length).toBeGreaterThan(0));
+  });
+
   it("skips prefill for chrome:// URLs", async () => {
     chrome.tabs.query.mockImplementation(async () => [
       { url: "chrome://settings/", title: "Settings" },

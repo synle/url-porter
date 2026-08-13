@@ -27,26 +27,61 @@ function NewTabContent() {
 
   /**
    * Redirects the current tab to the configured homepage URL, or shows fallback content.
+   *
+   * Every failure path must fall through to the welcome screen — a new tab that
+   * renders `null` forever is a blank white page with no way out.
+   *
    * @returns {Promise<void>}
    */
   const redirectToHomepage = async () => {
-    const url = await getHomepageUrl();
-
-    if (url) {
-      // Find the current tab and navigate it to the homepage URL
-      try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab?.id) {
-          chrome.tabs.update(tab.id, { url, highlighted: true });
-        }
-      } catch {
-        // Fallback: update whichever tab we're on without specifying ID
-        chrome.tabs.update({ url });
-      }
-    } else {
-      setIsLoading(false);
-      setShowContent(true);
+    let url = "";
+    try {
+      url = await getHomepageUrl();
+    } catch {
+      url = "";
     }
+
+    if (!url) {
+      showWelcome();
+      return;
+    }
+
+    // Prefer updating the tab by id; `chrome.tabs.query` can legitimately come
+    // back empty (e.g. a pre-rendered new tab that is not the active tab yet),
+    // in which case fall back to the tab-less form.
+    let tabId = null;
+    try {
+      const [tab] = (await chrome.tabs.query({ active: true, currentWindow: true })) || [];
+      tabId = tab?.id ?? null;
+    } catch {
+      tabId = null;
+    }
+
+    try {
+      if (tabId != null) {
+        await chrome.tabs.update(tabId, { url, highlighted: true });
+      } else {
+        await chrome.tabs.update({ url });
+      }
+    } catch (err) {
+      // A malformed stored homepage, a revoked permission, or a missing tab all
+      // land here. Navigate directly rather than stranding the user on a blank page.
+      console.error("[newtab] failed to redirect to homepage:", err);
+      try {
+        window.location.replace(url);
+      } catch {
+        showWelcome();
+      }
+    }
+  };
+
+  /**
+   * Reveal the welcome screen.
+   * @returns {void}
+   */
+  const showWelcome = () => {
+    setIsLoading(false);
+    setShowContent(true);
   };
 
   if (isLoading || !showContent) {

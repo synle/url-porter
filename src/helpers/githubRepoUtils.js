@@ -46,6 +46,7 @@ function parseGitHubRepo(url) {
   const org = match[1];
   let repo = match[2];
   if (repo.endsWith(".git")) repo = repo.slice(0, -4);
+  // Reserved top-level github.com routes that are not `<org>/<repo>` pairs.
   const nonRepoPages = [
     "settings",
     "orgs",
@@ -67,8 +68,22 @@ function parseGitHubRepo(url) {
     "pricing",
     "about",
     "pages",
+    "apps",
+    "advisories",
+    "codespaces",
+    "sessions",
+    "search",
+    "dashboard",
+    "account",
+    "users",
+    "stars",
+    "security",
+    "contact",
+    "site",
+    "readme",
   ];
-  if (nonRepoPages.includes(org)) return null;
+  // Compare case-insensitively — "github.com/Settings/..." is the same route.
+  if (nonRepoPages.includes(org.toLowerCase())) return null;
   return {
     org: toTitleCase(org),
     repo: toTitleCase(repo),

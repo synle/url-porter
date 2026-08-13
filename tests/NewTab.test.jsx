@@ -49,4 +49,24 @@ describe("NewTab", () => {
     expect(screen.getByText(/Welcome/i)).toBeTruthy();
     expect(screen.getByRole("link", { name: /Open Settings/i })).toBeTruthy();
   });
+
+  it("falls back to tab-less update when the query returns no tabs", async () => {
+    // A pre-rendered new tab is not always the active tab, so the query can
+    // legitimately come back empty. Doing nothing left a blank white page.
+    storageData.homepageUrl = "https://home.example.com";
+    chrome.tabs.query.mockResolvedValueOnce([]);
+    render(<NewTab />);
+    await waitFor(() => expect(chrome.tabs.update).toHaveBeenCalled());
+    expect(chrome.tabs.update).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://home.example.com" }),
+    );
+  });
+
+  it("shows the welcome screen instead of hanging when reading the homepage fails", async () => {
+    chrome.storage.local.get.mockImplementationOnce(() => {
+      throw new Error("storage unavailable");
+    });
+    render(<NewTab />);
+    expect(await screen.findByText(/Welcome/i)).toBeTruthy();
+  });
 });

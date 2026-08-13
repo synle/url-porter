@@ -166,6 +166,25 @@ export function cleanUrl(value) {
 }
 
 /**
+ * Percent-decode a URI component without throwing.
+ *
+ * `decodeURIComponent` raises `URIError: URI malformed` when the input holds a
+ * literal `%` that is not followed by two hex digits (e.g. the Figma slug
+ * `100%-Redesign`). Returns the input unchanged in that case.
+ *
+ * @param {string} value - The possibly percent-encoded string
+ * @returns {string} The decoded string, or the original when it cannot be decoded
+ */
+export function safeDecodeURIComponent(value) {
+  const str = String(value ?? "");
+  try {
+    return decodeURIComponent(str);
+  } catch {
+    return str;
+  }
+}
+
+/**
  * Sanitize a bookmark title for safe display in external consumers.
  * - Replaces `#` and `|` with `/` to avoid misinterpretation as
  *   markdown headers or nav schema separators.

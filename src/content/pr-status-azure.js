@@ -7,6 +7,15 @@
 const TAG = "[url-porter:pr-status-azure]";
 
 /**
+ * Whole-word status matchers. Plain `includes()` is not safe here because the
+ * selector below is deliberately broad — `"inactive".includes("active")` is
+ * true, which would report an abandoned or draft PR as open.
+ */
+const COMPLETED_RE = /\bcompleted\b/;
+const ABANDONED_RE = /\babandoned\b/;
+const ACTIVE_RE = /\bactive\b/;
+
+/**
  * Detect the PR status from the Azure DevOps page DOM.
  * @returns {"merged" | "closed" | "open" | null}
  */
@@ -17,17 +26,17 @@ function detectStatus() {
   );
   for (const el of statusElements) {
     const text = el.textContent.trim().toLowerCase();
-    if (text.includes("completed")) return "merged";
-    if (text.includes("abandoned")) return "closed";
-    if (text.includes("active")) return "open";
+    if (COMPLETED_RE.test(text)) return "merged";
+    if (ABANDONED_RE.test(text)) return "closed";
+    if (ACTIVE_RE.test(text)) return "open";
   }
 
   // Fallback: broader text search in the header area
   const header = document.querySelector(".page-content, .repos-pr-header, .bolt-header");
   if (header) {
     const text = header.textContent.toLowerCase();
-    if (text.includes("completed")) return "merged";
-    if (text.includes("abandoned")) return "closed";
+    if (COMPLETED_RE.test(text)) return "merged";
+    if (ABANDONED_RE.test(text)) return "closed";
   }
 
   return null;
@@ -38,9 +47,11 @@ function detectStatus() {
  * @returns {boolean}
  */
 function isAzureErrorPage() {
-  const body = document.body ? document.body.textContent : "";
+  // Lowercase the haystack — the page renders "Something went wrong", so a
+  // lowercase needle against raw textContent never matched.
+  const body = document.body ? document.body.textContent.toLowerCase() : "";
   return (
-    body.includes("Azure DevOps Services Unavailable") || body.includes("something went wrong")
+    body.includes("azure devops services unavailable") || body.includes("something went wrong")
   );
 }
 
@@ -70,11 +81,14 @@ function reportStatus() {
   const canonicalUrl = match[1];
   console.log(TAG, "detected status:", status, "for", canonicalUrl);
 
-  chrome.runtime.sendMessage({
-    type: "Myevent.prStatus",
-    url: canonicalUrl,
-    status,
-  });
+  sendToBackground(
+    {
+      type: "Myevent.prStatus",
+      url: canonicalUrl,
+      status,
+    },
+    TAG,
+  );
 }
 
 // Run after page load with delay for SPA rendering.
@@ -84,11 +98,19 @@ setTimeout(reportStatus, 2000 + Math.random() * 3000);
 // Observe for SPA navigation
 let lastUrl = window.location.href;
 const observer = new MutationObserver(() => {
+  // An orphaned script (extension reloaded/updated) would otherwise keep this
+  // observer running for the life of the tab, on every DOM mutation.
+  if (!isExtensionContextValid()) {
+    observer.disconnect();
+    return;
+  }
   if (window.location.href !== lastUrl) {
     lastUrl = window.location.href;
     setTimeout(reportStatus, 2000);
   }
 });
-observer.observe(document.body, { childList: true, subtree: true });
+if (document.body) {
+  observer.observe(document.body, { childList: true, subtree: true });
+}
 
 console.log(TAG, "content script loaded");
