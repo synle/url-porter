@@ -11,6 +11,15 @@ vi.stubGlobal("chrome", chrome);
 
 const { reconcileOnedrive } = await import("../src/helpers/onedriveUtils.js");
 
+/**
+ * Titles of the porter folder's subfolders, in their final on-disk order.
+ * @param {string} porterId - The url-porter folder ID.
+ * @returns {string[]} Subfolder titles in order.
+ */
+function subfolderOrder(porterId) {
+  return mockBookmarks.filter((b) => b.parentId === porterId && !b.url).map((b) => b.title);
+}
+
 describe("onedriveUtils — reconcileOnedrive", () => {
   beforeEach(() => {
     reset();
@@ -189,7 +198,12 @@ describe("onedriveUtils — reconcileOnedrive", () => {
       ],
     });
     await reconcileOnedrive();
-    const create = chrome.bookmarks.create.mock.calls.find((c) => c[0].title === "onedrive");
-    expect(create[0].index).toBeGreaterThanOrEqual(4);
+    expect(subfolderOrder(porter.id)).toEqual([
+      "prs",
+      "github repos",
+      "jira tickets",
+      "google drive",
+      "onedrive",
+    ]);
   });
 });

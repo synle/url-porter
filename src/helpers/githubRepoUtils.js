@@ -18,6 +18,7 @@
 
 import { getBookmarkFolderName, getGithubOrgThreshold } from "./storage.js";
 import { sanitizeBookmarkTitle } from "./configUtils.js";
+import { rebuildManagedSubfolder } from "./managedFolderUtils.js";
 
 const GITHUB_REPO_REGEX = /^https?:\/\/github\.com\/([^/?#]+)\/([^/?#]+)/;
 const AZURE_DEVOPS_REGEX = /^https?:\/\/([^/?#]+)\.visualstudio\.com\/([^/?#]+)\/_git\/([^/?#]+)/;
@@ -224,23 +225,6 @@ export async function reconcileGitHubRepos() {
 
   if (allRepos.size === 0) return;
 
-  // Delete the old "github repos" folder if it exists, then create a fresh one
-  const porterChildren = await chrome.bookmarks.getChildren(porterFolder.id);
-  const oldSubfolder = porterChildren.find((c) => !c.url && c.title === SUBFOLDER_NAME);
-  if (oldSubfolder) {
-    await chrome.bookmarks.removeTree(oldSubfolder.id);
-    console.log("[githubRepoUtils] reconcileGitHubRepos: deleted old folder");
-  }
-  // Place after "prs" folder
-  const updatedChildren2 = await chrome.bookmarks.getChildren(porterFolder.id);
-  const prsFolder = updatedChildren2.find((c) => !c.url && c.title === "prs");
-  const insertIndex = prsFolder ? updatedChildren2.indexOf(prsFolder) + 1 : 0;
-  const subfolder = await chrome.bookmarks.create({
-    parentId: porterFolder.id,
-    title: SUBFOLDER_NAME,
-    index: insertIndex,
-  });
-
   // Sort all repos by repo name (case-insensitive), then by org
   const sortedRepos = [...allRepos.values()].sort((a, b) => {
     const repoCompare = a.repo.toLowerCase().localeCompare(b.repo.toLowerCase());
@@ -272,37 +256,48 @@ export async function reconcileGitHubRepos() {
     }
   }
 
-  // Create org subfolders and add bookmarks
   let added = 0;
-  for (const org of realOrgs) {
-    const orgFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: org });
-    for (const { repo, url } of byOrg.get(org)) {
-      await chrome.bookmarks.create({
-        parentId: orgFolder.id,
-        title: sanitizeBookmarkTitle(repo),
-        url,
-      });
-      added++;
-    }
-  }
+  await rebuildManagedSubfolder({
+    parentId: porterFolder.id,
+    title: SUBFOLDER_NAME,
+    // Place after the "prs" folder
+    resolveIndex: (children) => {
+      const prsFolder = children.find((c) => !c.url && c.title === "prs");
+      return prsFolder ? children.indexOf(prsFolder) + 1 : 0;
+    },
+    populate: async (folderId) => {
+      // Create org subfolders and add bookmarks
+      for (const org of realOrgs) {
+        const orgFolder = await chrome.bookmarks.create({ parentId: folderId, title: org });
+        for (const { repo, url } of byOrg.get(org)) {
+          await chrome.bookmarks.create({
+            parentId: orgFolder.id,
+            title: sanitizeBookmarkTitle(repo),
+            url,
+          });
+          added++;
+        }
+      }
 
-  // Create misc folder for small groups
-  if (miscRepos.length > 0) {
-    miscRepos.sort(
-      (a, b) =>
-        a.org.toLowerCase().localeCompare(b.org.toLowerCase()) ||
-        a.repo.toLowerCase().localeCompare(b.repo.toLowerCase()),
-    );
-    const miscFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: "misc" });
-    for (const { org, repo, url } of miscRepos) {
-      await chrome.bookmarks.create({
-        parentId: miscFolder.id,
-        title: sanitizeBookmarkTitle(`${repo} (${org})`),
-        url,
-      });
-      added++;
-    }
-  }
+      // Create misc folder for small groups
+      if (miscRepos.length > 0) {
+        miscRepos.sort(
+          (a, b) =>
+            a.org.toLowerCase().localeCompare(b.org.toLowerCase()) ||
+            a.repo.toLowerCase().localeCompare(b.repo.toLowerCase()),
+        );
+        const miscFolder = await chrome.bookmarks.create({ parentId: folderId, title: "misc" });
+        for (const { org, repo, url } of miscRepos) {
+          await chrome.bookmarks.create({
+            parentId: miscFolder.id,
+            title: sanitizeBookmarkTitle(`${repo} (${org})`),
+            url,
+          });
+          added++;
+        }
+      }
+    },
+  });
 
   console.log(
     "[githubRepoUtils] reconcileGitHubRepos: done. added:",

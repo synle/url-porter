@@ -13,6 +13,7 @@
 
 import { getBookmarkFolderName, getBookmarkRules } from "./storage.js";
 import { sanitizeBookmarkTitle } from "./configUtils.js";
+import { rebuildManagedSubfolder } from "./managedFolderUtils.js";
 
 /** @type {string[]} Folder names reserved by hardcoded reconcilers. */
 const RESERVED_FOLDER_NAMES = [
@@ -259,24 +260,8 @@ export async function reconcileBookmarkRule(rule) {
 
   if (allItems.size === 0) return;
 
-  // Delete old subfolder
-  const subfolderName = rule.name.trim();
-  const porterChildren = await chrome.bookmarks.getChildren(porterFolder.id);
-  const oldSubfolder = porterChildren.find((c) => !c.url && c.title === subfolderName);
-  if (oldSubfolder) {
-    await chrome.bookmarks.removeTree(oldSubfolder.id);
-    console.log(`${logPrefix} deleted old folder`);
-  }
-
-  // Create new subfolder at end of porter folder
-  const updatedChildren = await chrome.bookmarks.getChildren(porterFolder.id);
-  const subfolder = await chrome.bookmarks.create({
-    parentId: porterFolder.id,
-    title: subfolderName,
-    index: updatedChildren.length,
-  });
-
   // Sort
+  const subfolderName = rule.name.trim();
   const sortField = rule.sortField || "visitTime";
   const sortDesc = (rule.sortDirection || "desc") === "desc";
   const sorted = [...allItems.values()].sort((a, b) => {
@@ -288,13 +273,20 @@ export async function reconcileBookmarkRule(rule) {
     return sortDesc ? -cmp : cmp;
   });
 
-  // Populate
   let added = 0;
-  for (const entry of sorted) {
-    const title = sanitizeBookmarkTitle(entry.title || entry.dedupeKey);
-    await chrome.bookmarks.create({ parentId: subfolder.id, title, url: entry.url });
-    added++;
-  }
+  await rebuildManagedSubfolder({
+    parentId: porterFolder.id,
+    title: subfolderName,
+    // Custom rule folders go at the end of the porter folder
+    resolveIndex: (children) => children.length,
+    populate: async (folderId) => {
+      for (const entry of sorted) {
+        const title = sanitizeBookmarkTitle(entry.title || entry.dedupeKey);
+        await chrome.bookmarks.create({ parentId: folderId, title, url: entry.url });
+        added++;
+      }
+    },
+  });
 
   console.log(`${logPrefix} done. added: ${added} items`);
 }

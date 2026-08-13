@@ -13,6 +13,7 @@
 
 import { getBookmarkFolderName, getGithubOrgThreshold, getJiraStatuses } from "./storage.js";
 import { sanitizeBookmarkTitle } from "./configUtils.js";
+import { rebuildManagedSubfolder } from "./managedFolderUtils.js";
 
 const ATLASSIAN_REGEX = /^https?:\/\/[^/]*\.atlassian\.net\/browse\/([A-Z][A-Z0-9]+-\d+)/i;
 const JIRA_HOST_REGEX = /^https?:\/\/jira[^/]*\/browse\/([A-Z][A-Z0-9]+-\d+)/i;
@@ -286,32 +287,6 @@ export async function reconcileJiraTickets() {
   // Get stored statuses from content script reports
   const storedStatuses = await getJiraStatuses();
 
-  // Delete the old folder if it exists
-  const oldSubfolder = porterChildren.find((c) => !c.url && c.title === SUBFOLDER_NAME);
-  if (oldSubfolder) {
-    await chrome.bookmarks.removeTree(oldSubfolder.id);
-    console.log("[jiraTicketUtils] reconcileJiraTickets: deleted old folder");
-  }
-
-  // Place after "figma mocks" (or after "github repos" if no figma, or index 2)
-  const updatedChildren = await chrome.bookmarks.getChildren(porterFolder.id);
-  const figmaFolder = updatedChildren.find((c) => !c.url && c.title === "figma mocks");
-  const githubFolder = updatedChildren.find((c) => !c.url && c.title === "github repos");
-  let insertIndex;
-  if (figmaFolder) {
-    insertIndex = updatedChildren.indexOf(figmaFolder) + 1;
-  } else if (githubFolder) {
-    insertIndex = updatedChildren.indexOf(githubFolder) + 1;
-  } else {
-    insertIndex = 2;
-  }
-
-  const subfolder = await chrome.bookmarks.create({
-    parentId: porterFolder.id,
-    title: SUBFOLDER_NAME,
-    index: insertIndex,
-  });
-
   // Group by project
   const byProject = new Map();
   for (const entry of allTickets.values()) {
@@ -337,40 +312,57 @@ export async function reconcileJiraTickets() {
   }
 
   let added = 0;
-  for (const project of realProjects) {
-    const projectFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: project });
-    const tickets = byProject.get(project).sort((a, b) => {
-      const numA = parseInt(a.ticketKey.split("-")[1], 10);
-      const numB = parseInt(b.ticketKey.split("-")[1], 10);
-      return numB - numA;
-    });
-    for (const entry of tickets) {
-      const status = storedStatuses[entry.url] || oldBookmarkStatuses[entry.url] || null;
-      // Inside a project folder, drop the project prefix (e.g. "96899" instead of "DEPEND-96899")
-      const ticketNumber = entry.ticketKey.split("-")[1];
-      const title = sanitizeBookmarkTitle(buildTitle(ticketNumber, entry.pageTitle, status));
-      await chrome.bookmarks.create({ parentId: projectFolder.id, title, url: entry.url });
-      added++;
-    }
-  }
+  await rebuildManagedSubfolder({
+    parentId: porterFolder.id,
+    title: SUBFOLDER_NAME,
+    // Place after "figma mocks" (or after "github repos" if no figma, or index 2)
+    resolveIndex: (children) => {
+      const figmaFolder = children.find((c) => !c.url && c.title === "figma mocks");
+      const githubFolder = children.find((c) => !c.url && c.title === "github repos");
+      if (figmaFolder) return children.indexOf(figmaFolder) + 1;
+      if (githubFolder) return children.indexOf(githubFolder) + 1;
+      return 2;
+    },
+    populate: async (folderId) => {
+      for (const project of realProjects) {
+        const projectFolder = await chrome.bookmarks.create({
+          parentId: folderId,
+          title: project,
+        });
+        const tickets = byProject.get(project).sort((a, b) => {
+          const numA = parseInt(a.ticketKey.split("-")[1], 10);
+          const numB = parseInt(b.ticketKey.split("-")[1], 10);
+          return numB - numA;
+        });
+        for (const entry of tickets) {
+          const status = storedStatuses[entry.url] || oldBookmarkStatuses[entry.url] || null;
+          // Inside a project folder, drop the project prefix (e.g. "96899" instead of "DEPEND-96899")
+          const ticketNumber = entry.ticketKey.split("-")[1];
+          const title = sanitizeBookmarkTitle(buildTitle(ticketNumber, entry.pageTitle, status));
+          await chrome.bookmarks.create({ parentId: projectFolder.id, title, url: entry.url });
+          added++;
+        }
+      }
 
-  // Misc folder for projects with few tickets
-  if (miscTickets.length > 0) {
-    miscTickets.sort(
-      (a, b) =>
-        a.project.localeCompare(b.project) ||
-        // Numeric, matching the project-folder sort above. localeCompare is
-        // lexicographic, which ordered "ABC-9" ahead of "ABC-10".
-        parseInt(b.ticketKey.split("-")[1], 10) - parseInt(a.ticketKey.split("-")[1], 10),
-    );
-    const miscFolder = await chrome.bookmarks.create({ parentId: subfolder.id, title: "misc" });
-    for (const entry of miscTickets) {
-      const status = storedStatuses[entry.url] || oldBookmarkStatuses[entry.url] || null;
-      const title = sanitizeBookmarkTitle(buildTitle(entry.ticketKey, entry.pageTitle, status));
-      await chrome.bookmarks.create({ parentId: miscFolder.id, title, url: entry.url });
-      added++;
-    }
-  }
+      // Misc folder for projects with few tickets
+      if (miscTickets.length > 0) {
+        miscTickets.sort(
+          (a, b) =>
+            a.project.localeCompare(b.project) ||
+            // Numeric, matching the project-folder sort above. localeCompare is
+            // lexicographic, which ordered "ABC-9" ahead of "ABC-10".
+            parseInt(b.ticketKey.split("-")[1], 10) - parseInt(a.ticketKey.split("-")[1], 10),
+        );
+        const miscFolder = await chrome.bookmarks.create({ parentId: folderId, title: "misc" });
+        for (const entry of miscTickets) {
+          const status = storedStatuses[entry.url] || oldBookmarkStatuses[entry.url] || null;
+          const title = sanitizeBookmarkTitle(buildTitle(entry.ticketKey, entry.pageTitle, status));
+          await chrome.bookmarks.create({ parentId: miscFolder.id, title, url: entry.url });
+          added++;
+        }
+      }
+    },
+  });
 
   console.log(
     "[jiraTicketUtils] reconcileJiraTickets: done. added:",

@@ -11,6 +11,15 @@ vi.stubGlobal("chrome", chrome);
 
 const { reconcileGoogleDrive } = await import("../src/helpers/googleDriveUtils.js");
 
+/**
+ * Titles of the porter folder's subfolders, in their final on-disk order.
+ * @param {string} porterId - The url-porter folder ID.
+ * @returns {string[]} Subfolder titles in order.
+ */
+function subfolderOrder(porterId) {
+  return mockBookmarks.filter((b) => b.parentId === porterId && !b.url).map((b) => b.title);
+}
+
 describe("googleDriveUtils — reconcileGoogleDrive", () => {
   beforeEach(() => {
     reset();
@@ -154,8 +163,12 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
       ],
     });
     await reconcileGoogleDrive();
-    const create = chrome.bookmarks.create.mock.calls.find((c) => c[0].title === "google drive");
-    expect(create[0].index).toBe(3);
+    expect(subfolderOrder(porter.id)).toEqual([
+      "prs",
+      "github repos",
+      "jira tickets",
+      "google drive",
+    ]);
   });
 
   it("falls back to figma index when jira is missing", async () => {
@@ -169,8 +182,12 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
       ],
     });
     await reconcileGoogleDrive();
-    const create = chrome.bookmarks.create.mock.calls.find((c) => c[0].title === "google drive");
-    expect(create[0].index).toBe(3);
+    expect(subfolderOrder(porter.id)).toEqual([
+      "prs",
+      "github repos",
+      "figma mocks",
+      "google drive",
+    ]);
   });
 
   it("falls back to github repos index when no jira or figma", async () => {
@@ -183,9 +200,8 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
       ],
     });
     await reconcileGoogleDrive();
-    const create = chrome.bookmarks.create.mock.calls.find((c) => c[0].title === "google drive");
-    // github repos is at the last index among siblings — placed right after it.
-    expect(create[0].index).toBeGreaterThanOrEqual(2);
+    // github repos is the last sibling — google drive is placed right after it.
+    expect(subfolderOrder(porter.id)).toEqual(["prs", "github repos", "google drive"]);
   });
 
   it("survives history.search errors", async () => {

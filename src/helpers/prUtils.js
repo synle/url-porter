@@ -20,6 +20,7 @@
 
 import { getBookmarkFolderName, getPrStatuses } from "./storage.js";
 import { sanitizeBookmarkTitle } from "./configUtils.js";
+import { rebuildManagedSubfolder } from "./managedFolderUtils.js";
 
 const GITHUB_PR_REGEX =
   /^https?:\/\/(github\.com|[^/?#]+\.githubprivate\.com|[^/?#]+\.ghe\.com)\/([^/?#]+)\/([^/?#]+)\/pull\/(\d+)/;
@@ -346,31 +347,25 @@ export async function reconcilePrs() {
   // Get stored statuses from content script reports
   const storedStatuses = await getPrStatuses();
 
-  // Delete old folder
-  const oldSubfolder = porterChildren.find((c) => !c.url && c.title === SUBFOLDER_NAME);
-  if (oldSubfolder) {
-    await chrome.bookmarks.removeTree(oldSubfolder.id);
-    console.log("[prUtils] reconcilePrs: deleted old folder");
-  }
-
-  // Place at index 0 (above github repos)
-  const subfolder = await chrome.bookmarks.create({
-    parentId: porterFolder.id,
-    title: SUBFOLDER_NAME,
-    index: 0,
-  });
-
   // Sort by date (newest first)
   const sorted = [...allPrs.values()].sort((a, b) => (b.visitTime || 0) - (a.visitTime || 0));
 
   let added = 0;
-  for (const entry of sorted) {
-    // Stored status (from content script) takes priority, then old bookmark status
-    const status = storedStatuses[entry.url] || oldBookmarkStatuses[entry.url] || null;
-    const title = sanitizeBookmarkTitle(buildTitle(entry, status));
-    await chrome.bookmarks.create({ parentId: subfolder.id, title, url: entry.url });
-    added++;
-  }
+  await rebuildManagedSubfolder({
+    parentId: porterFolder.id,
+    title: SUBFOLDER_NAME,
+    // Place at index 0 (above github repos)
+    resolveIndex: () => 0,
+    populate: async (folderId) => {
+      for (const entry of sorted) {
+        // Stored status (from content script) takes priority, then old bookmark status
+        const status = storedStatuses[entry.url] || oldBookmarkStatuses[entry.url] || null;
+        const title = sanitizeBookmarkTitle(buildTitle(entry, status));
+        await chrome.bookmarks.create({ parentId: folderId, title, url: entry.url });
+        added++;
+      }
+    },
+  });
 
   console.log("[prUtils] reconcilePrs: done. added:", added, "PRs");
 }

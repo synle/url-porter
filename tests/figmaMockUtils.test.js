@@ -131,10 +131,10 @@ describe("figmaMockUtils — reconcileFigmaMocks", () => {
       "figma.com": [{ url: "https://www.figma.com/design/ABC/Mock", title: "M", lastVisitTime: 1 }],
     });
     await reconcileFigmaMocks();
-    const create = chrome.bookmarks.create.mock.calls.find((c) => c[0].title === "figma mocks");
-    // figma mocks placed right after github repos (index of github repos + 1).
-    // github repos is index 1 in porter folder, so figma mocks goes to index 2.
-    expect(create[0].index).toBeGreaterThanOrEqual(1);
+    const order = mockBookmarks
+      .filter((b) => b.parentId === porter.id && !b.url)
+      .map((b) => b.title);
+    expect(order).toEqual(["prs", "github repos", "figma mocks"]);
   });
 
   it("walks bookmarks tree for figma URLs", async () => {
@@ -188,5 +188,35 @@ describe("figmaMockUtils — reconcileFigmaMocks", () => {
     expect(urls).toContain("https://www.figma.com/design/AAA/Good-One");
     expect(urls).toContain("https://www.figma.com/design/CCC/Good-Two");
     expect(urls).toContain("https://www.figma.com/design/BAD/100%-Redesign");
+  });
+
+  it("keeps the existing folder when the rebuild fails part way through", async () => {
+    const porter = addMockFolder("2", "url-porter");
+    const existing = addMockFolder(porter.id, "figma mocks");
+    addMockBookmark(existing.id, "Previously saved", "https://www.figma.com/design/OLD/Saved", 50);
+
+    setHistory({
+      "figma.com": [
+        { url: "https://www.figma.com/design/AAA/Good-One", title: "A", lastVisitTime: 300 },
+        { url: "https://www.figma.com/design/BOOM/Explodes", title: "B", lastVisitTime: 200 },
+      ],
+    });
+
+    const passthrough = chrome.bookmarks.create.getMockImplementation();
+    chrome.bookmarks.create.mockImplementation(async (arg) => {
+      if (arg.url?.includes("/BOOM/")) throw new Error("bookmark quota exceeded");
+      return passthrough(arg);
+    });
+
+    await expect(reconcileFigmaMocks()).rejects.toThrow("bookmark quota exceeded");
+
+    // The old folder used to be deleted before the rebuild started, so a failure
+    // here left the user with nothing at all.
+    const folders = mockBookmarks.filter((b) => b.parentId === porter.id && !b.url);
+    expect(folders.map((f) => f.title)).toEqual(["figma mocks"]);
+    const survivors = mockBookmarks
+      .filter((b) => b.parentId === existing.id && b.url)
+      .map((b) => b.url);
+    expect(survivors).toEqual(["https://www.figma.com/design/OLD/Saved"]);
   });
 });

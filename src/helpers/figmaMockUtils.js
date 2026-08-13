@@ -18,6 +18,7 @@
 
 import { getBookmarkFolderName } from "./storage.js";
 import { safeDecodeURIComponent, sanitizeBookmarkTitle } from "./configUtils.js";
+import { rebuildManagedSubfolder } from "./managedFolderUtils.js";
 
 const FIGMA_MOCK_REGEX =
   /^https?:\/\/(?:www\.)?figma\.com\/(design|file|proto|board)\/([^/?#]+)\/([^/?#]+)/;
@@ -159,37 +160,28 @@ export async function reconcileFigmaMocks() {
 
   if (allMocks.size === 0) return;
 
-  // Delete the old "figma mocks" folder if it exists
-  const porterChildren = await chrome.bookmarks.getChildren(porterFolder.id);
-  const oldSubfolder = porterChildren.find((c) => !c.url && c.title === SUBFOLDER_NAME);
-  if (oldSubfolder) {
-    await chrome.bookmarks.removeTree(oldSubfolder.id);
-    console.log("[figmaMockUtils] reconcileFigmaMocks: deleted old folder");
-  }
-
-  // Find the "github repos" folder index so we can place right after it
-  const updatedChildren = await chrome.bookmarks.getChildren(porterFolder.id);
-  const githubFolder = updatedChildren.find((c) => !c.url && c.title === "github repos");
-  const insertIndex = githubFolder ? updatedChildren.indexOf(githubFolder) + 1 : 1;
-
-  const subfolder = await chrome.bookmarks.create({
-    parentId: porterFolder.id,
-    title: SUBFOLDER_NAME,
-    index: insertIndex,
-  });
-
   // Sort all mocks by title (case-insensitive)
   const sortedMocks = [...allMocks.values()].sort((a, b) =>
     a.title.toLowerCase().localeCompare(b.title.toLowerCase()),
   );
 
-  // Create bookmarks
   let added = 0;
-  for (const { title: rawTitle, url } of sortedMocks) {
-    const title = sanitizeBookmarkTitle(rawTitle);
-    await chrome.bookmarks.create({ parentId: subfolder.id, title, url });
-    added++;
-  }
+  await rebuildManagedSubfolder({
+    parentId: porterFolder.id,
+    title: SUBFOLDER_NAME,
+    // Place right after "github repos"
+    resolveIndex: (children) => {
+      const githubFolder = children.find((c) => !c.url && c.title === "github repos");
+      return githubFolder ? children.indexOf(githubFolder) + 1 : 1;
+    },
+    populate: async (folderId) => {
+      for (const { title: rawTitle, url } of sortedMocks) {
+        const title = sanitizeBookmarkTitle(rawTitle);
+        await chrome.bookmarks.create({ parentId: folderId, title, url });
+        added++;
+      }
+    },
+  });
 
   console.log("[figmaMockUtils] reconcileFigmaMocks: done. added:", added, "mocks");
 }

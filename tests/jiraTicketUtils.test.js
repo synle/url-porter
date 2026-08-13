@@ -27,6 +27,14 @@ const chrome = {
       mockBookmarks.push(node);
       return node;
     }),
+    update: vi.fn(async (id, { url, title }) => {
+      const node = mockBookmarks.find((b) => b.id === id);
+      if (node) {
+        if (url !== undefined) node.url = url;
+        if (title !== undefined) node.title = title;
+      }
+      return node;
+    }),
     removeTree: vi.fn(async (id) => {
       const toRemove = new Set();
       /**

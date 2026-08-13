@@ -18,6 +18,7 @@
 
 import { getBookmarkFolderName } from "./storage.js";
 import { sanitizeBookmarkTitle } from "./configUtils.js";
+import { rebuildManagedSubfolder } from "./managedFolderUtils.js";
 
 const SUBFOLDER_NAME = "onedrive";
 
@@ -232,48 +233,33 @@ export async function reconcileOnedrive() {
 
   if (allDocs.size === 0) return;
 
-  // Delete old folder
-  const porterChildren = await chrome.bookmarks.getChildren(porterFolder.id);
-  const oldSubfolder = porterChildren.find((c) => !c.url && c.title === SUBFOLDER_NAME);
-  if (oldSubfolder) {
-    await chrome.bookmarks.removeTree(oldSubfolder.id);
-    console.log("[onedriveUtils] reconcileOnedrive: deleted old folder");
-  }
-
-  // Place after "google drive"
-  const updatedChildren = await chrome.bookmarks.getChildren(porterFolder.id);
-  const googleDriveFolder = updatedChildren.find((c) => !c.url && c.title === "google drive");
-  const jiraFolder = updatedChildren.find((c) => !c.url && c.title === "jira tickets");
-  const figmaFolder = updatedChildren.find((c) => !c.url && c.title === "figma mocks");
-  const githubFolder = updatedChildren.find((c) => !c.url && c.title === "github repos");
-  let insertIndex;
-  if (googleDriveFolder) {
-    insertIndex = updatedChildren.indexOf(googleDriveFolder) + 1;
-  } else if (jiraFolder) {
-    insertIndex = updatedChildren.indexOf(jiraFolder) + 1;
-  } else if (figmaFolder) {
-    insertIndex = updatedChildren.indexOf(figmaFolder) + 1;
-  } else if (githubFolder) {
-    insertIndex = updatedChildren.indexOf(githubFolder) + 1;
-  } else {
-    insertIndex = 4;
-  }
-
-  const subfolder = await chrome.bookmarks.create({
-    parentId: porterFolder.id,
-    title: SUBFOLDER_NAME,
-    index: insertIndex,
-  });
-
   // Sort by most recently visited (newest first)
   const sorted = [...allDocs.values()].sort((a, b) => (b.visitTime || 0) - (a.visitTime || 0));
 
   let added = 0;
-  for (const entry of sorted) {
-    const title = sanitizeBookmarkTitle(entry.title || entry.dedupeKey);
-    await chrome.bookmarks.create({ parentId: subfolder.id, title, url: entry.url });
-    added++;
-  }
+  await rebuildManagedSubfolder({
+    parentId: porterFolder.id,
+    title: SUBFOLDER_NAME,
+    // Place after "google drive", falling back through the other managed folders
+    resolveIndex: (children) => {
+      const googleDriveFolder = children.find((c) => !c.url && c.title === "google drive");
+      const jiraFolder = children.find((c) => !c.url && c.title === "jira tickets");
+      const figmaFolder = children.find((c) => !c.url && c.title === "figma mocks");
+      const githubFolder = children.find((c) => !c.url && c.title === "github repos");
+      if (googleDriveFolder) return children.indexOf(googleDriveFolder) + 1;
+      if (jiraFolder) return children.indexOf(jiraFolder) + 1;
+      if (figmaFolder) return children.indexOf(figmaFolder) + 1;
+      if (githubFolder) return children.indexOf(githubFolder) + 1;
+      return 4;
+    },
+    populate: async (folderId) => {
+      for (const entry of sorted) {
+        const title = sanitizeBookmarkTitle(entry.title || entry.dedupeKey);
+        await chrome.bookmarks.create({ parentId: folderId, title, url: entry.url });
+        added++;
+      }
+    },
+  });
 
   console.log("[onedriveUtils] reconcileOnedrive: done. added:", added, "docs");
 }

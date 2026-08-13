@@ -11,6 +11,15 @@ vi.stubGlobal("chrome", chrome);
 
 const { reconcileGitHubRepos } = await import("../src/helpers/githubRepoUtils.js");
 
+/**
+ * Titles of the porter folder's subfolders, in their final on-disk order.
+ * @param {string} porterId - The url-porter folder ID.
+ * @returns {string[]} Subfolder titles in order.
+ */
+function subfolderOrder(porterId) {
+  return mockBookmarks.filter((b) => b.parentId === porterId && !b.url).map((b) => b.title);
+}
+
 describe("githubRepoUtils — reconcileGitHubRepos", () => {
   beforeEach(() => {
     reset();
@@ -167,18 +176,16 @@ describe("githubRepoUtils — reconcileGitHubRepos", () => {
       "github.com": [{ url: "https://github.com/acme/widget", title: "w", lastVisitTime: 1 }],
     });
     await reconcileGitHubRepos();
-    const create = chrome.bookmarks.create.mock.calls.find((c) => c[0].title === "github repos");
-    expect(create[0].index).toBe(1);
+    expect(subfolderOrder(porter.id)).toEqual(["prs", "github repos"]);
   });
 
   it("places github repos at index 0 when prs is missing", async () => {
-    addMockFolder("2", "url-porter");
+    const porter = addMockFolder("2", "url-porter");
     setHistory({
       "github.com": [{ url: "https://github.com/acme/widget", title: "w", lastVisitTime: 1 }],
     });
     await reconcileGitHubRepos();
-    const create = chrome.bookmarks.create.mock.calls.find((c) => c[0].title === "github repos");
-    expect(create[0].index).toBe(0);
+    expect(subfolderOrder(porter.id)).toEqual(["github repos"]);
   });
 
   it("skips bookmarks inside porter folder during walk", async () => {
