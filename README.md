@@ -167,13 +167,13 @@ Then load the `url-porter` folder as an unpacked extension in Chrome (see [Load 
 
 ## CI/CD
 
-| Workflow                 | Trigger                      | What it does                                                                                                   |
-| ------------------------ | ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **build-main**           | Push/PR to main              | Builds, tests, formats, deploys to GitHub Pages                                                                |
-| **build-main** (PR)      | Pull requests                | Uploads `url-porter.zip` artifact and posts a PR comment with download link                                    |
-| **release-official**     | Manual (`workflow_dispatch`) | Bumps version, builds, creates GitHub release with `url-porter.zip`, tags `v{version}`                         |
-| **release-beta**         | Manual (`workflow_dispatch`) | Creates a draft prerelease tagged `release-beta-{date}-{sha}` with beta-marked manifest, `[Success]`/`[Error]` |
-| **cleanup-artifacts**    | Weekly (Sunday)              | Deletes old artifacts, draft releases, `[Error]` releases, and stale workflow runs                             |
-| **cleanup-pr-artifacts** | PR closed                    | Cleans up artifacts from closed PRs                                                                            |
+| Workflow                 | Trigger                                | What it does                                                                                                                                                         |
+| ------------------------ | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **build-main**           | Push/PR to main or `workflow_dispatch` | Builds, tests, formats, deploys to GitHub Pages. `release-official` dispatches it to re-validate the version-bump commit (GITHUB_TOKEN pushes never fire `on: push`) |
+| **build-main** (PR)      | Pull requests                          | Uploads `url-porter.zip` artifact and posts a PR comment with download link                                                                                          |
+| **release-official**     | Manual (`workflow_dispatch`)           | Bumps version, builds, creates GitHub release with `url-porter.zip`, tags `v{version}`                                                                               |
+| **release-beta**         | Manual (`workflow_dispatch`)           | Creates a draft prerelease tagged `release-beta-{date}-{sha}` with beta-marked manifest, `[Success]`/`[Error]`                                                       |
+| **cleanup-artifacts**    | Weekly (Sunday)                        | Deletes old artifacts, draft releases, `[Error]` releases, and stale workflow runs                                                                                   |
+| **cleanup-pr-artifacts** | PR closed                              | Cleans up artifacts from closed PRs                                                                                                                                  |
 
 **Versioning:** `package.json` is the single source of truth. The manifest version (`src/manifest.json`) is automatically synced during build and bundle steps.

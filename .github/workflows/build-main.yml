@@ -1,6 +1,9 @@
 name: build-main
 
 on:
+  # Lets release-official re-validate the version-bump commit, which is pushed
+  # with GITHUB_TOKEN and therefore never fires the push trigger below.
+  workflow_dispatch:
   push:
     branches: [master, main]
   pull_request:
