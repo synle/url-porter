@@ -70,17 +70,46 @@ jobs:
       # commit ships with no build-main run. workflow_dispatch is exempt from
       # that rule, so dispatch build-main on the branch the commit was just
       # pushed to (dispatch ref accepts branch/tag names, not SHAs).
+      #
+      # The dispatch ref is resolved from a cache that lags the git server:
+      # right after a push it can still see the previous HEAD. Verify the
+      # created run's head_sha matches the pushed commit and re-dispatch until
+      # it does, so the release commit is the one that gets validated.
       - name: Trigger CI on release commit
         uses: actions/github-script@v9
         with:
           script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: "build-main.yml",
-              ref: "main",
-            });
-            core.info(`Dispatched build-main on ${'${{ steps.commit.outputs.pushed_sha }}'}`);
+            const pushedSha = '${{ steps.commit.outputs.pushed_sha }}';
+            const maxAttempts = 6;
+            const settleMs = 10000;
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+              await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: "build-main.yml",
+                ref: "main",
+              });
+              core.info(`Dispatched build-main on main (attempt ${attempt}/${maxAttempts})`);
+              await new Promise((resolve) => setTimeout(resolve, settleMs));
+              const { data } = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: "build-main.yml",
+                event: "workflow_dispatch",
+                per_page: 1,
+              });
+              const latest = data.workflow_runs[0];
+              if (latest && latest.head_sha === pushedSha) {
+                core.info(`build-main dispatched on release commit ${pushedSha}`);
+                return;
+              }
+              core.warning(
+                `Attempt ${attempt}: dispatch resolved to ${latest ? latest.head_sha : "no run"}; expected ${pushedSha}`,
+              );
+            }
+            core.setFailed(
+              `build-main never dispatched on release commit ${pushedSha} after ${maxAttempts} attempts`,
+            );
 
       # Post-build: generate notes and finalize
       - name: Generate release notes
