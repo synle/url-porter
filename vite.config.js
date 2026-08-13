@@ -46,6 +46,11 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    // Chrome refuses `<link rel="modulepreload" crossorigin>` hints on
+    // `chrome-extension://` pages ("cross-world extension resource mismatch"),
+    // so every preload Vite emits is fetched, discarded, and logged as a console
+    // warning. Extension chunks are local, so drop the hints entirely.
+    modulePreload: false,
     rollupOptions: {
       input: {
         options: resolve(__dirname, "src/pages/options/options.html"),

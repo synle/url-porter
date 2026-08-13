@@ -2,7 +2,8 @@
   "manifest_version": 3,
   "name": "URL Porter",
   "version": "1.88.0",
-  "description": "This extension lets you configure redirect rules and set a custom homepage.",
+  "description": "This extension lets you configure redirect rules and set a custom homepage. https://github.com/synle/url-porter",
+  "homepage_url": "https://github.com/synle/url-porter",
   "icons": {
     "16": "icon.png",
     "48": "icon.png",
