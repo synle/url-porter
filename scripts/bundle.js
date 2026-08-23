@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/** Bundles dist/ into url-porter.zip with a synced manifest version. */
 
 import { createWriteStream, existsSync } from "fs";
 import { readdir, stat, readFile, writeFile } from "fs/promises";
@@ -45,6 +46,7 @@ async function syncManifestVersion() {
   console.log(`✓ Set manifest.json version to ${pkg.version}`);
 }
 
+/** Zips dist/ into url-porter.zip. @returns {Promise<void>} */
 async function createZip() {
   if (!existsSync(distDir)) {
     console.error("Error: dist directory not found. Run 'npm run build' first.");

@@ -185,6 +185,12 @@ async function getTicketsFromBookmarks(porterFolderId) {
   const tickets = new Map();
   try {
     const tree = await chrome.bookmarks.getTree();
+    /**
+     * Recursively collects matching bookmark entries into the results map.
+     * @param {Array} nodes
+     * @param {boolean} insidePorter
+     * @returns {void}
+     */
     function walk(nodes, insidePorter) {
       for (const node of nodes) {
         if (node.id === porterFolderId) {

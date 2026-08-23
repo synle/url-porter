@@ -253,6 +253,7 @@ async function getPrsFromBookmarks(porterFolderId) {
   const prs = new Map();
   try {
     const tree = await chrome.bookmarks.getTree();
+    /** Recursively collects matching bookmark entries into the results map. @param {Array} nodes @returns {void} */
     function walk(nodes) {
       for (const node of nodes) {
         if (node.id === porterFolderId) continue;
