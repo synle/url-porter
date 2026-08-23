@@ -1,90 +1,70 @@
 # AGENTS
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for agents working in this repo.
 
 ## Project Overview
 
-URL Porter is a Chrome Extension (Manifest V3) that lets users configure custom URL redirect rules (short aliases → full URLs), set a custom new tab homepage, and sync config from a remote server. Built with React 19, MUI 9, and Vite 6.
+URL Porter is a Chrome Extension (Manifest V3) for custom URL redirect rules (aliases → URLs), a custom new tab homepage, and remote config sync. Built with React 19, MUI 9, Vite 6.
 
 ## Build & Development Commands
 
 ```bash
-npm run dev          # Build to dist/ in watch mode (rebuilds on file changes)
+npm run dev          # Watch-mode build to dist/
 npm run build        # One-off production build → dist/ (also generates types/)
 npm run bundle       # Create url-porter.zip from dist/
-npm run package      # build + bundle (creates url-porter.zip)
-npm run lint         # ESLint — catches undefined references, missing imports
-npm run format       # Prettier (140 char width)
-npm run validate     # Run all quality checks: test + lint + build + format
+npm run package      # build + bundle
+npm run lint         # ESLint
+npm run format       # oxfmt
+npm run validate     # test + lint + build + format
 ```
 
-Tests use Vitest: `npm test` runs all tests. Test files live in the `tests/` directory at the project root (NOT inside `src/` — build hooks can delete files there). Chrome APIs are mocked via `vi.stubGlobal`. Use fictional company names in test fixtures (Acme, Globex, Initech) and made-up ticket keys (FALCON, PLUTO, ORBIT) — never real company names. Node version is pinned to 20.19.1 via Volta.
+Tests use Vitest (`npm test`). Test files live in `tests/` at the project root (never inside `src/` — build hooks can delete files there). Chrome APIs are mocked via `vi.stubGlobal`. Use fictional names in fixtures (Acme, Globex, Initech; FALCON, PLUTO, ORBIT). Node pinned to 20.19.1 via Volta.
 
-**VSCode debugging:** `.vscode/launch.json` provides launch configs for Vitest
-run-all, Vitest debug-current-file, and a watch-mode dev build for the Chrome
-extension. Open the Run and Debug panel and pick one.
+`.vscode/launch.json` has debug configs for Vitest run-all, Vitest current-file, and a watch-mode dev build.
 
-The env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server endpoint at build time.
+Env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server URL at build time.
 
 ## Local Development with Chrome
 
-1. Run `npm run dev` — builds to `dist/` and watches for file changes.
-2. Open Chrome → `chrome://extensions/` → enable **Developer mode** → **Load unpacked** → select the `dist/` folder.
-3. Edit source files — Vite rebuilds automatically and the extension auto-reloads (no manual reload needed).
+1. `npm run dev`
+2. Chrome → `chrome://extensions/` → Developer mode → **Load unpacked** → select `dist/`.
+3. Edit files — Vite rebuilds and the extension auto-reloads.
 
-> **Tip:** Pin the extension to your toolbar (click the puzzle-piece icon → pin URL Porter) for quick access to the Add Link popup.
+Tip: pin the extension to the toolbar for quick access to the Add Link popup.
 
 ## Architecture
 
-**Extension entry points** (each is a separate Vite input with its own HTML/JSX):
+**Extension entry points** (each a separate Vite input):
 
-- `src/background/background.js` — Service worker. Manages `chrome.declarativeNetRequest` redirect rules, context menus, omnibox suggestions ("go" keyword), and message handling.
-- `src/pages/options/` — Main settings UI with "Clean" (table) and "Advanced" (full-config JSON editor via `react-simple-code-editor` + Prism.js) modes. Also configures homepage URL, bookmark folder name, history limits, and custom bookmark rules.
-- `src/pages/addlink/` — Browser action popup for quick-adding the current page as a redirect rule.
-- `src/pages/addrule/` — Standalone page for adding a bookmark rule. Opened from context menu with auto-filled fields (domain + date rule name, history keywords, URL match/dedup patterns derived from the current page URL).
-- `src/pages/newtab/` — New tab override that auto-redirects to a configured homepage.
-- `src/pages/history/` — Audit trail of redirect rule changes with search, restore, and bulk delete.
+- `src/background/background.js` — Service worker: `chrome.declarativeNetRequest` redirect rules, context menus, omnibox ("go"), message handling.
+- `src/pages/options/` — Settings UI: "Clean" (table) and "Advanced" (full-config JSON editor) modes, homepage, folder name, history limits, bookmark rules.
+- `src/pages/addlink/` — Popup to quick-add current page as a redirect rule.
+- `src/pages/addrule/` — Page to add a bookmark rule, opened from context menu with auto-filled fields derived from the current page.
+- `src/pages/newtab/` — New tab override redirecting to the configured homepage.
+- `src/pages/history/` — Audit trail of redirect rule changes (search, restore, bulk delete).
 
 **Shared helpers** (`src/helpers/`):
 
-- `storage.js` — Chrome storage API wrappers. Config rules use `chrome.storage.sync`; homepage URL, sync URL, bookmark folder name, and history use `chrome.storage.local`.
-- `configUtils.js` — Normalizes redirect entries for `declarativeNetRequest` format. Only file with TypeScript declarations (emitted to `types/`).
+- `storage.js` — Chrome storage wrappers. Config rules use `chrome.storage.sync`; homepage, sync URL, folder name, history use `chrome.storage.local`.
+- `configUtils.js` — Normalizes entries for `declarativeNetRequest`. Only file with TypeScript declarations (emitted to `types/`).
 - `historyUtils.js` — History tracking with configurable limits (5000 aliases, 20 entries per alias).
-- `configAnalysis.js` — Broken link detection and conflict/duplicate resolution. Pure functions used by the Options page for on-demand health checks.
-- `historyStatsUtils.js` — Browse history stats aggregation (most visited URLs grouped by path, stripping query strings/hashes). Used by the HistoryStatsSection component on the Options page Stats tab.
-- `fieldHelpers.js` — Shared placeholder and helper text constants for form fields (used by AddLink popup and Options dialogs).
-- `ruleDerivation.js` — Pure functions for deriving bookmark rule fields from a URL (`escapeRegex`, `deriveRuleFromUrl`). Used by the AddRule page for auto-fill.
-- `bookmarkUtils.js` — Bookmark sync. Maintains a configurable bookmark folder (default "url-porter") under Other Bookmarks that mirrors config entries. The folder name is stored in `chrome.storage.local` and editable on the Options page. Key behaviors:
-  - **Deduplicates by title** — if multiple bookmarks share the same title, the later (newer) one is kept and older duplicates are removed. Unique bookmarks not in config are never deleted.
-  - **Preserves sort order** — existing bookmarks are updated in-place; new ones are appended to the bottom.
-  - **Resolves short links** — if a `to` URL matches another alias, it expands through the chain until reaching a full URL (e.g. `a` → `aaa` → `https://aaa.com`).
+- `configAnalysis.js` — Broken link detection, conflict/duplicate resolution. Pure functions for Options page health checks.
+- `historyStatsUtils.js` — Browse history stats aggregation (most visited URLs grouped by path). Used by HistoryStatsSection on the Stats tab.
+- `fieldHelpers.js` — Shared form field placeholder/helper text constants.
+- `ruleDerivation.js` — Derives bookmark rule fields from a URL (`escapeRegex`, `deriveRuleFromUrl`). Used by AddRule page.
+- `bookmarkUtils.js` — Bookmark sync: maintains a configurable folder (default "url-porter") under Other Bookmarks mirroring config entries. Dedupes by title (later wins), preserves sort order (updates in-place, appends new), resolves short-link chains (`a` → `aaa` → full URL).
+- Bucket reconcilers (`prUtils`, `githubRepoUtils`, `figmaMockUtils`, `jiraTicketUtils`, `googleDriveUtils`, `onedriveUtils`) — each rebuilds a subfolder under the url-porter folder from browser history and bookmarks. **All bookmark walkers must skip the url-porter folder** (accept `porterFolderId`, skip matching nodes) or previously-built titles get re-parsed and data accumulates every cycle.
+- `managedFolderUtils.js` — `rebuildManagedSubfolder()`: builds a replacement in a staging folder (`<name> (updating…)`), swaps only once populated. Never `chrome.bookmarks.removeTree` your own folder first — the MV3 worker can die at any `await`, leaving no folder. Orphaned staging folders are cleaned up next run.
+- `genericBookmarkRuleUtils.js` — User-defined rules (in `chrome.storage.local` key `bookmarkRules`) generalizing the reconciler pattern: history keywords, URL match regex, dedup key regex, title cleanup, sort. Managed by BookmarkRulesSection / context menu "Add Bookmark Rule for This Site". Included in import/export. Reserved folder names blocked.
 
-**Bookmark bucket reconcilers** (`src/helpers/{prUtils,githubRepoUtils,figmaMockUtils,jiraTicketUtils,googleDriveUtils,onedriveUtils}.js`):
+**Content scripts** (`src/content/`, copied verbatim, registered in `manifest.json`): `content-utils.js` (error page detection, staggered reload), `pr-status-github.js` (github.com, _.githubprivate.com, *.ghe.com → `Myevent.prStatus`), `pr-status-azure.js` (*.visualstudio.com, dev.azure.com → same `dedupeKey` for both URL formats), `jira-status.js` (_.atlassian.net/browse/* → `Myevent.jiraStatus`), `keep.js` (markdown preview button in Keep note modals), `fav.js` (bookmark export for synle.github.io/fav via `Myevent.getBookmarks`).
 
-Each reconciler scans browser history and bookmarks, then rebuilds a subfolder under the url-porter folder (e.g. "jira tickets", "prs", "github repos"). Key design rule: **all bookmark walkers must skip the url-porter folder** (by accepting `porterFolderId` and `continue`-ing when `node.id` matches) to prevent a feedback loop where previously-built bookmark titles get re-parsed and accumulate data (e.g. dates appending on each reconciliation cycle).
+**Data flows**:
 
-**Crash-safe folder rebuilds** (`src/helpers/managedFolderUtils.js`):
+- Status tracking: content script detects status → message to background → stored in `chrome.storage.local` (`prStatuses` / `jiraStatuses`, keyed by canonical URL) → reconcilers prefix titles with status emoji. Priority: stored > old title prefix > none.
+- Config: UI saves → `storage.js` → `"Myevent.updateConfig"` message → background updates dynamic rules → history logged → bookmarks reconciled.
 
-Every reconciler swaps its subfolder through `rebuildManagedSubfolder()`. It builds the replacement in a staging folder (titled `<name> (updating…)`) and only removes the live folder once the replacement is fully populated, then renames staging into place. Reconcilers must **never** call `chrome.bookmarks.removeTree` on their own folder first: the MV3 service worker can be terminated at any `await`, so a delete-then-rebuild leaves the user with no folder at all. A staging folder orphaned by an interrupted run is cleaned up by the next reconcile. `resolveIndex(children)` receives the porter folder's children _including_ the folder being replaced — removing it afterwards does not shift the staging folder relative to its remaining siblings.
-
-**Generic bookmark rule reconciler** (`src/helpers/genericBookmarkRuleUtils.js`):
-
-User-configurable bookmark rules stored in `chrome.storage.local` under `bookmarkRules`. Each rule defines history search keywords, a URL match regex, a dedup key extraction regex, title cleanup patterns, and sort preferences. The generic reconciler generalizes the 5-step pattern (search history, walk bookmarks, dedup, stage rebuild, swap) into a single reusable function. Rules are managed via the `BookmarkRulesSection` component on the Options page (which uses the `BookmarkRuleForm` reusable component) and can also be added via the context menu "Add Bookmark Rule for This Site" action (opens `src/pages/addrule/`). Rules are included in import/export. Reserved folder names (prs, github repos, etc.) are blocked to prevent conflicts with hardcoded reconcilers.
-
-**Content scripts** (`src/content/`) — copied verbatim (not Vite inputs). Each registered in `manifest.json`:
-
-- `content-utils.js` — Shared utilities loaded before other content scripts. Provides error page detection and staggered reload with backoff.
-- `pr-status-github.js` — Detects PR status (merged/closed/open) on GitHub pages (`github.com`, `*.githubprivate.com`, `*.ghe.com`) and sends `Myevent.prStatus` to background.
-- `pr-status-azure.js` — Same for Azure DevOps (`*.visualstudio.com`, `dev.azure.com/{org}`). Both Azure URL formats share the same `dedupeKey` for deduplication.
-- `jira-status.js` — Detects Jira ticket status on Atlassian Cloud (`*.atlassian.net/browse/*`) and sends `Myevent.jiraStatus` to background.
-- `keep.js` — Google Keep content script that injects a markdown preview button into note modals.
-- `fav.js` — Content script for `synle.github.io/fav/` that exports bookmark data from url-porter subfolders via `Myevent.getBookmarks`.
-
-**Status tracking data flow**: Content scripts detect status on PR/Jira pages → send message to background → statuses stored in `chrome.storage.local` under `prStatuses` / `jiraStatuses` keys (keyed by canonical URL) → reconcilers prefix bookmark titles with status emoji. Status priority: stored (content script) > old bookmark title prefix > none.
-
-**Data flow**: UI saves config → `storage.js` → sends `"Myevent.updateConfig"` message → `background.js` updates `chrome.declarativeNetRequest.updateDynamicRules()` → history logged → bookmark folder reconciled.
-
-**Full config JSON format** (used in Advanced Mode editor, export, and import):
+**Full config JSON** (Advanced Mode editor, export, import; plain `[]` configs array also accepted for backward compat):
 
 ```json
 {
@@ -101,75 +81,58 @@ User-configurable bookmark rules stored in `chrome.storage.local` under `bookmar
 }
 ```
 
-The Advanced Mode editor and export/import use this single object. For backward compatibility, a plain `[]` configs array is also accepted in the Advanced Mode editor.
+**Theme** (`src/theme.jsx`): auto light/dark, animations disabled, compact sizing, ripple disabled.
 
-**Theme** (`src/theme.jsx`): MUI theme with auto light/dark mode detection, all animations disabled, compact sizing (small defaults for all components), and ripple disabled.
+## Build System
 
-## Build System Details
+`vite.config.js` post-build plugins copy the manifest, move generated HTML to `dist/pages/[name]/`, fix asset paths, clean up `dist/src/`. Output must match paths in `manifest.json`.
 
-`vite.config.js` has custom post-build plugins that:
+Content scripts are not Vite inputs — add a `copyFileSync` call in `vite.config.js` and register in `manifest.json`.
 
-1. Copy `src/manifest.json` to `dist/`
-2. Move generated HTML files to their expected extension paths (`dist/pages/[name]/`)
-3. Fix relative asset paths in the moved HTML files
-4. Clean up temporary `dist/src/` directory
+In dev mode (`--watch`), manifest name becomes "URL Porter (DEV)" and `dev-reload.js` polls a timestamp file to trigger reload. Dev-only.
 
-Output structure must match paths declared in `manifest.json`. Be careful when modifying build config or adding new pages.
+Versioning: `package.json` is the single source of truth; `src/manifest.json` and `dist/manifest.json` sync during build/bundle. Version bumps happen only in release-official, never during CI builds.
 
-Content scripts (`src/content/`) are **not** Vite inputs — they are copied verbatim by the `copy-manifest` plugin. If adding new content scripts, add a `copyFileSync` call in `vite.config.js` and register them in `src/manifest.json`.
+## Quality Checklist (mandatory)
 
-In dev/watch mode (`--watch`), the manifest's `name` is automatically changed to "URL Porter (DEV)" to distinguish from production builds. A dev-reload mechanism (`src/background/dev-reload.js`) is also injected — it polls a timestamp file and calls `chrome.runtime.reload()` on changes. This is dev-only and not included in production builds.
+After every change:
 
-## Quality Checklist (mandatory, non-negotiable)
-
-After every change, you MUST:
-
-1. **Run `npm run validate`** — runs test, lint, build, and format in sequence. All must pass before considering a change complete. This is enforced by hooks in `.claude/settings.json`.
-2. **Add JSDoc** — Mandatory on ALL functions, constants, types, and interfaces in every change — JavaScript and TypeScript alike. Script files must start with `/** Description. */` file header (note: `/**` not `/** *`). No exceptions.
-3. **Update README** — When adding or updating a feature, update `README.md` to reflect the change (features list, project structure, scripts table, etc.).
+1. Run `npm run validate` — all checks must pass (enforced by `.claude/settings.json` hooks).
+2. Add JSDoc to all functions, constants, types, interfaces. Script files start with `/** Description. */` header.
+3. Update README.md when adding or changing features.
 
 ## Status Emoji Convention
 
-These 4 emojis are the standard status icons used in bookmark title prefixes across reconcilers (PRs, Jira tickets). Reuse them for any future status tracking:
+Standard status icons in bookmark title prefixes; reuse for any future status tracking:
 
-| Emoji | Unicode        | Name                   | Meaning                           |
-| ----- | -------------- | ---------------------- | --------------------------------- |
-| 🔵    | `\uD83D\uDD35` | LARGE BLUE CIRCLE      | In progress / active / open       |
-| ✅    | `\u2705`       | WHITE HEAVY CHECK MARK | Done / closed / resolved / merged |
-| ⚪    | `\u26AA`       | MEDIUM WHITE CIRCLE    | Not started / to do / backlog     |
-| ❌    | `\u274C`       | CROSS MARK             | Blocked / abandoned / failed      |
+| Emoji | Meaning                      |
+| ----- | ---------------------------- |
+| 🔵    | In progress / active / open  |
+| ✅    | Done / closed / merged       |
+| ⚪    | Not started / backlog        |
+| ❌    | Blocked / abandoned / failed |
 
 ## CI/CD
 
-- **build-main** (`build-main.yml`): Runs on push/PR to main. Uses reusable workflow from `synle/workflows` which auto-detects and runs `package-syle`, formats code, commits changes, and deploys to GitHub Pages. On PRs, a separate `pr-artifacts` job uploads the zip and posts a download comment.
-- **release-official** (`release-official.yml`): Manual `workflow_dispatch` only. Uses shared release actions from `synle/workflows/actions/release/`. Flow: bump version (`npm version minor`) → resolve tag → create draft → build (`package-syle`) → commit version bump → generate changelog → finalize (publish release with `url-porter.zip`). Tag format: `v{version}`. Use the `/release-official` skill to trigger interactively.
-- **release-beta** (`release-beta.yml`): Manual `workflow_dispatch` only. Uses shared release actions from `synle/workflows/actions/release/`. Flow: resolve beta tag → create draft → mark manifest as beta → build → restore manifest → generate changelog → finalize (draft prerelease with `[Success]`/`[Error]`). Tag format: `release-beta-{date}-{sha}`. Manifest name set to "URL Porter (Beta)". Use the `/release-beta` skill to trigger interactively.
-- **Versioning**: `package.json` is the single source of truth. `src/manifest.json` and `dist/manifest.json` are synced automatically during build (by `vite.config.js` `copy-manifest` plugin) and bundle (by `scripts/bundle.js`). Version bumping only happens in the release-official workflow, never during CI builds.
-- **cleanup-artifacts** / **cleanup-pr-artifacts**: Scheduled and PR-close cleanup workflows.
+- **build-main**: push/PR to main. Reusable workflow from `synle/workflows`: runs `package-syle`, formats, commits, deploys to GitHub Pages. PRs get a zip artifact + download comment.
+- **release-official**: manual dispatch only. Bumps version (`npm version minor`) → draft → build → changelog → publish `url-porter.zip`, tag `v{version}`. Use `/release-official`.
+- **release-beta**: manual dispatch only. Beta-marked draft prerelease, tag `release-beta-{date}-{sha}`, name "URL Porter (Beta)". Use `/release-beta`.
+- **cleanup-artifacts / cleanup-pr-artifacts**: scheduled and PR-close cleanup.
 
 ## GitHub Raw File URLs
 
-When fetching raw file content from GitHub repos, always use the `?raw=1` blob URL format:
-
-```
-https://github.com/{owner}/{repo}/blob/head/{path}?raw=1
-```
-
-Do NOT use:
-
-- `https://api.github.com/repos/{owner}/{repo}/contents/{path}` (GitHub Contents API)
-- `https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}`
+Fetch raw file content via `https://github.com/{owner}/{repo}/blob/head/{path}?raw=1` — never the Contents API or raw.githubusercontent.com.
 
 ## Key Conventions
 
-- ES modules throughout (`"type": "module"` in package.json and manifest.json background)
-- React state management via hooks only (no external state library)
-- URL normalization: `from` fields get `||` prefix and `^` suffix at redirect rule build time (in `normalizeFrom`); `to` fields get `https://` if no protocol
-- All UI pages share `src/theme.jsx` for consistent styling — component sizes default to "small" globally via theme, so avoid setting `size="small"` on individual components
-- Settings that auto-save on blur (homepage URL, bookmark folder name, history limits) send `"Myevent.updateConfig"` message to trigger background reconciliation
-- No Monaco Editor — use `react-simple-code-editor` + Prism.js for the JSON editor (Monaco doesn't work in Chrome extensions)
+- ES modules throughout (`"type": "module"` in package.json and manifest background).
+- React state via hooks only.
+- URL normalization: `from` gets `||` prefix and `^` suffix (`normalizeFrom`); `to` gets `https://` if no protocol.
+- All pages share `src/theme.jsx`; component sizes default to small globally — don't set `size="small"` per component.
+- Settings that auto-save on blur send `"Myevent.updateConfig"` to trigger background reconciliation.
+- JSON editor uses `react-simple-code-editor` + Prism.js (Monaco doesn't work in extensions).
 
 ## Git / PR Merge Policy
 
-- Always use **squash and merge** when merging PRs. Never use merge commits or rebase merges. This keeps the git history clean with one commit per PR.
-- You may `git merge origin/main` or `git merge origin/master` locally to sync branches, but PR merges must always be squash merges.
+- Squash merge only — one commit per PR, no merge or rebase merges.
+- Local branch sync via `git merge origin/main` is fine; PR merges stay squash.

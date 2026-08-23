@@ -16,7 +16,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "text-summary", "json-summary", "html"],
       reportsDirectory: "coverage",
-      // Explicit source globs only — never `**/*` (rule 41).
+      // Explicit source globs only — never `**/*`.
       include: ["src/**/*.{js,jsx,ts,tsx}"],
       exclude: [
         "src/**/*.{test,spec}.{js,jsx,ts,tsx}",
