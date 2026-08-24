@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "no-empty": "off",
+    "no-unused-vars": "off",
+    "react/react-in-jsx-scope": "off",
+    "react/immutability": "off",
+    "react/set-state-in-effect": "off"
+  },
+  "ignorePatterns": [
+    ".claude/**",
+    "coverage/**",
+    "dist/**",
+    "types/**",
+    "node_modules/**",
+    "src/content/**"
+  ]
+}
