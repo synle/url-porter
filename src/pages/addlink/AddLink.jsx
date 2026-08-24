@@ -51,10 +51,6 @@ function AddLinkContent() {
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const fromInputRef = useRef(null);
 
-  useEffect(() => {
-    detectContextAndPrefill();
-  }, []);
-
   /**
    * Detects the opening context (query params or active tab) and prefills the form fields.
    * @returns {Promise<void>}
@@ -96,6 +92,13 @@ function AddLinkContent() {
 
     setTimeout(() => fromInputRef.current?.focus(), 100);
   };
+
+  useEffect(() => {
+    const boot = async () => {
+      await detectContextAndPrefill();
+    };
+    boot();
+  }, []);
 
   /**
    * Validates the form inputs and saves the new link, or prompts on duplicate.

@@ -37,19 +37,6 @@ function getProject(ticketKey) {
 }
 
 /**
- * Format a timestamp as yyyy-MM.
- * @param {number} ts
- * @returns {string}
- */
-function formatDate(ts) {
-  if (!ts) return "";
-  const d = new Date(ts);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  return `${yyyy}-${mm}`;
-}
-
-/**
  * Parse a Jira URL into { ticketKey, url } or null.
  * Strips query strings, hash fragments, and trailing slashes.
  * @param {string} url

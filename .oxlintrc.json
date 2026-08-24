@@ -5,18 +5,11 @@
     "correctness": "error"
   },
   "rules": {
-    "no-empty": "off",
-    "no-unused-vars": "off",
+    "no-empty": "error",
+    "no-unused-vars": "error",
     "react/react-in-jsx-scope": "off",
-    "react/immutability": "off",
-    "react/set-state-in-effect": "off"
+    "react/immutability": "error",
+    "react/set-state-in-effect": "error"
   },
-  "ignorePatterns": [
-    ".claude/**",
-    "coverage/**",
-    "dist/**",
-    "types/**",
-    "node_modules/**",
-    "src/content/**"
-  ]
+  "ignorePatterns": [".claude/**", "coverage/**", "dist/**", "types/**", "node_modules/**"]
 }

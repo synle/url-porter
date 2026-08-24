@@ -21,10 +21,6 @@ function AddRuleContent() {
   const [prefillRule, setPrefillRule] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
-  useEffect(() => {
-    init();
-  }, []);
-
   /**
    * Load existing rule names and derive auto-fill from URL params.
    * @returns {Promise<void>}
@@ -56,6 +52,13 @@ function AddRuleContent() {
       setPrefillRule(null);
     }
   };
+
+  useEffect(() => {
+    const boot = async () => {
+      await init();
+    };
+    boot();
+  }, []);
 
   /**
    * Save the new rule to storage and close the page.
@@ -125,6 +128,7 @@ function AddRuleContent() {
 
         <Paper sx={{ p: 2.5 }} elevation={0}>
           <BookmarkRuleForm
+            key={prefillRule ? "prefilled" : "empty"}
             rule={prefillRule}
             existingNames={existingNames}
             onSave={handleSave}

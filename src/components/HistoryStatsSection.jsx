@@ -92,7 +92,11 @@ export default function HistoryStatsSection({ showSnackbar }) {
   );
 
   useEffect(() => {
-    loadSettings().then(({ months }) => fetchHistoryStats({ months }));
+    const boot = async () => {
+      const { months } = await loadSettings();
+      await fetchHistoryStats({ months });
+    };
+    boot();
   }, [loadSettings, fetchHistoryStats]);
 
   /** Filtered, sorted, and capped entries for display. */
@@ -333,7 +337,6 @@ export default function HistoryStatsSection({ showSnackbar }) {
           </Box>
         ) : (
           filteredEntries.map((entry, idx) => {
-            const hasVariants = entry.variants.length > 1;
             const isExpanded = expandedRows.has(entry.strippedUrl);
             return (
               <Box key={entry.strippedUrl}>

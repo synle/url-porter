@@ -139,7 +139,6 @@ describe("githubRepoUtils — reconcileGitHubRepos", () => {
       ],
     });
     await reconcileGitHubRepos();
-    const repoFolder = mockBookmarks.find((b) => b.title === "github repos");
     // Should have just one entry under github repos (deduped by canonical URL)
     const allBms = mockBookmarks.filter(
       (b) =>

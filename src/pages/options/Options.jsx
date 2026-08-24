@@ -60,7 +60,6 @@ import CodeIcon from "@mui/icons-material/Code";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import HistoryIcon from "@mui/icons-material/History";
 import BarChartIcon from "@mui/icons-material/BarChart";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import AddLinkIcon from "@mui/icons-material/AddLink";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
@@ -185,10 +184,6 @@ function OptionsContent() {
 
   const fromInputRef = useRef(null);
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
   /**
    * Loads all settings (config, homepage, history limits, bookmark folder) from storage into state.
    * @returns {Promise<void>}
@@ -226,6 +221,13 @@ function OptionsContent() {
     setEditorContent(json);
     setLastSavedEditorContent(json);
   };
+
+  useEffect(() => {
+    const boot = async () => {
+      await loadSettings();
+    };
+    boot();
+  }, []);
 
   /**
    * Displays a snackbar notification.
@@ -490,7 +492,7 @@ function OptionsContent() {
       chrome.runtime.sendMessage({ type: "Myevent.updateConfig" });
       await loadSettings();
       showSnackbar("Settings saved!");
-    } catch (err) {
+    } catch {
       setJsonErrorDialogOpen(true);
     }
   };

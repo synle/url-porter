@@ -2,9 +2,8 @@
 /** Bundles dist/ into url-porter.zip with a synced manifest version. */
 
 import { createWriteStream, existsSync } from "fs";
-import { readdir, stat, readFile, writeFile } from "fs/promises";
-import { join, relative } from "path";
-import { createGzip } from "zlib";
+import { readFile, writeFile } from "fs/promises";
+import { join } from "path";
 import archiver from "archiver";
 import { fileURLToPath } from "url";
 import { dirname } from "path";

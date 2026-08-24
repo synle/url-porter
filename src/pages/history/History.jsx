@@ -61,10 +61,6 @@ function HistoryContent() {
   const [restoreAllDialogOpen, setRestoreAllDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
-  useEffect(() => {
-    loadHistory();
-  }, []);
-
   /**
    * Loads all history entries from storage and updates state.
    * @returns {Promise<void>}
@@ -73,6 +69,13 @@ function HistoryContent() {
     const history = await getHistoryAsFlat();
     setEntries(history);
   };
+
+  useEffect(() => {
+    const boot = async () => {
+      await loadHistory();
+    };
+    boot();
+  }, []);
 
   const filteredEntries = useMemo(() => {
     if (!searchQuery.trim()) return entries;

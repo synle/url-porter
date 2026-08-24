@@ -66,13 +66,13 @@ function detectStatus() {
     if (BLOCKED_RE.test(text)) return "blocked";
 
     // Closed / Done / Resolved / Won't Fix / Won't Do
-    if (CLOSED_RE.test(text)) return "closed";
+    if (CLOSED_PHRASE_RE.test(text)) return "closed";
 
     // In progress
     if (IN_PROGRESS_RE.test(text)) return "in_progress";
 
     // Not started
-    if (NOT_STARTED_RE.test(text)) return "not_started";
+    if (NOT_STARTED_PHRASE_RE.test(text)) return "not_started";
   }
 
   return null;

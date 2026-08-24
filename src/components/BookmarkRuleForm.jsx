@@ -1,5 +1,5 @@
 /** Reusable form for creating/editing a bookmark reconciler rule. */
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Box,
   TextField,
@@ -36,6 +36,9 @@ const DEFAULT_EXAMPLE = {
 /**
  * Form component for adding or editing a bookmark rule.
  *
+ * State is initialized from `rule` on mount only. To edit a different rule,
+ * the parent must remount this form (pass a `key` derived from the rule).
+ *
  * @param {object} props
  * @param {object|null} props.rule - Existing rule to edit, or null for a new rule
  * @param {string[]} props.existingNames - Names of existing rules (for duplicate checking)
@@ -51,27 +54,22 @@ export default function BookmarkRuleForm({
   onCancel,
   showSnackbar,
 }) {
-  const [formName, setFormName] = useState(DEFAULT_EXAMPLE.name);
-  const [formKeywords, setFormKeywords] = useState(DEFAULT_EXAMPLE.historyKeywords);
-  const [formUrlMatch, setFormUrlMatch] = useState(DEFAULT_EXAMPLE.urlMatchPattern);
-  const [formDedupeKey, setFormDedupeKey] = useState(DEFAULT_EXAMPLE.dedupeKeyPattern);
-  const [formTitleStrip, setFormTitleStrip] = useState(DEFAULT_EXAMPLE.titleStripPatterns);
-  const [formSortField, setFormSortField] = useState("visitTime");
-  const [formSortDirection, setFormSortDirection] = useState("desc");
-  const [formEnabled, setFormEnabled] = useState(true);
-
-  useEffect(() => {
-    if (rule) {
-      setFormName(rule.name || "");
-      setFormKeywords((rule.historyKeywords || []).join(", "));
-      setFormUrlMatch(rule.urlMatchPattern || "");
-      setFormDedupeKey(rule.dedupeKeyPattern || "");
-      setFormTitleStrip((rule.titleStripPatterns || []).join("\n"));
-      setFormSortField(rule.sortField || "visitTime");
-      setFormSortDirection(rule.sortDirection || "desc");
-      setFormEnabled(rule.enabled !== false);
-    }
-  }, [rule]);
+  const [formName, setFormName] = useState(rule ? rule.name || "" : DEFAULT_EXAMPLE.name);
+  const [formKeywords, setFormKeywords] = useState(
+    rule ? (rule.historyKeywords || []).join(", ") : DEFAULT_EXAMPLE.historyKeywords,
+  );
+  const [formUrlMatch, setFormUrlMatch] = useState(
+    rule ? rule.urlMatchPattern || "" : DEFAULT_EXAMPLE.urlMatchPattern,
+  );
+  const [formDedupeKey, setFormDedupeKey] = useState(
+    rule ? rule.dedupeKeyPattern || "" : DEFAULT_EXAMPLE.dedupeKeyPattern,
+  );
+  const [formTitleStrip, setFormTitleStrip] = useState(
+    rule ? (rule.titleStripPatterns || []).join("\n") : DEFAULT_EXAMPLE.titleStripPatterns,
+  );
+  const [formSortField, setFormSortField] = useState(rule?.sortField || "visitTime");
+  const [formSortDirection, setFormSortDirection] = useState(rule?.sortDirection || "desc");
+  const [formEnabled, setFormEnabled] = useState(rule ? rule.enabled !== false : true);
 
   /**
    * Auto-fill History Keywords from URL Match Pattern when keywords are empty.

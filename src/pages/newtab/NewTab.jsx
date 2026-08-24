@@ -21,9 +21,14 @@ function NewTabContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
 
-  useEffect(() => {
-    redirectToHomepage();
-  }, []);
+  /**
+   * Reveal the welcome screen.
+   * @returns {void}
+   */
+  function showWelcome() {
+    setIsLoading(false);
+    setShowContent(true);
+  }
 
   /**
    * Redirects the current tab to the configured homepage URL, or shows fallback content.
@@ -75,14 +80,12 @@ function NewTabContent() {
     }
   };
 
-  /**
-   * Reveal the welcome screen.
-   * @returns {void}
-   */
-  const showWelcome = () => {
-    setIsLoading(false);
-    setShowContent(true);
-  };
+  useEffect(() => {
+    const boot = async () => {
+      await redirectToHomepage();
+    };
+    boot();
+  }, []);
 
   if (isLoading || !showContent) {
     return null;

@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import { createChromeMock } from "./_chromeMock.js";
 
-const { chrome, storageData, reset } = createChromeMock();
+const { chrome, reset } = createChromeMock();
 vi.stubGlobal("chrome", chrome);
 
 // jsdom doesn't implement URL.createObjectURL — stub for the export-to-CSV path.

@@ -38,10 +38,6 @@ export default function BookmarkRulesSection({ showSnackbar }) {
   const [deletingRuleId, setDeletingRuleId] = useState(null);
   const [editingRule, setEditingRule] = useState(null);
 
-  useEffect(() => {
-    loadRules();
-  }, []);
-
   /**
    * Load bookmark rules from storage into state.
    * @returns {Promise<void>}
@@ -50,6 +46,13 @@ export default function BookmarkRulesSection({ showSnackbar }) {
     const stored = await getBookmarkRules();
     setRules(stored);
   };
+
+  useEffect(() => {
+    const boot = async () => {
+      await loadRules();
+    };
+    boot();
+  }, []);
 
   /**
    * Save rules to storage and notify background to reconcile.
@@ -169,6 +172,7 @@ export default function BookmarkRulesSection({ showSnackbar }) {
         <DialogTitle>{editingRule ? "Edit Bookmark Rule" : "Add Bookmark Rule"}</DialogTitle>
         <DialogContent>
           <BookmarkRuleForm
+            key={editingRule ? editingRule.id : "new"}
             rule={editingRule}
             existingNames={rules.map((r) => r.name)}
             onSave={handleFormSave}

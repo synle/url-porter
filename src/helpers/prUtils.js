@@ -48,19 +48,6 @@ function toTitleCase(str) {
 }
 
 /**
- * Format a timestamp as m/yy (e.g. 3/26).
- * @param {number} ts
- * @returns {string}
- */
-function formatDate(ts) {
-  if (!ts) return "";
-  const d = new Date(ts);
-  const m = d.getMonth() + 1;
-  const yy = String(d.getFullYear()).slice(2);
-  return `${m}/${yy}`;
-}
-
-/**
  * Parse a GitHub PR URL into { org, repo, prNumber, url } or null.
  * Supports github.com and *.githubprivate.com (GitHub Enterprise).
  * @param {string} url

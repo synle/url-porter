@@ -72,7 +72,9 @@ function parseOnedriveUrl(rawUrl) {
         const canonical = `${base}?resid=${resid}`;
         return { dedupeKey: resid.toLowerCase(), url: canonical };
       }
-    } catch {}
+    } catch {
+      // new URL() only throws on malformed input; fall through to the cleaned URL below.
+    }
     const cleanUrl = rawUrl.split("?")[0].split("#")[0].replace(/\/+$/, "");
     return { dedupeKey: cleanUrl.toLowerCase(), url: cleanUrl };
   }
