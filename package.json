@@ -1,6 +1,6 @@
 {
   "name": "url-porter",
-  "version": "1.98.0",
+  "version": "1.99.0",
   "description": "This extension lets you configure redirect rules and set a custom homepage. https://github.com/synle/url-porter",
   "homepage": "https://github.com/synle/url-porter",
   "bugs": {
