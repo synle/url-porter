@@ -106,7 +106,7 @@ src/
 tests/               # Vitest test files (Chrome APIs mocked via vi.stubGlobal)
 ```
 
-Tech stack: React 19, Vite 6, MUI 9, Vitest, Chrome Manifest V3 (`declarativeNetRequest`, storage, bookmarks, history, omnibox).
+Tech stack: React 19, Vite 8, MUI 9, Vitest, Chrome Manifest V3 (`declarativeNetRequest`, storage, bookmarks, history, omnibox).
 
 ## Installation
 
