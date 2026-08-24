@@ -3,7 +3,7 @@ import { defineConfig } from "vite";
 import { resolve, dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync, rmSync } from "fs";
-import react from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react-swc";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
