@@ -12,13 +12,13 @@ Last measured against: oxlint 1.79.0, repo at v1.97.0 (2026-08-24).
 `.oxlintrc.json` enables the `react` plugin, sets `categories.correctness`
 to `error`, and turns off five rules:
 
-| Rule                          | Why it was turned off                                            |
-| ----------------------------- | ---------------------------------------------------------------- |
-| `no-empty`                    | One empty catch-style block in `onedriveUtils.js`                |
-| `no-unused-vars`              | 11 unused vars/params across scripts, src, and tests             |
-| `react/react-in-jsx-scope`    | False positives: build uses the automatic JSX runtime            |
-| `react/immutability`          | 6 self-referencing callback patterns flagged                     |
-| `react/set-state-in-effect`   | 2 synchronous setState calls inside effects                      |
+| Rule                        | Why it was turned off                                 |
+| --------------------------- | ----------------------------------------------------- |
+| `no-empty`                  | One empty catch-style block in `onedriveUtils.js`     |
+| `no-unused-vars`            | 11 unused vars/params across scripts, src, and tests  |
+| `react/react-in-jsx-scope`  | False positives: build uses the automatic JSX runtime |
+| `react/immutability`        | 6 self-referencing callback patterns flagged          |
+| `react/set-state-in-effect` | 2 synchronous setState calls inside effects           |
 
 `ignorePatterns` also excludes `src/content/**`. Verified: content scripts
 produce **0** findings when the ignore is removed, so the exclusion is stale
