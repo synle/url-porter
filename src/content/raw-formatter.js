@@ -29,6 +29,10 @@
     if (el !== pre) /** @type {HTMLElement} */ (el).style.display = "none";
   }
   pre.style.display = "block";
+  // Fixed box model / size so formatted output lines up regardless of Chrome's default <pre> styling.
+  pre.style.padding = "0";
+  pre.style.margin = "0";
+  pre.style.fontSize = "1rem";
 
   /** Apply wrap + font styles to the <pre>; formatted output is always monospace. @returns {void} */
   function applyPreStyle() {
@@ -88,10 +92,13 @@
 
   // UI lives in a shadow root so page CSS can't touch it.
   const host = document.createElement("div");
-  host.style.cssText = "position:fixed;bottom:12px;right:12px;z-index:2147483647;";
+  // user-select:none keeps the button out of Cmd/Ctrl+A and mouse selections of the page content.
+  host.style.cssText =
+    "position:fixed;bottom:12px;right:12px;z-index:2147483647;user-select:none;-webkit-user-select:none;";
   const root = host.attachShadow({ mode: "open" });
   root.innerHTML = `
     <style>
+      :host, * { user-select:none; -webkit-user-select:none; }
       .wrap { display:flex; font:12px system-ui,sans-serif; box-shadow:0 1px 4px rgba(0,0,0,.3); border-radius:4px; position:relative; }
       button { font:inherit; border:0; background:#1976d2; color:#fff; padding:4px 8px; cursor:pointer; }
       button:hover { background:#1565c0; }
@@ -106,7 +113,7 @@
       .err { color:#c62828; background:#fff; padding:2px 6px; margin-bottom:2px; font:11px system-ui,sans-serif; max-width:320px; border-radius:4px; }
     </style>
     <div class="err" hidden></div>
-    <div class="wrap"><button class="main"></button><button class="caret" title="Choose syntax / wrapping">&#9652;</button><div class="menu"></div></div>`;
+    <div class="wrap"><button class="main"></button><button class="caret" title="Choose syntax / wrapping. Cmd/Ctrl/Alt+S format, Cmd/Ctrl/Alt+C copy all">&#9652;</button><div class="menu"></div></div>`;
   /** @type {HTMLButtonElement} */
   const mainBtn = root.querySelector(".main");
   /** @type {HTMLButtonElement} */
@@ -160,19 +167,52 @@
     render();
   }
 
-  mainBtn.addEventListener("click", () => {
+  mainBtn.addEventListener("click", () => toggleFormat());
+  caretBtn.addEventListener("click", () => menu.classList.toggle("open"));
+  /** Toggle between formatted and raw content. @returns {Promise<void> | void} */
+  function toggleFormat() {
     if (!formatted) return applyFormat();
     pre.textContent = original;
     formatted = false;
     render();
-  });
-  caretBtn.addEventListener("click", () => menu.classList.toggle("open"));
-  // Cmd+Shift+Enter (macOS) or Ctrl+Shift+Enter (any OS) toggles soft wrap.
+  }
+
+  /**
+   * Copy the whole currently displayed content (raw or formatted) to the clipboard.
+   * @returns {void}
+   */
+  function copyAll() {
+    navigator.clipboard.writeText(pre.textContent).catch((err) => {
+      console.warn("url-porter: copy failed", err);
+    });
+  }
+
+  // Keyboard shortcuts (only registered on pages we can format):
+  // - Cmd/Ctrl+Shift+Enter: toggle soft wrap.
+  // - Cmd/Ctrl+S or Alt+S: toggle format / raw.
+  // - Cmd/Ctrl+C or Alt+C: copy the entire content (unless the user selected part of it).
+  // e.code is used because macOS Option+letter yields a symbol in e.key.
   document.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter" || !e.shiftKey || e.altKey || !(e.metaKey || e.ctrlKey)) return;
-    e.preventDefault();
-    wrap = !wrap;
-    render();
+    const mod = e.metaKey || e.ctrlKey;
+    if (e.key === "Enter" && e.shiftKey && !e.altKey && mod) {
+      e.preventDefault();
+      wrap = !wrap;
+      render();
+      return;
+    }
+    if (e.shiftKey || !(mod || e.altKey) || (mod && e.altKey)) return;
+    if (e.code === "KeyS") {
+      e.preventDefault();
+      toggleFormat();
+      return;
+    }
+    if (e.code === "KeyC") {
+      const sel = String(window.getSelection() || "");
+      const partial = mod && sel !== "" && sel !== pre.textContent;
+      if (partial) return; // keep native copy of a partial selection
+      e.preventDefault();
+      copyAll();
+    }
   });
   render();
   document.documentElement.appendChild(host);
