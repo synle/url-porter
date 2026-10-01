@@ -122,6 +122,7 @@
     applyPreStyle();
     const wrapItem = document.createElement("div");
     wrapItem.textContent = `${wrap ? "\u2713" : "\u2003"} Wrap lines`;
+    wrapItem.title = "Cmd+Shift+Enter (macOS) / Ctrl+Shift+Enter";
     wrapItem.addEventListener("click", () => {
       wrap = !wrap;
       menu.classList.remove("open");
@@ -166,6 +167,13 @@
     render();
   });
   caretBtn.addEventListener("click", () => menu.classList.toggle("open"));
+  // Cmd+Shift+Enter (macOS) or Ctrl+Shift+Enter (any OS) toggles soft wrap.
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || !e.shiftKey || e.altKey || !(e.metaKey || e.ctrlKey)) return;
+    e.preventDefault();
+    wrap = !wrap;
+    render();
+  });
   render();
   document.documentElement.appendChild(host);
 })();
