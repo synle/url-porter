@@ -20,6 +20,24 @@
       text: original,
     }) || FALLBACK_LANGUAGE;
   let formatted = false;
+  /** Whether long lines soft-wrap. Chrome's raw view wraps by default. @type {boolean} */
+  let wrap = true;
+
+  // Hide Chrome's own JSON viewer chrome (the "Pretty-print" checkbox + its formatted pane, Chrome 131+);
+  // it's injected as body siblings of the raw <pre>, so keep only the <pre> visible.
+  for (const el of document.body.children) {
+    if (el !== pre) /** @type {HTMLElement} */ (el).style.display = "none";
+  }
+  pre.style.display = "block";
+
+  /** Apply wrap + font styles to the <pre>; formatted output is always monospace. @returns {void} */
+  function applyPreStyle() {
+    pre.style.whiteSpace = wrap ? "pre-wrap" : "pre";
+    pre.style.overflowWrap = wrap ? "anywhere" : "normal";
+    pre.style.fontFamily = formatted
+      ? "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+      : "";
+  }
 
   /**
    * Label for a language id.
@@ -70,7 +88,7 @@
 
   // UI lives in a shadow root so page CSS can't touch it.
   const host = document.createElement("div");
-  host.style.cssText = "position:fixed;top:8px;right:12px;z-index:2147483647;";
+  host.style.cssText = "position:fixed;bottom:12px;right:12px;z-index:2147483647;";
   const root = host.attachShadow({ mode: "open" });
   root.innerHTML = `
     <style>
@@ -79,15 +97,16 @@
       button:hover { background:#1565c0; }
       .main { border-radius:4px 0 0 4px; }
       .caret { border-left:1px solid rgba(255,255,255,.4); border-radius:0 4px 4px 0; padding:4px 6px; }
-      .menu { display:none; position:absolute; top:100%; right:0; margin-top:2px; background:#fff; color:#222; border:1px solid #ccc; border-radius:4px; max-height:70vh; overflow:auto; min-width:120px; font:12px system-ui,sans-serif; }
+      .menu { display:none; position:absolute; bottom:100%; right:0; margin-bottom:2px; background:#fff; color:#222; border:1px solid #ccc; border-radius:4px; max-height:70vh; overflow:auto; min-width:120px; font:12px system-ui,sans-serif; }
       .menu.open { display:block; }
       .menu div { padding:4px 10px; cursor:pointer; white-space:nowrap; }
       .menu div:hover { background:#e3f2fd; }
       .menu div.sel { font-weight:bold; }
-      .err { color:#c62828; background:#fff; padding:2px 6px; margin-top:2px; font:11px system-ui,sans-serif; max-width:320px; border-radius:4px; }
+      .menu hr { border:0; border-top:1px solid #ddd; margin:2px 0; }
+      .err { color:#c62828; background:#fff; padding:2px 6px; margin-bottom:2px; font:11px system-ui,sans-serif; max-width:320px; border-radius:4px; }
     </style>
-    <div class="wrap"><button class="main"></button><button class="caret" title="Choose syntax">&#9662;</button><div class="menu"></div></div>
-    <div class="err" hidden></div>`;
+    <div class="err" hidden></div>
+    <div class="wrap"><button class="main"></button><button class="caret" title="Choose syntax / wrapping">&#9652;</button><div class="menu"></div></div>`;
   /** @type {HTMLButtonElement} */
   const mainBtn = root.querySelector(".main");
   /** @type {HTMLButtonElement} */
@@ -100,7 +119,17 @@
   /** Refresh button label and menu selection. @returns {void} */
   function render() {
     mainBtn.textContent = formatted ? "Raw" : `Format ${langLabel(langId)}`;
+    applyPreStyle();
+    const wrapItem = document.createElement("div");
+    wrapItem.textContent = `${wrap ? "\u2713" : "\u2003"} Wrap lines`;
+    wrapItem.addEventListener("click", () => {
+      wrap = !wrap;
+      menu.classList.remove("open");
+      render();
+    });
     menu.replaceChildren(
+      wrapItem,
+      document.createElement("hr"),
       ...LANGUAGES.map((l) => {
         const item = document.createElement("div");
         item.textContent = l.label;
