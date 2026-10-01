@@ -2,7 +2,15 @@
 import { defineConfig } from "vite";
 import { resolve, dirname, join } from "path";
 import { fileURLToPath } from "url";
-import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync, rmSync } from "fs";
+import {
+  copyFileSync,
+  mkdirSync,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  rmSync,
+  readdirSync,
+} from "fs";
 import react from "@vitejs/plugin-react";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -127,6 +135,18 @@ export default defineConfig({
           resolve(__dirname, "src/content/jira-status.js"),
           join(contentDir, "jira-status.js"),
         );
+        for (const name of ["format-detect.js", "raw-formatter.js"]) {
+          copyFileSync(resolve(__dirname, "src/content", name), join(contentDir, name));
+        }
+        // Vendor Prettier standalone ESM + plugins; raw-formatter.js lazy-imports them.
+        const prettierSrc = resolve(__dirname, "node_modules/prettier");
+        const prettierDest = resolve(__dirname, "dist/vendor/prettier");
+        mkdirSync(join(prettierDest, "plugins"), { recursive: true });
+        copyFileSync(join(prettierSrc, "standalone.mjs"), join(prettierDest, "standalone.mjs"));
+        for (const file of readdirSync(join(prettierSrc, "plugins"))) {
+          if (!file.endsWith(".mjs")) continue;
+          copyFileSync(join(prettierSrc, "plugins", file), join(prettierDest, "plugins", file));
+        }
       },
     },
     {

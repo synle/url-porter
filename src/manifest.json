@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "URL Porter",
-  "version": "1.99.0",
+  "version": "2.0.0",
   "description": "This extension lets you configure redirect rules and set a custom homepage. https://github.com/synle/url-porter",
   "homepage_url": "https://github.com/synle/url-porter",
   "icons": {
@@ -60,6 +60,17 @@
     {
       "matches": ["https://*.atlassian.net/browse/*"],
       "js": ["content/content-utils.js", "content/jira-status.js"]
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/format-detect.js", "content/raw-formatter.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["vendor/prettier/*"],
+      "matches": ["<all_urls>"]
     }
   ]
 }

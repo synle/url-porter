@@ -13,6 +13,7 @@ A Chrome extension that lets you configure redirect rules and set a custom homep
 - **PR Status Tracking** - Content scripts on GitHub (incl. Enterprise) and Azure DevOps prefix bookmark titles with status emoji
 - **Jira Status Tracking** - Content script on Atlassian Cloud does the same for ticket status (🔵 in progress, ✅ done, ⚪ not started, ❌ blocked)
 - **Google Keep Markdown Preview** - Injects a markdown preview button into Keep note modals
+- **Raw Page Formatter** - Floating "Format <syntax> ▾" button on raw text responses (JSON, JS, TS, CSS, SCSS, Less, HTML, Vue, XML, YAML, Markdown, GraphQL, Handlebars, ...). Pretty-prints with bundled Prettier (no CDN, no extra extension). Syntax auto-detected from Content-Type, then URL extension, then content sniffing; the caret menu overrides it. Click again to show raw.
 - **Config Health Checks** - On-demand broken link detection and conflict/duplicate resolution
 - **History Tracking** - Audit trail of rule changes with search, restore, bulk delete
 - **Sync Server** - Optionally sync config from a remote JSON file
@@ -92,7 +93,7 @@ With `npm run dev`, the extension auto-reloads on file changes.
 ```
 src/
 ├── background/      # Service worker (redirect rules, context menus, omnibox, bookmark sync)
-├── content/         # Content scripts (PR status, Jira status, Keep markdown, fav export)
+├── content/         # Content scripts (PR status, Jira status, Keep markdown, fav export, raw formatter)
 ├── components/      # Reusable UI components (SyncDialog, BookmarkRulesSection, BookmarkRuleForm)
 ├── helpers/         # Shared utilities (storage, config, history, bookmarks, reconcilers)
 ├── pages/
