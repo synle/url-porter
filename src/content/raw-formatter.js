@@ -94,7 +94,7 @@
   const host = document.createElement("div");
   // user-select:none keeps the button out of Cmd/Ctrl+A and mouse selections of the page content.
   host.style.cssText =
-    "position:fixed;bottom:12px;right:12px;z-index:2147483647;user-select:none;-webkit-user-select:none;";
+    "position:fixed;top:12px;right:12px;z-index:2147483647;user-select:none;-webkit-user-select:none;";
   const root = host.attachShadow({ mode: "open" });
   root.innerHTML = `
     <style>
@@ -104,16 +104,18 @@
       button:hover { background:#1565c0; }
       .main { border-radius:4px 0 0 4px; }
       .caret { border-left:1px solid rgba(255,255,255,.4); border-radius:0 4px 4px 0; padding:4px 6px; }
-      .menu { display:none; position:absolute; bottom:100%; right:0; margin-bottom:2px; background:#fff; color:#222; border:1px solid #ccc; border-radius:4px; max-height:70vh; overflow:auto; min-width:120px; font:12px system-ui,sans-serif; }
+      .menu { display:none; position:absolute; top:100%; right:0; margin-top:2px; background:#fff; color:#222; border:1px solid #ccc; border-radius:4px; max-height:70vh; overflow:auto; min-width:120px; font:12px system-ui,sans-serif; }
       .menu.open { display:block; }
       .menu div { padding:4px 10px; cursor:pointer; white-space:nowrap; }
       .menu div:hover { background:#e3f2fd; }
       .menu div.sel { font-weight:bold; }
       .menu hr { border:0; border-top:1px solid #ddd; margin:2px 0; }
-      .err { color:#c62828; background:#fff; padding:2px 6px; margin-bottom:2px; font:11px system-ui,sans-serif; max-width:320px; border-radius:4px; }
+      .err { color:#c62828; background:#fff; padding:2px 6px; margin-top:2px; font:11px system-ui,sans-serif; max-width:320px; border-radius:4px; }
+      .toast { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:rgba(33,33,33,.92); color:#fff; padding:6px 12px; border-radius:4px; font:12px system-ui,sans-serif; box-shadow:0 1px 4px rgba(0,0,0,.3); pointer-events:none; white-space:nowrap; }
     </style>
+    <div class="wrap"><button class="main"></button><button class="caret" title="Choose syntax / wrapping. Cmd/Ctrl/Alt+S format, Cmd/Ctrl/Alt+C copy all">&#9662;</button><div class="menu"></div></div>
     <div class="err" hidden></div>
-    <div class="wrap"><button class="main"></button><button class="caret" title="Choose syntax / wrapping. Cmd/Ctrl/Alt+S format, Cmd/Ctrl/Alt+C copy all">&#9652;</button><div class="menu"></div></div>`;
+    <div class="toast" hidden></div>`;
   /** @type {HTMLButtonElement} */
   const mainBtn = root.querySelector(".main");
   /** @type {HTMLButtonElement} */
@@ -122,18 +124,45 @@
   const menu = root.querySelector(".menu");
   /** @type {HTMLDivElement} */
   const errBox = root.querySelector(".err");
+  /** @type {HTMLDivElement} */
+  const toastBox = root.querySelector(".toast");
+  /** How long a toast stays visible. @type {number} */
+  const TOAST_MS = 2000;
+  /** Pending hide timer for the current toast. @type {ReturnType<typeof setTimeout> | undefined} */
+  let toastTimer;
+
+  /**
+   * Show a short non-selectable status toast at the bottom; replaces any toast already showing.
+   * @param {string} message - Text to show.
+   * @returns {void}
+   */
+  function toast(message) {
+    clearTimeout(toastTimer);
+    toastBox.textContent = message;
+    toastBox.hidden = false;
+    toastTimer = setTimeout(() => {
+      toastBox.hidden = true;
+    }, TOAST_MS);
+  }
+
+  /** Flip soft wrap and announce the new state. @returns {void} */
+  function toggleWrap() {
+    wrap = !wrap;
+    render();
+    toast(`Word wrap ${wrap ? "ON" : "OFF"}`);
+  }
 
   /** Refresh button label and menu selection. @returns {void} */
   function render() {
-    mainBtn.textContent = formatted ? "Raw" : `Format ${langLabel(langId)}`;
+    // Label never flips to "Raw": the button always (re)formats with the selected syntax.
+    mainBtn.textContent = `Format ${langLabel(langId)}`;
     applyPreStyle();
     const wrapItem = document.createElement("div");
     wrapItem.textContent = `${wrap ? "\u2713" : "\u2003"} Wrap lines`;
     wrapItem.title = "Cmd+Shift+Enter (macOS) / Ctrl+Shift+Enter";
     wrapItem.addEventListener("click", () => {
-      wrap = !wrap;
       menu.classList.remove("open");
-      render();
+      toggleWrap();
     });
     menu.replaceChildren(
       wrapItem,
@@ -158,52 +187,59 @@
     try {
       pre.textContent = await formatText(original, langId);
       formatted = true;
+      toast(`Content formatted as ${langLabel(langId)}`);
     } catch (e) {
       pre.textContent = original;
       formatted = false;
       errBox.textContent = `${langLabel(langId)}: ${String(e?.message || e).split("\n")[0]}`;
       errBox.hidden = false;
+      toast(`Could not format as ${langLabel(langId)}`);
     }
     render();
   }
 
-  mainBtn.addEventListener("click", () => toggleFormat());
+  mainBtn.addEventListener("click", () => applyFormat());
   caretBtn.addEventListener("click", () => menu.classList.toggle("open"));
-  /** Toggle between formatted and raw content. @returns {Promise<void> | void} */
-  function toggleFormat() {
-    if (!formatted) return applyFormat();
-    pre.textContent = original;
-    formatted = false;
-    render();
-  }
 
   /**
-   * Copy the whole currently displayed content (raw or formatted) to the clipboard.
+   * Copy the whole displayed content (raw or formatted) verbatim — textContent keeps every space and newline.
    * @returns {void}
    */
   function copyAll() {
-    navigator.clipboard.writeText(pre.textContent).catch((err) => {
-      console.warn("url-porter: copy failed", err);
-    });
+    navigator.clipboard
+      .writeText(pre.textContent)
+      .then(() => toast("All content copied to clipboard"))
+      .catch((err) => {
+        console.warn("url-porter: copy failed", err);
+        toast("Copy failed");
+      });
   }
+
+  // Native copy of a selection: write plain text only, so rich-text paste targets can't collapse the
+  // <pre>'s indentation (HTML clipboard payloads drop white-space:pre when pasted).
+  document.addEventListener("copy", (e) => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !pre.contains(sel.anchorNode)) return;
+    e.clipboardData.setData("text/plain", sel.toString());
+    e.preventDefault();
+  });
 
   // Keyboard shortcuts (only registered on pages we can format):
   // - Cmd/Ctrl+Shift+Enter: toggle soft wrap.
-  // - Cmd/Ctrl+S or Alt+S: toggle format / raw.
+  // - Cmd/Ctrl+S or Alt+S: format with the selected syntax.
   // - Cmd/Ctrl+C or Alt+C: copy the entire content (unless the user selected part of it).
   // e.code is used because macOS Option+letter yields a symbol in e.key.
   document.addEventListener("keydown", (e) => {
     const mod = e.metaKey || e.ctrlKey;
     if (e.key === "Enter" && e.shiftKey && !e.altKey && mod) {
       e.preventDefault();
-      wrap = !wrap;
-      render();
+      toggleWrap();
       return;
     }
     if (e.shiftKey || !(mod || e.altKey) || (mod && e.altKey)) return;
     if (e.code === "KeyS") {
       e.preventDefault();
-      toggleFormat();
+      applyFormat();
       return;
     }
     if (e.code === "KeyC") {

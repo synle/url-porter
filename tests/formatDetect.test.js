@@ -28,7 +28,7 @@ describe("detectLanguage priority", () => {
   });
   it("falls back to the URL extension when the header is generic", () => {
     expect(F.detectLanguage({ contentType: "text/plain", url: "http://localhost/abc.ts" })).toBe(
-      "typescript",
+      "js",
     );
   });
   it("ignores the query string when reading the extension", () => {
@@ -45,7 +45,7 @@ describe("fromContentType", () => {
   it.each([
     ["application/vnd.globex+json; charset=utf-8", "json"],
     ["application/atom+xml", "xml"],
-    ["text/javascript", "javascript"],
+    ["text/javascript", "js"],
     ["text/css", "css"],
     ["application/yaml", "yaml"],
     ["text/plain", null],
@@ -60,8 +60,8 @@ describe("fromContent", () => {
     ['<?xml version="1.0"?><a/>', "xml"],
     ["<!DOCTYPE html><html></html>", "html"],
     ["<initech><id>1</id></initech>", "xml"],
-    ["interface Acme { id: number }", "typescript"],
-    ["const a = () => 1;", "javascript"],
+    ["interface Acme { id: number }", "js"],
+    ["const a = () => 1;", "js"],
     ["body { color: red; }", "css"],
     ["name: initech\nport: 80", "yaml"],
     ["# FALCON\n\nsome text", "markdown"],
@@ -83,8 +83,6 @@ describe("formatXml", () => {
 describe("LANGUAGES", () => {
   it("covers the requested syntaxes", () => {
     const ids = F.LANGUAGES.map((l) => l.id);
-    expect(ids).toEqual(
-      expect.arrayContaining(["json", "javascript", "typescript", "css", "html", "xml", "yaml"]),
-    );
+    expect(ids).toEqual(expect.arrayContaining(["json", "js", "css", "html", "xml", "yaml"]));
   });
 });

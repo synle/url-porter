@@ -7,8 +7,8 @@
   const LANGUAGES = [
     { id: "json", label: "JSON", parser: "json", plugins: ["babel", "estree"] },
     { id: "json5", label: "JSON5", parser: "json5", plugins: ["babel", "estree"] },
-    { id: "javascript", label: "JS", parser: "babel", plugins: ["babel", "estree"] },
-    { id: "typescript", label: "TS", parser: "typescript", plugins: ["typescript", "estree"] },
+    // One entry for JS / TS / JSX / TSX: Prettier's typescript parser accepts all four.
+    { id: "js", label: "JS/TS", parser: "typescript", plugins: ["typescript", "estree"] },
     { id: "flow", label: "Flow", parser: "flow", plugins: ["flow", "estree"] },
     { id: "css", label: "CSS", parser: "css", plugins: ["postcss"] },
     { id: "scss", label: "SCSS", parser: "scss", plugins: ["postcss"] },
@@ -33,8 +33,7 @@
   const CONTENT_TYPE_RULES = [
     [/json5/, "json5"],
     [/[/+]json$/, "json"],
-    [/typescript/, "typescript"],
-    [/javascript|ecmascript|jsx/, "javascript"],
+    [/typescript|javascript|ecmascript|jsx/, "js"],
     [/^text\/css$/, "css"],
     [/scss/, "scss"],
     [/less/, "less"],
@@ -54,14 +53,14 @@
     geojson: "json",
     webmanifest: "json",
     json5: "json5",
-    js: "javascript",
-    mjs: "javascript",
-    cjs: "javascript",
-    jsx: "javascript",
-    ts: "typescript",
-    mts: "typescript",
-    cts: "typescript",
-    tsx: "typescript",
+    js: "js",
+    mjs: "js",
+    cjs: "js",
+    jsx: "js",
+    ts: "js",
+    mts: "js",
+    cts: "js",
+    tsx: "js",
     css: "css",
     scss: "scss",
     less: "less",
@@ -147,9 +146,9 @@
         t,
       )
     ) {
-      return "typescript";
+      return "js";
     }
-    if (/\b(function|const|let|var|import|export)\b|=>|\brequire\(/.test(t)) return "javascript";
+    if (/\b(function|const|let|var|import|export)\b|=>|\brequire\(/.test(t)) return "js";
     if (/^[.#@:\w\-[\]*,>\s]+\{[^{}]*:[^{}]*\}/.test(t)) return "css";
     if (/^#{1,6}\s/m.test(t)) return "markdown";
     if (/^---\s*$|^[\w"'-]+:\s/m.test(t) && !/[{};]\s*$/m.test(t)) return "yaml";
