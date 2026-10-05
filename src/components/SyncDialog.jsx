@@ -17,6 +17,7 @@ import {
   isValidUrl,
   DEFAULT_SYNC_URL,
 } from "../helpers/storage.js";
+import { parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
 
 /**
  * Dialog component for syncing settings from a remote server URL.
@@ -38,7 +39,7 @@ export default function SyncDialog({ open, onClose, onSuccess, onError }) {
   }, [open]);
 
   /**
-   * Validate the URL, fetch remote config, and apply it to local storage.
+   * Validate the URL, fetch remote config (parsed as JSONC), and apply it to local storage.
    * @returns {Promise<void>}
    */
   const handleSyncSubmit = async () => {
@@ -53,8 +54,18 @@ export default function SyncDialog({ open, onClose, onSuccess, onError }) {
       const res = await fetch(syncUrl, { method: "GET" });
       if (!res.ok) throw new Error("Failed to sync settings from server");
 
-      const ajaxResponse = await res.json();
-      if (!("homepage" in ajaxResponse) || !("configs" in ajaxResponse)) {
+      const parseErrors = [];
+      const ajaxResponse = parseJsonc(await res.text(), parseErrors, { allowTrailingComma: true });
+      if (parseErrors.length) {
+        const { error, offset } = parseErrors[0];
+        throw new Error(`Invalid JSONC: ${printParseErrorCode(error)} at offset ${offset}`);
+      }
+      if (
+        !ajaxResponse ||
+        typeof ajaxResponse !== "object" ||
+        !("homepage" in ajaxResponse) ||
+        !("configs" in ajaxResponse)
+      ) {
         throw new Error("Invalid response format");
       }
 

@@ -61,7 +61,7 @@ describe("SyncDialog", () => {
     const onError = vi.fn();
     globalThis.fetch = vi
       .fn()
-      .mockResolvedValue({ ok: true, json: async () => ({ randomKey: true }) });
+      .mockResolvedValue({ ok: true, text: async () => '{ "randomKey": true }' });
     render(<SyncDialog open={true} onClose={() => {}} onSuccess={() => {}} onError={onError} />);
     fireEvent.click(await screen.findByRole("button", { name: /Sync Now/i }));
     await waitFor(() => expect(onError).toHaveBeenCalled());
@@ -72,16 +72,43 @@ describe("SyncDialog", () => {
     const onClose = vi.fn();
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({
-        homepage: "https://home.example.com",
-        configs: [{ from: "x", to: "https://x.com" }],
-      }),
+      text: async () =>
+        JSON.stringify({
+          homepage: "https://home.example.com",
+          configs: [{ from: "x", to: "https://x.com" }],
+        }),
     });
     render(<SyncDialog open={true} onClose={onClose} onSuccess={onSuccess} onError={() => {}} />);
     fireEvent.click(await screen.findByRole("button", { name: /Sync Now/i }));
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
     expect(onClose).toHaveBeenCalled();
     expect(storageData.homepageUrl).toBe("https://home.example.com");
+  });
+
+  it("accepts a JSONC response with comments and trailing commas", async () => {
+    const onSuccess = vi.fn();
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => `{
+        // Acme homepage
+        "homepage": "https://acme.example.com",
+        /* FALCON alias */
+        "configs": [{ "from": "falcon", "to": "https://falcon.example.com" },],
+      }`,
+    });
+    render(<SyncDialog open={true} onClose={() => {}} onSuccess={onSuccess} onError={() => {}} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Sync Now/i }));
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+    expect(storageData.homepageUrl).toBe("https://acme.example.com");
+  });
+
+  it("invokes onError with a JSONC parse message on malformed input", async () => {
+    const onError = vi.fn();
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, text: async () => '{ "homepage": ' });
+    render(<SyncDialog open={true} onClose={() => {}} onSuccess={() => {}} onError={onError} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Sync Now/i }));
+    await waitFor(() => expect(onError).toHaveBeenCalled());
+    expect(onError.mock.calls[0][0]).toMatch(/^Sync failed: Invalid JSONC: /);
   });
 
   it("triggers onClose when Cancel is clicked", async () => {

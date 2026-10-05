@@ -65,7 +65,7 @@ To customize the default sync server URL at build time:
 VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL=https://your-server.com/config.json
 ```
 
-Default: `https://synle.github.io/fav/url-porter.json`.
+Default: `https://synle.github.io/fav/url-porter.jsonc`. The response is parsed as JSONC (comments and trailing commas allowed).
 
 ### Load in Chrome
 

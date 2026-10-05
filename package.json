@@ -20,7 +20,7 @@
     "build:types": "tsc",
     "bundle": "node scripts/bundle.js",
     "package": "npm run build && npm run bundle",
-    "package-syle": "VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL=https://synle.github.io/fav/url-porter.json npm run package",
+    "package-syle": "VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL=https://synle.github.io/fav/url-porter.jsonc npm run package",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "lint": "oxlint .",
@@ -33,6 +33,7 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^9.0.0",
     "@mui/material": "^9.0.0",
+    "jsonc-parser": "3.3.1",
     "prettier": "3.9.9",
     "prismjs": "^1.30.0",
     "react-simple-code-editor": "^0.14.1"

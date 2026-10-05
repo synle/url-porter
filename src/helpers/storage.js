@@ -8,7 +8,7 @@
 /** Default sync server URL, overridable at build time via env var. */
 const DEFAULT_SYNC_URL =
   import.meta.env.VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL ||
-  "https://synle.github.io/fav/url-porter.json";
+  "https://synle.github.io/fav/url-porter.jsonc";
 
 export { DEFAULT_SYNC_URL };
 
