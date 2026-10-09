@@ -41,6 +41,7 @@ Tip: pin the extension to the toolbar for quick access to the Add Link popup.
 - `src/pages/addlink/` — Popup to quick-add current page as a redirect rule.
 - `src/pages/addrule/` — Page to add a bookmark rule, opened from context menu with auto-filled fields derived from the current page.
 - `src/pages/newtab/` — New tab override redirecting to the configured homepage.
+- `src/viewer/textview.{html,js}` — Static (non-Vite, copied by `vite.config.js`) viewer opened by the "Preview Selection as Markdown" / "Format Selection as ▸ <syntax>" context menus (`src/helpers/selectionViewer.js`); reads the selection from `chrome.storage.session` and reuses `format-detect.js` helpers.
 - `src/pages/history/` — Audit trail of redirect rule changes (search, restore, bulk delete).
 
 **Shared helpers** (`src/helpers/`):

@@ -1,4 +1,6 @@
 /** Tests for src/content/raw-formatter.js — floating Format button, menu, toasts, and copy behavior on raw text pages. */
+import { pathToFileURL } from "node:url";
+import { resolve } from "node:path";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 /** Clipboard writeText spy, reset per test. @type {import("vitest").Mock} */
@@ -143,6 +145,50 @@ describe("toasts", () => {
     expect(root.querySelector("style").textContent).toContain(
       ":host, * { user-select:none; -webkit-user-select:none; }",
     );
+  });
+});
+
+describe("markdown preview", () => {
+  /**
+   * Find a menu item by label, ignoring the check-mark column.
+   * @param {ShadowRoot} root - Formatter UI root.
+   * @param {string} label - Item text without the check-mark column.
+   * @returns {HTMLElement | undefined} Matching item.
+   */
+  const item = (root, label) =>
+    [...root.querySelectorAll(".menu div")].find(
+      (d) => d.textContent.replace(/^[\u2713\u2003] /, "") === label,
+    );
+
+  it("offers Preview Markdown only when Markdown is selected", async () => {
+    const { root } = await loadPage("{}");
+    expect(item(root, "Preview Markdown")).toBeUndefined();
+    item(root, "Markdown").click();
+    await vi.waitFor(() => expect(item(root, "Preview Markdown")).toBeDefined());
+  });
+
+  it("renders the original markdown as HTML in a script-less sandboxed frame and toggles back", async () => {
+    vi.stubGlobal("chrome", {
+      runtime: {
+        getURL: (p) =>
+          p === "vendor/marked/marked.esm.js"
+            ? pathToFileURL(resolve("node_modules/marked/lib/marked.esm.js")).href
+            : `file:///nonexistent/${p}`,
+      },
+    });
+    const { root, pre } = await loadPage("# Acme\n\n- **FALCON**\n", "text/markdown");
+    const frame = document.querySelector("iframe");
+    expect(frame.getAttribute("sandbox")).not.toContain("allow-scripts");
+    item(root, "Preview Markdown").click();
+    await vi.waitFor(() => expect(frame.style.display).toBe("block"));
+    expect(frame.srcdoc).toContain("<h1>Acme</h1>");
+    expect(frame.srcdoc).toContain("<strong>FALCON</strong>");
+    expect(pre.style.display).toBe("none");
+    expect(root.querySelector(".toast").textContent).toBe("Markdown preview ON");
+    item(root, "Preview Markdown").click();
+    await flush();
+    expect(frame.style.display).toBe("none");
+    expect(pre.style.display).toBe("block");
   });
 });
 

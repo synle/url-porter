@@ -1,5 +1,4 @@
 /** Raw-page formatter: on plain-text responses (JSON, JS, CSS, XML, YAML, ...) shows a floating "Format <lang> ▾" split button that pretty-prints the page with bundled Prettier. */
-/* global chrome */
 (function () {
   const api = globalThis.UrlPorterFormat;
   if (!api || !document.body || document.contentType === "text/html") return;
@@ -7,9 +6,7 @@
   const pre = document.body.querySelector(":scope > pre");
   if (!pre) return;
 
-  const { LANGUAGES, detectLanguage, formatXml } = api;
-  /** Path of the vendored Prettier ESM bundles inside the extension. @type {string} */
-  const VENDOR_BASE = "vendor/prettier/";
+  const { LANGUAGES, detectLanguage, formatText, markdownToHtmlDocument } = api;
   /** Language used when detection finds nothing. @type {string} */
   const FALLBACK_LANGUAGE = "json";
   const original = pre.textContent;
@@ -22,6 +19,15 @@
   let formatted = false;
   /** Whether long lines soft-wrap. Chrome's raw view wraps by default. @type {boolean} */
   let wrap = true;
+  /** Language ids that can be rendered as an HTML preview. @type {string[]} */
+  const PREVIEWABLE = ["markdown", "mdx"];
+  /** Whether the rendered Markdown preview replaces the <pre>. @type {boolean} */
+  let preview = false;
+  // Preview renders in a script-less sandboxed iframe so markup in the page text can never run in the page origin.
+  const previewFrame = document.createElement("iframe");
+  previewFrame.setAttribute("sandbox", "allow-popups allow-popups-to-escape-sandbox");
+  previewFrame.style.cssText = "display:none;border:0;width:100%;height:100vh;background:#fff;";
+  document.body.appendChild(previewFrame);
 
   // Hide Chrome's own JSON viewer chrome (the "Pretty-print" checkbox + its formatted pane, Chrome 131+);
   // it's injected as body siblings of the raw <pre>, so keep only the <pre> visible.
@@ -49,46 +55,6 @@
    * @returns {string} Display label.
    */
   const langLabel = (id) => LANGUAGES.find((l) => l.id === id).label;
-
-  /**
-   * Lazily import Prettier standalone plus the plugins a language needs.
-   * @param {string[]} pluginNames - Plugin file stems under vendor/prettier/plugins/.
-   * @returns {Promise<{prettier: any, plugins: any[]}>} Loaded modules.
-   */
-  async function loadPrettier(pluginNames) {
-    const url = (p) => chrome.runtime.getURL(VENDOR_BASE + p);
-    const [prettier, ...plugins] = await Promise.all([
-      import(url("standalone.mjs")),
-      ...pluginNames.map((n) => import(url(`plugins/${n}.mjs`))),
-    ]);
-    return { prettier, plugins: plugins.map((m) => m.default || m) };
-  }
-
-  /**
-   * Format text for one language.
-   * @param {string} text - Raw content.
-   * @param {string} id - Language id from LANGUAGES.
-   * @returns {Promise<string>} Formatted text.
-   * @throws {Error} When the parser rejects the input.
-   */
-  async function formatText(text, id) {
-    const lang = LANGUAGES.find((l) => l.id === id);
-    if (lang.id === "xml") return formatXml(text);
-    if (lang.id === "json") {
-      // Prettier keeps short objects on one line; always expand strict JSON like a JSON viewer.
-      try {
-        return JSON.stringify(JSON.parse(text), null, 2);
-      } catch {
-        // Not strict JSON (comments, trailing commas); let Prettier try.
-      }
-    }
-    const { prettier, plugins } = await loadPrettier(lang.plugins);
-    return prettier.format(text, {
-      parser: lang.parser,
-      plugins,
-      printWidth: 100,
-    });
-  }
 
   // UI lives in a shadow root so page CSS can't touch it.
   const host = document.createElement("div");
@@ -164,8 +130,20 @@
       menu.classList.remove("open");
       toggleWrap();
     });
+    const extraItems = [];
+    if (PREVIEWABLE.includes(langId)) {
+      const previewItem = document.createElement("div");
+      previewItem.className = "preview";
+      previewItem.textContent = `${preview ? "\u2713" : "\u2003"} Preview Markdown`;
+      previewItem.addEventListener("click", () => {
+        menu.classList.remove("open");
+        togglePreview();
+      });
+      extraItems.push(previewItem);
+    }
     menu.replaceChildren(
       wrapItem,
+      ...extraItems,
       document.createElement("hr"),
       ...LANGUAGES.map((l) => {
         const item = document.createElement("div");
@@ -173,6 +151,7 @@
         if (l.id === langId) item.className = "sel";
         item.addEventListener("click", () => {
           langId = l.id;
+          if (!PREVIEWABLE.includes(langId)) setPreview(false);
           menu.classList.remove("open");
           applyFormat();
         });
@@ -181,9 +160,40 @@
     );
   }
 
+  /**
+   * Show or hide the rendered preview in place of the <pre>.
+   * @param {boolean} on - Whether the preview is visible.
+   * @returns {void}
+   */
+  function setPreview(on) {
+    preview = on;
+    previewFrame.style.display = on ? "block" : "none";
+    pre.style.display = on ? "none" : "block";
+  }
+
+  /** Flip the Markdown preview on/off and announce it. @returns {Promise<void>} */
+  async function togglePreview() {
+    if (preview) {
+      setPreview(false);
+      toast("Markdown preview OFF");
+      render();
+      return;
+    }
+    try {
+      previewFrame.srcdoc = await markdownToHtmlDocument(original);
+      setPreview(true);
+      toast("Markdown preview ON");
+    } catch (e) {
+      console.warn("url-porter: markdown preview failed", e);
+      toast("Could not preview Markdown");
+    }
+    render();
+  }
+
   /** Format page text with the current language; show parse errors inline. @returns {Promise<void>} */
   async function applyFormat() {
     errBox.hidden = true;
+    setPreview(false);
     try {
       pre.textContent = await formatText(original, langId);
       formatted = true;

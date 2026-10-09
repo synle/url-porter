@@ -1,4 +1,5 @@
-/** Pure language detection + language catalog for the raw-page formatter content script. Classic script: exposes `globalThis.UrlPorterFormat`. */
+/** Language catalog, detection, and shared format / Markdown-render helpers for the raw-page formatter and the selection viewer page. Classic script: exposes `globalThis.UrlPorterFormat`. */
+/* global chrome */
 (function () {
   /**
    * Supported languages. `parser` + `plugins` drive Prettier standalone; `xml` uses the built-in formatter.
@@ -205,6 +206,66 @@
     return lines.join("\n") + "\n";
   }
 
+  /** Path of the vendored Prettier ESM bundles inside the extension. @type {string} */
+  const PRETTIER_BASE = "vendor/prettier/";
+  /** Path of the vendored marked ESM bundle inside the extension. @type {string} */
+  const MARKED_PATH = "vendor/marked/marked.esm.js";
+
+  /**
+   * Lazily import Prettier standalone plus the plugins a language needs.
+   * @param {string[]} pluginNames - Plugin file stems under vendor/prettier/plugins/.
+   * @returns {Promise<{prettier: any, plugins: any[]}>} Loaded modules.
+   */
+  async function loadPrettier(pluginNames) {
+    const url = (p) => chrome.runtime.getURL(PRETTIER_BASE + p);
+    const [prettier, ...plugins] = await Promise.all([
+      import(url("standalone.mjs")),
+      ...pluginNames.map((n) => import(url(`plugins/${n}.mjs`))),
+    ]);
+    return { prettier, plugins: plugins.map((m) => m.default || m) };
+  }
+
+  /**
+   * Format text for one language.
+   * @param {string} text - Raw content.
+   * @param {string} id - Language id from LANGUAGES.
+   * @returns {Promise<string>} Formatted text.
+   * @throws {Error} When the parser rejects the input or the Prettier bundle cannot load.
+   */
+  async function formatText(text, id) {
+    const lang = LANGUAGES.find((l) => l.id === id);
+    if (lang.id === "xml") return formatXml(text);
+    if (lang.id === "json") {
+      // Prettier keeps short objects on one line; always expand strict JSON like a JSON viewer.
+      try {
+        return JSON.stringify(JSON.parse(text), null, 2);
+      } catch {
+        // Not strict JSON (comments, trailing commas); let Prettier try.
+      }
+    }
+    const { prettier, plugins } = await loadPrettier(lang.plugins);
+    return prettier.format(text, { parser: lang.parser, plugins, printWidth: 100 });
+  }
+
+  /**
+   * Render Markdown to a standalone styled HTML document with vendored marked (GFM).
+   * Callers must load it into a script-less sandboxed iframe (`srcdoc`) — the output is untrusted markup.
+   * @param {string} text - Markdown source.
+   * @returns {Promise<string>} Full HTML document.
+   * @throws {Error} When the marked bundle cannot load.
+   */
+  async function markdownToHtmlDocument(text) {
+    const { marked } = await import(chrome.runtime.getURL(MARKED_PATH));
+    const body = marked.parse(text, { gfm: true });
+    return `<!doctype html><meta charset="utf-8"><base target="_blank"><style>
+      body{font:16px/1.6 system-ui,sans-serif;max-width:860px;margin:0 auto;padding:48px 24px;color:#1f2328;}
+      pre{background:#f6f8fa;padding:12px;border-radius:6px;overflow:auto;}
+      code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:85%;}
+      table{border-collapse:collapse;}th,td{border:1px solid #d0d7de;padding:4px 10px;}
+      img{max-width:100%;}blockquote{color:#59636e;border-left:4px solid #d0d7de;margin:0;padding:0 12px;}
+    </style>${body}`;
+  }
+
   globalThis.UrlPorterFormat = {
     LANGUAGES,
     fromContentType,
@@ -212,5 +273,7 @@
     fromContent,
     detectLanguage,
     formatXml,
+    formatText,
+    markdownToHtmlDocument,
   };
 })();

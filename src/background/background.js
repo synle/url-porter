@@ -24,6 +24,9 @@ import { reconcileJiraTickets } from "../helpers/jiraTicketUtils.js";
 import { reconcileGoogleDrive } from "../helpers/googleDriveUtils.js";
 import { reconcileOnedrive } from "../helpers/onedriveUtils.js";
 import { reconcileAllBookmarkRules } from "../helpers/genericBookmarkRuleUtils.js";
+import { createSelectionMenus, handleSelectionMenuClick } from "../helpers/selectionViewer.js";
+// Side-effect import: classic script that defines globalThis.UrlPorterFormat (language catalog).
+import "../content/format-detect.js";
 
 // --- Lifecycle ---
 
@@ -44,6 +47,8 @@ chrome.runtime.onInstalled.addListener(async () => {
     contexts: ["page"],
   });
 
+  createSelectionMenus(globalThis.UrlPorterFormat.LANGUAGES);
+
   chrome.omnibox.setDefaultSuggestion({
     description: "Search URL Porter links: %s",
   });
@@ -51,8 +56,11 @@ chrome.runtime.onInstalled.addListener(async () => {
 
 // --- Context Menu ---
 
-/** Handle context menu clicks for Add Link and Add Bookmark Rule. */
+/** Handle context menu clicks for Add Link, Add Bookmark Rule, and the selection viewer items. */
 chrome.contextMenus.onClicked.addListener((info, tab) => {
+  handleSelectionMenuClick(info, tab).catch((err) =>
+    console.warn("[background] selection viewer failed", err),
+  );
   if (info.menuItemId === "add-to-url-porter") {
     const url = encodeURIComponent(tab.url || "");
     const title = encodeURIComponent(tab.title || "");

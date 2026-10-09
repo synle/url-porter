@@ -220,6 +220,9 @@ describe("background — onInstalled", () => {
     expect(chrome.contextMenus.create).toHaveBeenCalledWith(
       expect.objectContaining({ id: "add-bookmark-rule" }),
     );
+    expect(chrome.contextMenus.create).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "selection-format:json", parentId: "selection-format" }),
+    );
     expect(chrome.omnibox.setDefaultSuggestion).toHaveBeenCalled();
   });
 });

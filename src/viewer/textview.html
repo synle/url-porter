@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>URL Porter Viewer</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        font:
+          14px system-ui,
+          sans-serif;
+        color-scheme: light dark;
+      }
+      #err {
+        color: #c62828;
+        padding: 8px 12px;
+      }
+      #out {
+        margin: 0;
+        padding: 12px;
+        font:
+          13px/1.5 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Consolas,
+          monospace;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      #preview {
+        border: 0;
+        width: 100%;
+        height: 100%;
+        background: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="err" hidden></div>
+    <pre id="out" hidden></pre>
+    <iframe
+      id="preview"
+      hidden
+      sandbox="allow-popups allow-popups-to-escape-sandbox"
+      title="Markdown preview"
+    ></iframe>
+    <script src="../content/format-detect.js"></script>
+    <script src="textview.js"></script>
+  </body>
+</html>

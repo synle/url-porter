@@ -147,6 +147,19 @@ export default defineConfig({
           if (!file.endsWith(".mjs")) continue;
           copyFileSync(join(prettierSrc, "plugins", file), join(prettierDest, "plugins", file));
         }
+        // Vendor marked ESM; raw-formatter.js lazy-imports it for the Markdown preview.
+        const markedDest = resolve(__dirname, "dist/vendor/marked");
+        mkdirSync(markedDest, { recursive: true });
+        copyFileSync(
+          resolve(__dirname, "node_modules/marked/lib/marked.esm.js"),
+          join(markedDest, "marked.esm.js"),
+        );
+        // Static selection viewer page (opened from the "Preview / Format Selection" context menus).
+        const viewerDest = resolve(__dirname, "dist/viewer");
+        mkdirSync(viewerDest, { recursive: true });
+        for (const name of ["textview.html", "textview.js"]) {
+          copyFileSync(resolve(__dirname, "src/viewer", name), join(viewerDest, name));
+        }
       },
     },
     {
