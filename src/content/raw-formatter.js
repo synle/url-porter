@@ -1,4 +1,4 @@
-/** Raw-page formatter: on plain-text responses (JSON, JS, CSS, XML, YAML, ...) shows a floating "Format <lang> ▾" split button that pretty-prints the page with bundled Prettier. */
+/** Raw-page formatter: on plain-text responses (JSON, JS, CSS, XML, YAML, ...) shows a floating "Format <lang> ▾" split button that pretty-prints (or reverts) the page with bundled Prettier, plus wrap / copy / download actions. */
 (function () {
   const api = globalThis.UrlPorterFormat;
   if (!api || !document.body || document.contentType === "text/html") return;
@@ -79,7 +79,7 @@
       .err { color:#c62828; background:#fff; padding:2px 6px; margin-top:2px; font:11px system-ui,sans-serif; max-width:320px; border-radius:4px; }
       .toast { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:rgba(33,33,33,.92); color:#fff; padding:6px 12px; border-radius:4px; font:12px system-ui,sans-serif; box-shadow:0 1px 4px rgba(0,0,0,.3); pointer-events:none; white-space:nowrap; }
     </style>
-    <div class="wrap"><button class="main"></button><button class="caret" title="Choose syntax / wrapping. Cmd/Ctrl/Alt+S format, Cmd/Ctrl/Alt+C copy all">&#9662;</button><div class="menu"></div></div>
+    <div class="wrap"><button class="main"></button><button class="caret" title="Format, wrap, copy, download, or choose syntax">&#9662;</button><div class="menu"></div></div>
     <div class="err" hidden></div>
     <div class="toast" hidden></div>`;
   /** @type {HTMLButtonElement} */
@@ -118,18 +118,56 @@
     toast(`Word wrap ${wrap ? "ON" : "OFF"}`);
   }
 
+  /** Shortcut hints shown next to menu labels. @type {Record<string, string>} */
+  const SHORTCUTS = {
+    format: "Alt + S / Option + S",
+    wrap: "Ctrl + Shift + Enter / Cmd + Shift + Enter",
+    copy: "Ctrl + C / Cmd + C",
+    download: "Ctrl + S / Cmd + S",
+  };
+
+  /**
+   * Build a clickable menu row that closes the menu then runs an action.
+   * @param {string} text - Row label.
+   * @param {() => void} action - Click handler.
+   * @param {string} [className] - Optional CSS class.
+   * @returns {HTMLDivElement} The row element.
+   */
+  function menuItem(text, action, className) {
+    const item = document.createElement("div");
+    item.textContent = text;
+    if (className) item.className = className;
+    item.addEventListener("click", () => {
+      menu.classList.remove("open");
+      action();
+    });
+    return item;
+  }
+
+  /**
+   * Prefix a label with a check-mark column (check when on, em-space when off).
+   * @param {boolean} on - Toggle state.
+   * @param {string} label - Label text.
+   * @returns {string} Label with check column.
+   */
+  const checked = (on, label) => `${on ? "\u2713" : "\u2003"} ${label}`;
+
   /** Refresh button label and menu selection. @returns {void} */
   function render() {
-    // Label never flips to "Raw": the button always (re)formats with the selected syntax.
+    // Label stays "Format <syntax>"; clicking while formatted reverts to the original text.
     mainBtn.textContent = `Format ${langLabel(langId)}`;
+    mainBtn.title = formatted
+      ? "Formatted — click to revert to original"
+      : `Format as ${langLabel(langId)}`;
     applyPreStyle();
-    const wrapItem = document.createElement("div");
-    wrapItem.textContent = `${wrap ? "\u2713" : "\u2003"} Wrap lines`;
-    wrapItem.title = "Cmd+Shift+Enter (macOS) / Ctrl+Shift+Enter";
-    wrapItem.addEventListener("click", () => {
-      menu.classList.remove("open");
-      toggleWrap();
-    });
+    const actionItems = [
+      menuItem(
+        checked(formatted, `Format ${langLabel(langId)} (${SHORTCUTS.format})`),
+        toggleFormat,
+        "format",
+      ),
+      menuItem(checked(wrap, `Wrap lines (${SHORTCUTS.wrap})`), toggleWrap, "wrap"),
+    ];
     const extraItems = [];
     if (PREVIEWABLE.includes(langId)) {
       const previewItem = document.createElement("div");
@@ -142,8 +180,10 @@
       extraItems.push(previewItem);
     }
     menu.replaceChildren(
-      wrapItem,
+      ...actionItems,
       ...extraItems,
+      menuItem(checked(false, `Copy to clipboard (${SHORTCUTS.copy})`), copyAll, "copy"),
+      menuItem(checked(false, `Download (${SHORTCUTS.download})`), download, "download"),
       document.createElement("hr"),
       ...LANGUAGES.map((l) => {
         const item = document.createElement("div");
@@ -208,7 +248,44 @@
     render();
   }
 
-  mainBtn.addEventListener("click", () => applyFormat());
+  /** Revert to the original unformatted text and announce it. @returns {void} */
+  function revertFormat() {
+    errBox.hidden = true;
+    setPreview(false);
+    pre.textContent = original;
+    formatted = false;
+    toast("Reverted to original (unformatted)");
+    render();
+  }
+
+  /** Format if showing original text, otherwise revert to original. @returns {Promise<void>} */
+  async function toggleFormat() {
+    if (formatted) revertFormat();
+    else await applyFormat();
+  }
+
+  /**
+   * File name for downloads: last URL path segment, else `content.txt`.
+   * @returns {string} Download file name.
+   */
+  function downloadName() {
+    const last = decodeURIComponent(location.pathname.split("/").pop() || "");
+    return last || "content.txt";
+  }
+
+  /** Download the displayed text as-is (formatted if formatted, original otherwise). @returns {void} */
+  function download() {
+    const blob = new Blob([pre.textContent], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = downloadName();
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+    toast(`Downloaded ${formatted ? "formatted" : "original"} content as ${a.download}`);
+  }
+
+  mainBtn.addEventListener("click", () => toggleFormat());
   caretBtn.addEventListener("click", () => menu.classList.toggle("open"));
 
   /**
@@ -236,7 +313,8 @@
 
   // Keyboard shortcuts (only registered on pages we can format):
   // - Cmd/Ctrl+Shift+Enter: toggle soft wrap.
-  // - Cmd/Ctrl+S or Alt+S: format with the selected syntax.
+  // - Cmd/Ctrl+S: download the displayed content.
+  // - Alt+S: toggle format (format / revert to original).
   // - Cmd/Ctrl+C or Alt+C: copy the entire content (unless the user selected part of it).
   // e.code is used because macOS Option+letter yields a symbol in e.key.
   document.addEventListener("keydown", (e) => {
@@ -249,7 +327,8 @@
     if (e.shiftKey || !(mod || e.altKey) || (mod && e.altKey)) return;
     if (e.code === "KeyS") {
       e.preventDefault();
-      applyFormat();
+      if (mod) download();
+      else toggleFormat();
       return;
     }
     if (e.code === "KeyC") {

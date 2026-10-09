@@ -62,7 +62,7 @@ afterEach(() => {
 });
 
 describe("Format button", () => {
-  it("keeps the 'Format <syntax>' label after formatting instead of switching to Raw", async () => {
+  it("keeps the 'Format <syntax>' label and a second click reverts to the original", async () => {
     const { root, pre } = await loadPage('{"acme":{"id":1}}');
     const main = root.querySelector(".main");
     expect(main.textContent).toBe("Format JSON");
@@ -70,10 +70,23 @@ describe("Format button", () => {
     await flush();
     expect(pre.textContent).toBe('{\n  "acme": {\n    "id": 1\n  }\n}');
     expect(main.textContent).toBe("Format JSON");
+    expect(root.querySelector(".toast").textContent).toBe("Content formatted as JSON");
     main.click();
     await flush();
     expect(main.textContent).toBe("Format JSON");
-    expect(pre.textContent).toBe('{\n  "acme": {\n    "id": 1\n  }\n}');
+    expect(pre.textContent).toBe('{"acme":{"id":1}}');
+    expect(root.querySelector(".toast").textContent).toBe("Reverted to original (unformatted)");
+  });
+
+  it("lists Format, Wrap, Copy, Download with shortcuts above the syntax list", async () => {
+    const { root } = await loadPage("{}");
+    const labels = [...root.querySelectorAll(".menu div")].slice(0, 4).map((d) => d.textContent);
+    expect(labels).toEqual([
+      "\u2003 Format JSON (Alt + S / Option + S)",
+      "\u2713 Wrap lines (Ctrl + Shift + Enter / Cmd + Shift + Enter)",
+      "\u2003 Copy to clipboard (Ctrl + C / Cmd + C)",
+      "\u2003 Download (Ctrl + S / Cmd + S)",
+    ]);
   });
 
   it("is anchored top-right with a menu that drops down", async () => {
@@ -222,5 +235,31 @@ describe("copy", () => {
     document.dispatchEvent(evt);
     expect(setData).toHaveBeenCalledWith("text/plain", '{\n  "falcon": 1\n}');
     expect(evt.defaultPrevented).toBe(true);
+  });
+
+  it("Alt+S again reverts to the original", async () => {
+    const { pre } = await loadPage('{"orbit":1}');
+    press({ code: "KeyS", altKey: true });
+    await flush();
+    press({ code: "KeyS", altKey: true });
+    await flush();
+    expect(pre.textContent).toBe('{"orbit":1}');
+  });
+});
+
+describe("download", () => {
+  it("Cmd+S downloads the displayed text as-is and toasts its state", async () => {
+    const blobs = [];
+    URL.createObjectURL = (b) => (blobs.push(b), "blob:acme");
+    URL.revokeObjectURL = () => {};
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const { root } = await loadPage('{"pluto":1}');
+    press({ code: "KeyS", metaKey: true });
+    const anchors = click.mock.contexts.filter((el) => el instanceof HTMLAnchorElement);
+    // Earlier tests' document listeners also fire; the newest page's download runs last.
+    expect(anchors.at(-1).href).toBe("blob:acme");
+    expect(await blobs.at(-1).text()).toBe('{"pluto":1}');
+    expect(root.querySelector(".toast").textContent).toMatch(/^Downloaded original content as /);
+    click.mockRestore();
   });
 });
