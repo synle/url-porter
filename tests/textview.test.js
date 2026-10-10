@@ -29,6 +29,7 @@ async function openViewer(search, session) {
   });
   vi.resetModules();
   await import("../src/content/format-detect.js");
+  await import("../src/content/raw-formatter.js");
   await import("../src/viewer/textview.js");
   await globalThis.UrlPorterViewerReady;
 }
@@ -70,5 +71,15 @@ describe("textview", () => {
     await openViewer("?mode=format&lang=cobol&key=k", { k: "ORBIT" });
     expect($("out").textContent).toBe("ORBIT");
     expect($("err").textContent).toMatch(/Unknown syntax "cobol"/);
+  });
+
+  it("mounts the shared Format toolbar, which reverts to the original selection", async () => {
+    document.documentElement.querySelectorAll(":scope > div").forEach((el) => el.remove());
+    await openViewer("?mode=format&lang=json&key=k", { k: '{"globex":1}' });
+    const root = document.documentElement.querySelector(":scope > div").shadowRoot;
+    expect(root.querySelector(".main").textContent).toBe("Format JSON/JSON5");
+    root.querySelector(".main").click();
+    expect($("out").textContent).toBe('{"globex":1}');
+    expect(root.querySelector(".toast").textContent).toBe("Reverted to original (unformatted)");
   });
 });

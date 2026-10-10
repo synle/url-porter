@@ -30,15 +30,30 @@ async function renderViewer() {
     return;
   }
 
+  /**
+   * Attach the shared Format toolbar (menu + keyboard shortcuts) for the shown content.
+   * @param {{langId?: string, formatted?: boolean, preview?: boolean}} state - Initial toolbar state.
+   * @returns {void}
+   */
+  const mountToolbar = (state) =>
+    globalThis.UrlPorterRawFormatter?.mount(out, {
+      original: text,
+      previewFrame: preview,
+      fileName: "selection.txt",
+      ...state,
+    });
+
   if (params.get("mode") === "markdown") {
     document.title = "Markdown Preview";
+    out.textContent = text;
     try {
       preview.srcdoc = await markdownToHtmlDocument(text);
       preview.hidden = false;
+      mountToolbar({ langId: "markdown", preview: true });
     } catch (e) {
       showError(`Could not render Markdown: ${String(e?.message || e)}`);
-      out.textContent = text;
       out.hidden = false;
+      mountToolbar({ langId: "markdown" });
     }
     return;
   }
@@ -48,14 +63,17 @@ async function renderViewer() {
   if (!lang) {
     showError(`Unknown syntax "${params.get("lang")}"; showing the selection as-is.`);
     out.textContent = text;
+    mountToolbar({});
     return;
   }
   document.title = `Formatted ${lang.label}`;
   try {
     out.textContent = await formatText(text, lang.id);
+    mountToolbar({ langId: lang.id, formatted: true });
   } catch (e) {
     showError(`${lang.label}: ${String(e?.message || e).split("\n")[0]}`);
     out.textContent = text;
+    mountToolbar({ langId: lang.id });
   }
 }
 
