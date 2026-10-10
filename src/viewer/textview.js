@@ -1,4 +1,4 @@
-/** Viewer page for context-menu selections: renders handed-off text as a Markdown preview or as formatted monospace code. */
+/** Viewer page for context-menu selections: renders handed-off text as a Markdown preview, a JSON tree, or formatted monospace code. */
 /* global chrome */
 
 /**
@@ -32,7 +32,7 @@ async function renderViewer() {
 
   /**
    * Attach the shared Format toolbar (menu + keyboard shortcuts) for the shown content.
-   * @param {{langId?: string, formatted?: boolean, preview?: boolean}} state - Initial toolbar state.
+   * @param {{langId?: string, formatted?: boolean, preview?: boolean, autoPreview?: boolean}} state - Initial toolbar state.
    * @returns {void}
    */
   const mountToolbar = (state) =>
@@ -54,6 +54,20 @@ async function renderViewer() {
       showError(`Could not render Markdown: ${String(e?.message || e)}`);
       out.hidden = false;
       mountToolbar({ langId: "markdown" });
+    }
+    return;
+  }
+
+  if (params.get("mode") === "json") {
+    document.title = "JSON Tree";
+    out.hidden = false;
+    try {
+      out.textContent = await formatText(text, "json");
+      mountToolbar({ langId: "json", formatted: true, autoPreview: true });
+    } catch (e) {
+      showError(`Not valid JSON: ${String(e?.message || e).split("\n")[0]}`);
+      out.textContent = text;
+      mountToolbar({ langId: "json" });
     }
     return;
   }

@@ -6,6 +6,7 @@ import {
   createSelectionMenus,
   getSelectedText,
   handleSelectionMenuClick,
+  updateSelectionMenus,
 } from "../src/helpers/selectionViewer.js";
 
 /** Fake chrome.storage.session contents. @type {Record<string, string>} */
@@ -14,7 +15,7 @@ let session;
 beforeEach(() => {
   session = {};
   vi.stubGlobal("chrome", {
-    contextMenus: { create: vi.fn() },
+    contextMenus: { create: vi.fn(), update: vi.fn(async () => {}) },
     runtime: { getURL: (p) => `chrome-extension://acme/${p}` },
     scripting: { executeScript: vi.fn() },
     tabs: { create: vi.fn() },
@@ -29,7 +30,7 @@ beforeEach(() => {
 });
 
 describe("createSelectionMenus", () => {
-  it("adds a Preview item and a Format submenu with one child per syntax", () => {
+  it("adds hidden Markdown / JSON preview items and a Format submenu with one child per syntax", () => {
     createSelectionMenus([
       { id: "json", label: "JSON" },
       { id: "yaml", label: "YAML" },
@@ -40,6 +41,13 @@ describe("createSelectionMenus", () => {
         id: "selection-preview-markdown",
         title: "Preview Selection as Markdown",
         contexts: ["selection"],
+        visible: false,
+      },
+      {
+        id: "selection-view-json",
+        title: "View Selection as JSON Tree",
+        contexts: ["selection"],
+        visible: false,
       },
       { id: "selection-format", title: "Format Selection as", contexts: ["selection"] },
       {
@@ -54,6 +62,32 @@ describe("createSelectionMenus", () => {
         title: "YAML",
         contexts: ["selection"],
       },
+    ]);
+  });
+});
+
+describe("updateSelectionMenus", () => {
+  it("shows only the JSON item for a JSON selection", async () => {
+    await updateSelectionMenus({ json: true, markdown: false });
+    expect(chrome.contextMenus.update.mock.calls).toEqual([
+      ["selection-preview-markdown", { visible: false }],
+      ["selection-view-json", { visible: true }],
+    ]);
+  });
+
+  it("shows only the Markdown item for a Markdown selection", async () => {
+    await updateSelectionMenus({ json: false, markdown: true });
+    expect(chrome.contextMenus.update.mock.calls).toEqual([
+      ["selection-preview-markdown", { visible: true }],
+      ["selection-view-json", { visible: false }],
+    ]);
+  });
+
+  it("hides both for a non-boolean payload", async () => {
+    await updateSelectionMenus({ json: "yes", markdown: 1 });
+    expect(chrome.contextMenus.update.mock.calls).toEqual([
+      ["selection-preview-markdown", { visible: false }],
+      ["selection-view-json", { visible: false }],
     ]);
   });
 });
@@ -107,6 +141,17 @@ describe("handleSelectionMenuClick", () => {
     expect(params.get("mode")).toBe("format");
     expect(params.get("lang")).toBe("yaml");
     expect(chrome.tabs.create.mock.calls[0][0].index).toBeUndefined();
+  });
+
+  it("opens the viewer in json mode for the JSON tree item", async () => {
+    await handleSelectionMenuClick(
+      { menuItemId: "selection-view-json", selectionText: '{"team":"ORBIT"}' },
+      undefined,
+      1,
+    );
+    const params = new URL(chrome.tabs.create.mock.calls[0][0].url).searchParams;
+    expect(params.get("mode")).toBe("json");
+    expect(session[params.get("key")]).toBe('{"team":"ORBIT"}');
   });
 
   it("ignores other menu items", async () => {

@@ -24,7 +24,11 @@ import { reconcileJiraTickets } from "../helpers/jiraTicketUtils.js";
 import { reconcileGoogleDrive } from "../helpers/googleDriveUtils.js";
 import { reconcileOnedrive } from "../helpers/onedriveUtils.js";
 import { reconcileAllBookmarkRules } from "../helpers/genericBookmarkRuleUtils.js";
-import { createSelectionMenus, handleSelectionMenuClick } from "../helpers/selectionViewer.js";
+import {
+  createSelectionMenus,
+  handleSelectionMenuClick,
+  updateSelectionMenus,
+} from "../helpers/selectionViewer.js";
 // Side-effect import: classic script that defines globalThis.UrlPorterFormat (language catalog).
 import "../content/format-detect.js";
 
@@ -145,6 +149,12 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       console.log("[background] stored Jira status:", request.status, "for", request.url);
       scheduleReconcile();
     });
+    return;
+  }
+  if (request.type === "Myevent.selectionKind") {
+    updateSelectionMenus(request).catch((err) =>
+      console.warn("[background] selection menu update failed", err),
+    );
     return;
   }
   if (request.type === "Myevent.getBookmarks") {

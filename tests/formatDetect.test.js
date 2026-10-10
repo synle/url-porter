@@ -72,6 +72,54 @@ describe("fromContent", () => {
   });
 });
 
+describe("isJsonBlob", () => {
+  it.each([
+    ['{"team":"FALCON"}', true],
+    ['  [1, {"acme": null}]\n', true],
+    ["{}", true],
+    ['"FALCON"', false],
+    ["42", false],
+    ["true", false],
+    ["null", false],
+    ["{team: 'FALCON'}", false],
+    ['{"a":1,}', false],
+    ["", false],
+    [undefined, false],
+  ])("%s → %s", (text, expected) => {
+    expect(F.isJsonBlob(text)).toBe(expected);
+  });
+});
+
+describe("isMarkdownBlob", () => {
+  it.each([
+    ["# Initech\n\nsome text", true],
+    ["intro\n```js\nconst a = 1;\n```", true],
+    ["| a | b |\n|---|---|\n| 1 | 2 |", true],
+    ["- FALCON\n- PLUTO\n\nsee [docs](https://acme.example)", true],
+    ["use `npm test` and **always** run it", true],
+    ["Meeting moved to 3pm, bring the Globex report.", false],
+    ["- just one bullet", false],
+    ["only **bold** here", false],
+    ["#nospace hashtag", false],
+    ['{"title":"# not markdown"}', false],
+    ["", false],
+  ])("%s → %s", (text, expected) => {
+    expect(F.isMarkdownBlob(text)).toBe(expected);
+  });
+});
+
+describe("previewKind", () => {
+  it.each([
+    ["markdown", "markdown"],
+    ["mdx", "markdown"],
+    ["json", "json"],
+    ["yaml", null],
+    ["unknown", null],
+  ])("%s → %s", (id, expected) => {
+    expect(F.previewKind(id)).toBe(expected);
+  });
+});
+
 describe("formatXml", () => {
   it("indents nested elements and keeps leaf text inline", () => {
     expect(F.formatXml("<a><b>hi</b><c><d/></c></a>")).toBe(

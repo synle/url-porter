@@ -154,10 +154,17 @@ export default defineConfig({
           resolve(__dirname, "node_modules/marked/lib/marked.esm.js"),
           join(markedDest, "marked.esm.js"),
         );
+        // Vendor @andypf/json-viewer (self-contained IIFE web component) for the JSON tree preview.
+        const jsonViewerDest = resolve(__dirname, "dist/vendor/json-viewer");
+        mkdirSync(jsonViewerDest, { recursive: true });
+        copyFileSync(
+          resolve(__dirname, "node_modules/@andypf/json-viewer/dist/iife/index.js"),
+          join(jsonViewerDest, "json-viewer.js"),
+        );
         // Static selection viewer page (opened from the "Preview / Format Selection" context menus).
         const viewerDest = resolve(__dirname, "dist/viewer");
         mkdirSync(viewerDest, { recursive: true });
-        for (const name of ["textview.html", "textview.js"]) {
+        for (const name of ["textview.html", "textview.js", "jsonview.html", "jsonview.js"]) {
           copyFileSync(resolve(__dirname, "src/viewer", name), join(viewerDest, name));
         }
       },

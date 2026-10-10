@@ -14,6 +14,17 @@
           14px system-ui,
           sans-serif;
         color-scheme: light dark;
+        background: #fff;
+        color: #000;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #000;
+          color: #fff;
+        }
+        #err {
+          color: #ff8a80;
+        }
       }
       #err {
         color: #c62828;
@@ -35,7 +46,6 @@
         border: 0;
         width: 100%;
         height: 100%;
-        background: #fff;
       }
     </style>
   </head>

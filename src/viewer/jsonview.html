@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>JSON Tree</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        font:
+          13px system-ui,
+          sans-serif;
+      }
+      body {
+        color-scheme: light dark;
+        background: #fff;
+      }
+      body.dark {
+        background: #000;
+      }
+      #err {
+        color: #c62828;
+        padding: 8px 12px;
+      }
+      andypf-json-viewer {
+        display: block;
+        min-height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="err" hidden></div>
+    <andypf-json-viewer
+      id="tree"
+      indent="2"
+      expanded="2"
+      show-toolbar="true"
+      show-data-types="false"
+      show-copy="true"
+      show-size="true"
+    ></andypf-json-viewer>
+    <script src="../vendor/json-viewer/json-viewer.js"></script>
+    <script src="jsonview.js"></script>
+  </body>
+</html>

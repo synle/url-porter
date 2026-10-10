@@ -80,14 +80,20 @@ describe("Format button", () => {
 
   it("lists Format, Wrap, Copy, Download with shortcuts above the syntax list", async () => {
     const { root } = await loadPage("{}");
-    const labels = [...root.querySelectorAll(".menu div")].slice(0, 5).map((d) => d.textContent);
-    expect(labels).toEqual([
-      "\u2003 Format JSON/JSON5 (Alt + S / Option + S)",
-      "\u2713 Wrap lines (Ctrl + Shift + Enter / Cmd + Shift + Enter)",
-      "\u2003 Dark mode (Shift + Esc)",
-      "\u2003 Copy to clipboard (Ctrl + C / Cmd + C)",
-      "\u2003 Download (Ctrl + S / Cmd + S)",
+    const rows = [...root.querySelectorAll(".menu div.action")].map((d) => [
+      d.querySelector(".check").textContent,
+      d.querySelector(".label").textContent,
+      d.querySelector(".kbd").textContent,
     ]);
+    expect(rows).toEqual([
+      ["", "Format JSON/JSON5", "Alt + S / Option + S"],
+      ["\u2713", "Wrap lines", "Ctrl + Shift + Enter / Cmd + Shift + Enter"],
+      ["", "Dark mode", "Shift + Esc"],
+      ["", "View JSON Tree", "Alt + M / Option + M"],
+      ["", "Copy to clipboard", "Ctrl + C / Cmd + C"],
+      ["", "Download", "Ctrl + S / Cmd + S"],
+    ]);
+    expect(root.querySelector("style").textContent).toMatch(/\.menu \.kbd \{[^}]*opacity:\.55/);
   });
 
   it("is anchored top-right with a menu that drops down", async () => {
@@ -164,14 +170,14 @@ describe("toasts", () => {
 
 describe("markdown preview", () => {
   /**
-   * Find a menu item by label, ignoring the check-mark column.
+   * Find a menu item by label: an action row's `.label` column, or a syntax row's text.
    * @param {ShadowRoot} root - Formatter UI root.
-   * @param {string} label - Item text without the check-mark column.
+   * @param {string} label - Label text.
    * @returns {HTMLElement | undefined} Matching item.
    */
   const item = (root, label) =>
     [...root.querySelectorAll(".menu div")].find(
-      (d) => d.textContent.replace(/^[\u2713\u2003] /, "").replace(/ \(.*\)$/, "") === label,
+      (d) => (d.querySelector(".label")?.textContent ?? d.textContent) === label,
     );
 
   it("offers Preview Markdown only when Markdown is selected", async () => {
@@ -269,9 +275,144 @@ describe("theme", () => {
   it("Shift+Escape toggles dark mode on the page and toasts the state", async () => {
     const { root } = await loadPage("{}");
     press({ key: "Escape", shiftKey: true });
-    expect(document.body.style.background).toBe("rgb(30, 30, 30)");
+    expect(document.body.style.background).toBe("rgb(0, 0, 0)");
+    expect(document.body.style.color).toBe("rgb(255, 255, 255)");
     expect(root.querySelector(".toast").textContent).toBe("Dark mode");
     press({ key: "Escape", shiftKey: true });
+    expect(document.body.style.background).toBe("rgb(255, 255, 255)");
+    expect(document.body.style.color).toBe("rgb(0, 0, 0)");
     expect(root.querySelector(".toast").textContent).toBe("Light mode");
+  });
+});
+
+describe("JSON tree preview", () => {
+  /**
+   * The newest JSON tree iframe (toolbars from earlier tests keep their key listeners, so the current one appends last).
+   * @returns {HTMLIFrameElement|undefined} The frame, or undefined before first use.
+   */
+  const jsonFrame = () => [...document.querySelectorAll('iframe[title="JSON tree"]')].at(-1);
+
+  /** getURL stub: the JSON page maps to about:blank so jsdom never tries to load a missing file. @type {import("vitest").Mock} */
+  let getURL;
+  beforeEach(() => {
+    getURL = vi.fn((p) =>
+      p === "viewer/jsonview.html" ? "about:blank" : `chrome-extension://acme/${p}`,
+    );
+    vi.stubGlobal("chrome", { runtime: { getURL } });
+  });
+
+  it("Alt+M on JSON opens the JSON tree frame in place of the text, and toggles back", async () => {
+    const { root, pre } = await loadPage('{"team":"FALCON"}');
+    press({ code: "KeyM", altKey: true });
+    expect(getURL).toHaveBeenCalledWith("viewer/jsonview.html");
+    expect(jsonFrame().src).toBe("about:blank");
+    expect(jsonFrame().style.display).toBe("block");
+    expect(pre.style.display).toBe("none");
+    expect(root.querySelector(".toast").textContent).toBe("JSON tree ON");
+    press({ code: "KeyM", altKey: true });
+    expect(jsonFrame().style.display).toBe("none");
+    expect(pre.style.display).toBe("block");
+    expect(root.querySelector(".toast").textContent).toBe("JSON tree OFF");
+  });
+
+  it("posts the original text and theme to the frame only after it reports ready", async () => {
+    await loadPage('{"team":"PLUTO"}');
+    press({ code: "KeyM", altKey: true });
+    const post = vi.spyOn(jsonFrame().contentWindow, "postMessage");
+    expect(post).not.toHaveBeenCalled();
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: { type: "url-porter:json-view:ready" },
+        source: jsonFrame().contentWindow,
+      }),
+    );
+    expect(post).toHaveBeenCalledWith(
+      { type: "url-porter:json-view", text: '{"team":"PLUTO"}', dark: false },
+      "chrome-extension://acme",
+    );
+  });
+
+  it("ignores a ready message from a window other than its frame", async () => {
+    await loadPage('{"team":"ORBIT"}');
+    press({ code: "KeyM", altKey: true });
+    const post = vi.spyOn(jsonFrame().contentWindow, "postMessage");
+    window.dispatchEvent(
+      new MessageEvent("message", { data: { type: "url-porter:json-view:ready" }, source: window }),
+    );
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it("follows the selected syntax, not the content: YAML has no preview item and Alt+M does nothing", async () => {
+    const { root } = await loadPage("team: FALCON", "text/yaml");
+    expect(root.querySelector(".menu .preview")).toBeNull();
+    root.querySelector(".toast").textContent = "";
+    press({ code: "KeyM", altKey: true });
+    expect(root.querySelector(".toast").textContent).toBe("");
+  });
+
+  it("offers the JSON tree when the user picks JSON even if the text is not JSON", async () => {
+    const { root } = await loadPage("team: FALCON", "text/yaml");
+    const jsonItem = [...root.querySelectorAll(".menu div")].find(
+      (d) => d.textContent === "JSON/JSON5",
+    );
+    jsonItem.click();
+    await vi.waitFor(() =>
+      expect(root.querySelector(".menu .preview .label")?.textContent).toBe("View JSON Tree"),
+    );
+  });
+});
+
+describe("selection kind reporting", () => {
+  /**
+   * Load the scripts with a sendMessage spy, select `text` in a textarea, and let the debounce fire.
+   * @param {string} text - Text to select.
+   * @returns {Promise<import("vitest").Mock>} The sendMessage spy.
+   */
+  async function selectText(text) {
+    const sendMessage = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("chrome", {
+      runtime: { getURL: (p) => `file:///nonexistent/${p}`, sendMessage },
+    });
+    document.body.innerHTML = "<p>Acme</p>";
+    Object.defineProperty(document, "contentType", { value: "text/html", configurable: true });
+    vi.resetModules();
+    await import("../src/content/format-detect.js");
+    await import("../src/content/raw-formatter.js");
+    vi.useFakeTimers();
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    document.dispatchEvent(new Event("selectionchange"));
+    vi.advanceTimersByTime(150);
+    return sendMessage;
+  }
+
+  it("reports a JSON selection as json only", async () => {
+    const send = await selectText('{"team":"FALCON"}');
+    expect(send).toHaveBeenLastCalledWith({
+      type: "Myevent.selectionKind",
+      json: true,
+      markdown: false,
+    });
+  });
+
+  it("reports a Markdown selection as markdown only", async () => {
+    const send = await selectText("# Initech\n\n- PLUTO");
+    expect(send).toHaveBeenLastCalledWith({
+      type: "Myevent.selectionKind",
+      json: false,
+      markdown: true,
+    });
+  });
+
+  it("reports plain prose as neither", async () => {
+    const send = await selectText("Lunch with the Globex team at noon.");
+    expect(send).toHaveBeenLastCalledWith({
+      type: "Myevent.selectionKind",
+      json: false,
+      markdown: false,
+    });
   });
 });

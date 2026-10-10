@@ -166,6 +166,65 @@
   }
 
   /**
+   * Whether text is a real JSON blob: strict JSON.parse succeeds and yields an object or array
+   * (bare strings / numbers / booleans don't count — they are just words).
+   * @param {string} [text] - Candidate text.
+   * @returns {boolean} True for a JSON object or array.
+   */
+  function isJsonBlob(text) {
+    const t = String(text || "").trim();
+    if (!/^[[{]/.test(t)) return false;
+    try {
+      const value = JSON.parse(t);
+      return typeof value === "object" && value !== null;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Markdown block markers that alone make text Markdown (heading, fenced code, table separator row). @type {RegExp[]} */
+  const MARKDOWN_STRONG = [
+    /^#{1,6}\s+\S/m,
+    /^\s*(```|~~~)/m,
+    /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/m,
+  ];
+
+  /** Weaker Markdown markers; at least two distinct ones are needed. @type {RegExp[]} */
+  const MARKDOWN_WEAK = [
+    /^\s*([-*+]|\d+[.)])\s+\S[^\n]*\n\s*([-*+]|\d+[.)])\s+\S/m, // a list of 2+ items
+    /\[[^\]\n]+\]\([^)\s]+\)/, // [link](url)
+    /^>\s/m, // blockquote
+    /(\*\*|__)[^*_\n]+\1/, // bold
+    /`[^`\n]+`/, // inline code
+    /^\s*- \[[ xX]\]\s/m, // task list
+  ];
+
+  /**
+   * Whether text plausibly is real Markdown, not prose that happens to contain a `*`.
+   * Needs one strong block marker (heading, code fence, table) or two distinct weak markers. JSON never counts.
+   * @param {string} [text] - Candidate text.
+   * @returns {boolean} True when the text reads as Markdown.
+   */
+  function isMarkdownBlob(text) {
+    const t = String(text || "").trim();
+    if (!t || isJsonBlob(t)) return false;
+    if (MARKDOWN_STRONG.some((re) => re.test(t))) return true;
+    return MARKDOWN_WEAK.filter((re) => re.test(t)).length >= 2;
+  }
+
+  /** Language id → preview kind its toolbar toggle (Alt+M) opens. @type {Record<string, "markdown"|"json">} */
+  const PREVIEW_KINDS = { markdown: "markdown", mdx: "markdown", json: "json" };
+
+  /**
+   * Preview kind for a selected syntax; the toolbar trusts the user's syntax choice, no content check.
+   * @param {string} langId - Language id.
+   * @returns {"markdown"|"json"|null} Preview kind, or null when the syntax has no preview.
+   */
+  function previewKind(langId) {
+    return PREVIEW_KINDS[langId] || null;
+  }
+
+  /**
    * Minimal XML pretty-printer (Prettier core ships no XML parser). Indents elements by 2 spaces; leaf text stays inline.
    * @param {string} xml - Raw XML.
    * @returns {string} Indented XML ending with a newline.
@@ -246,22 +305,40 @@
     return prettier.format(text, { parser: lang.parser, plugins, printWidth: 100 });
   }
 
+  /** Light Markdown colors: black on white, standard blue links. @type {string} */
+  const MD_LIGHT =
+    "--fg:#000;--bg:#fff;--link:#0645ad;--visited:#5a3696;--muted:#555;--code-bg:#f2f2f2;--border:#ccc;";
+  /** Dark Markdown colors: white on black, light blue links. @type {string} */
+  const MD_DARK =
+    "--fg:#fff;--bg:#000;--link:#8ab4f8;--visited:#c58af9;--muted:#aaa;--code-bg:#1a1a1a;--border:#444;";
+
   /**
    * Render Markdown to a standalone styled HTML document with vendored marked (GFM).
+   * Colors follow the OS theme (prefers-color-scheme) unless `theme` pins one.
    * Callers must load it into a script-less sandboxed iframe (`srcdoc`) — the output is untrusted markup.
    * @param {string} text - Markdown source.
+   * @param {"light"|"dark"} [theme] - Force a theme (the toolbar's Shift+Esc toggle); omit to follow the OS.
    * @returns {Promise<string>} Full HTML document.
    * @throws {Error} When the marked bundle cannot load.
    */
-  async function markdownToHtmlDocument(text) {
+  async function markdownToHtmlDocument(text, theme) {
     const { marked } = await import(chrome.runtime.getURL(MARKED_PATH));
     const body = marked.parse(text, { gfm: true });
-    return `<!doctype html><meta charset="utf-8"><base target="_blank"><style>
-      body{font:16px/1.6 system-ui,sans-serif;max-width:860px;margin:0 auto;padding:48px 24px;color:#1f2328;}
-      pre{background:#f6f8fa;padding:12px;border-radius:6px;overflow:auto;}
-      code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:85%;}
-      table{border-collapse:collapse;}th,td{border:1px solid #d0d7de;padding:4px 10px;}
-      img{max-width:100%;}blockquote{color:#59636e;border-left:4px solid #d0d7de;margin:0;padding:0 12px;}
+    const vars =
+      theme === "dark"
+        ? `:root{${MD_DARK}color-scheme:dark;}`
+        : theme === "light"
+          ? `:root{${MD_LIGHT}color-scheme:light;}`
+          : `:root{${MD_LIGHT}color-scheme:light dark;}@media (prefers-color-scheme: dark){:root{${MD_DARK}}}`;
+    return `<!doctype html><meta charset="utf-8"><base target="_blank"><style>${vars}
+      html{background:var(--bg);color:var(--fg);}
+      body{font:16px/1.6 system-ui,sans-serif;max-width:860px;margin:0 auto;padding:48px 24px;}
+      a{color:var(--link);text-decoration:underline;}a:visited{color:var(--visited);}
+      pre{background:var(--code-bg);padding:12px;border-radius:6px;overflow:auto;}
+      code{background:var(--code-bg);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:85%;}
+      table{border-collapse:collapse;}th,td{border:1px solid var(--border);padding:4px 10px;}
+      hr{border:0;border-top:1px solid var(--border);}
+      img{max-width:100%;}blockquote{color:var(--muted);border-left:4px solid var(--border);margin:0;padding:0 12px;}
     </style>${body}`;
   }
 
@@ -271,6 +348,9 @@
     fromUrl,
     fromContent,
     detectLanguage,
+    isJsonBlob,
+    isMarkdownBlob,
+    previewKind,
     formatXml,
     formatText,
     markdownToHtmlDocument,

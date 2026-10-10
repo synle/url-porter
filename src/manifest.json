@@ -70,7 +70,13 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["vendor/prettier/*", "vendor/marked/*"],
+      "resources": [
+        "vendor/prettier/*",
+        "vendor/marked/*",
+        "vendor/json-viewer/*",
+        "viewer/jsonview.html",
+        "viewer/jsonview.js"
+      ],
       "matches": ["<all_urls>"]
     }
   ]
