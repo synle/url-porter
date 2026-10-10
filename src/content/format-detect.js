@@ -6,8 +6,8 @@
    * @type {Array<{id: string, label: string, parser: string, plugins: string[]}>}
    */
   const LANGUAGES = [
-    { id: "json", label: "JSON", parser: "json", plugins: ["babel", "estree"] },
-    { id: "json5", label: "JSON5", parser: "json5", plugins: ["babel", "estree"] },
+    // One entry for JSON / JSON5: Prettier's json parser accepts JSON5 input (comments, unquoted keys, trailing commas).
+    { id: "json", label: "JSON/JSON5", parser: "json", plugins: ["babel", "estree"] },
     // One entry for JS / TS / JSX / TSX: Prettier's typescript parser accepts all four.
     { id: "js", label: "JS/TS", parser: "typescript", plugins: ["typescript", "estree"] },
     { id: "flow", label: "Flow", parser: "flow", plugins: ["flow", "estree"] },
@@ -32,8 +32,7 @@
 
   /** Content-type pattern → language id. First match wins; generic types (text/plain) match nothing. @type {Array<[RegExp, string]>} */
   const CONTENT_TYPE_RULES = [
-    [/json5/, "json5"],
-    [/[/+]json$/, "json"],
+    [/[/+]json5?$/, "json"],
     [/typescript|javascript|ecmascript|jsx/, "js"],
     [/^text\/css$/, "css"],
     [/scss/, "scss"],
@@ -53,7 +52,7 @@
     har: "json",
     geojson: "json",
     webmanifest: "json",
-    json5: "json5",
+    json5: "json",
     js: "js",
     mjs: "js",
     cjs: "js",
@@ -153,7 +152,7 @@
     if (/^[.#@:\w\-[\]*,>\s]+\{[^{}]*:[^{}]*\}/.test(t)) return "css";
     if (/^#{1,6}\s/m.test(t)) return "markdown";
     if (/^---\s*$|^[\w"'-]+:\s/m.test(t) && !/[{};]\s*$/m.test(t)) return "yaml";
-    if (/^[[{]/.test(t)) return "json5";
+    if (/^[[{]/.test(t)) return "json";
     return null;
   }
 

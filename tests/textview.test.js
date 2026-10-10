@@ -43,7 +43,7 @@ describe("textview", () => {
     expect($("out").textContent).toBe('{\n  "acme": [\n    1,\n    2\n  ]\n}');
     expect($("out").hidden).toBe(false);
     expect($("err").hidden).toBe(true);
-    expect(document.title).toBe("Formatted JSON");
+    expect(document.title).toBe("Formatted JSON/JSON5");
   });
 
   it("shows the raw selection plus an error when formatting fails", async () => {

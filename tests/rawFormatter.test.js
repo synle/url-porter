@@ -65,25 +65,26 @@ describe("Format button", () => {
   it("keeps the 'Format <syntax>' label and a second click reverts to the original", async () => {
     const { root, pre } = await loadPage('{"acme":{"id":1}}');
     const main = root.querySelector(".main");
-    expect(main.textContent).toBe("Format JSON");
+    expect(main.textContent).toBe("Format JSON/JSON5");
     main.click();
     await flush();
     expect(pre.textContent).toBe('{\n  "acme": {\n    "id": 1\n  }\n}');
-    expect(main.textContent).toBe("Format JSON");
-    expect(root.querySelector(".toast").textContent).toBe("Content formatted as JSON");
+    expect(main.textContent).toBe("Format JSON/JSON5");
+    expect(root.querySelector(".toast").textContent).toBe("Content formatted as JSON/JSON5");
     main.click();
     await flush();
-    expect(main.textContent).toBe("Format JSON");
+    expect(main.textContent).toBe("Format JSON/JSON5");
     expect(pre.textContent).toBe('{"acme":{"id":1}}');
     expect(root.querySelector(".toast").textContent).toBe("Reverted to original (unformatted)");
   });
 
   it("lists Format, Wrap, Copy, Download with shortcuts above the syntax list", async () => {
     const { root } = await loadPage("{}");
-    const labels = [...root.querySelectorAll(".menu div")].slice(0, 4).map((d) => d.textContent);
+    const labels = [...root.querySelectorAll(".menu div")].slice(0, 5).map((d) => d.textContent);
     expect(labels).toEqual([
-      "\u2003 Format JSON (Alt + S / Option + S)",
+      "\u2003 Format JSON/JSON5 (Alt + S / Option + S)",
       "\u2713 Wrap lines (Ctrl + Shift + Enter / Cmd + Shift + Enter)",
+      "\u2003 Dark mode (Shift + Esc)",
       "\u2003 Copy to clipboard (Ctrl + C / Cmd + C)",
       "\u2003 Download (Ctrl + S / Cmd + S)",
     ]);
@@ -124,7 +125,7 @@ describe("Format button", () => {
     // Prettier's vendored bundle is absent in tests, so the fallback import rejects.
     await vi.waitFor(() => expect(root.querySelector(".err").hidden).toBe(false));
     expect(pre.textContent).toBe("{not json");
-    expect(root.querySelector(".toast").textContent).toBe("Could not format as JSON");
+    expect(root.querySelector(".toast").textContent).toBe("Could not format as JSON/JSON5");
   });
 });
 
@@ -170,7 +171,7 @@ describe("markdown preview", () => {
    */
   const item = (root, label) =>
     [...root.querySelectorAll(".menu div")].find(
-      (d) => d.textContent.replace(/^[\u2713\u2003] /, "") === label,
+      (d) => d.textContent.replace(/^[\u2713\u2003] /, "").replace(/ \(.*\)$/, "") === label,
     );
 
   it("offers Preview Markdown only when Markdown is selected", async () => {
@@ -261,5 +262,16 @@ describe("download", () => {
     expect(await blobs.at(-1).text()).toBe('{"pluto":1}');
     expect(root.querySelector(".toast").textContent).toMatch(/^Downloaded original content as /);
     click.mockRestore();
+  });
+});
+
+describe("theme", () => {
+  it("Shift+Escape toggles dark mode on the page and toasts the state", async () => {
+    const { root } = await loadPage("{}");
+    press({ key: "Escape", shiftKey: true });
+    expect(document.body.style.background).toBe("rgb(30, 30, 30)");
+    expect(root.querySelector(".toast").textContent).toBe("Dark mode");
+    press({ key: "Escape", shiftKey: true });
+    expect(root.querySelector(".toast").textContent).toBe("Light mode");
   });
 });

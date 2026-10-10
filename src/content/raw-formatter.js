@@ -23,10 +23,14 @@
   const PREVIEWABLE = ["markdown", "mdx"];
   /** Whether the rendered Markdown preview replaces the <pre>. @type {boolean} */
   let preview = false;
+  /** Whether the page uses the dark theme; starts from the OS preference. @type {boolean} */
+  let dark = !!window.matchMedia?.("(prefers-color-scheme: dark)").matches;
   // Preview renders in a script-less sandboxed iframe so markup in the page text can never run in the page origin.
   const previewFrame = document.createElement("iframe");
   previewFrame.setAttribute("sandbox", "allow-popups allow-popups-to-escape-sandbox");
-  previewFrame.style.cssText = "display:none;border:0;width:100%;height:100vh;background:#fff;";
+  // Pinned to the viewport (and page overflow hidden while shown) so only one scrollbar appears: the frame's, at the window edge.
+  previewFrame.style.cssText =
+    "display:none;position:fixed;inset:0;border:0;width:100%;height:100%;background:#fff;";
   document.body.appendChild(previewFrame);
 
   // Hide Chrome's own JSON viewer chrome (the "Pretty-print" checkbox + its formatted pane, Chrome 131+);
@@ -42,6 +46,10 @@
 
   /** Apply wrap + font styles to the <pre>; formatted output is always monospace. @returns {void} */
   function applyPreStyle() {
+    document.body.style.background = dark ? "#1e1e1e" : "#fff";
+    document.body.style.color = dark ? "#d4d4d4" : "#000";
+    // The sandboxed preview can't be restyled from here, so invert it (hue-rotate keeps colors natural).
+    previewFrame.style.filter = dark ? "invert(1) hue-rotate(180deg)" : "";
     pre.style.whiteSpace = wrap ? "pre-wrap" : "pre";
     pre.style.overflowWrap = wrap ? "anywhere" : "normal";
     pre.style.fontFamily = formatted
@@ -124,6 +132,8 @@
     wrap: "Ctrl + Shift + Enter / Cmd + Shift + Enter",
     copy: "Ctrl + C / Cmd + C",
     download: "Ctrl + S / Cmd + S",
+    preview: "Alt + M / Option + M",
+    theme: "Shift + Esc",
   };
 
   /**
@@ -152,6 +162,13 @@
    */
   const checked = (on, label) => `${on ? "\u2713" : "\u2003"} ${label}`;
 
+  /** Flip dark/light theme and announce it. @returns {void} */
+  function toggleTheme() {
+    dark = !dark;
+    render();
+    toast(`${dark ? "Dark" : "Light"} mode`);
+  }
+
   /** Refresh button label and menu selection. @returns {void} */
   function render() {
     // Label stays "Format <syntax>"; clicking while formatted reverts to the original text.
@@ -167,12 +184,13 @@
         "format",
       ),
       menuItem(checked(wrap, `Wrap lines (${SHORTCUTS.wrap})`), toggleWrap, "wrap"),
+      menuItem(checked(dark, `Dark mode (${SHORTCUTS.theme})`), toggleTheme, "theme"),
     ];
     const extraItems = [];
     if (PREVIEWABLE.includes(langId)) {
       const previewItem = document.createElement("div");
       previewItem.className = "preview";
-      previewItem.textContent = `${preview ? "\u2713" : "\u2003"} Preview Markdown`;
+      previewItem.textContent = checked(preview, `Preview Markdown (${SHORTCUTS.preview})`);
       previewItem.addEventListener("click", () => {
         menu.classList.remove("open");
         togglePreview();
@@ -209,6 +227,7 @@
     preview = on;
     previewFrame.style.display = on ? "block" : "none";
     pre.style.display = on ? "none" : "block";
+    document.documentElement.style.overflow = on ? "hidden" : "";
   }
 
   /** Flip the Markdown preview on/off and announce it. @returns {Promise<void>} */
@@ -315,6 +334,7 @@
   // - Cmd/Ctrl+Shift+Enter: toggle soft wrap.
   // - Cmd/Ctrl+S: download the displayed content.
   // - Alt+S: toggle format (format / revert to original).
+  // - Alt+M: toggle Markdown preview (Markdown/MDX only). Shift+Escape: toggle dark/light mode.
   // - Cmd/Ctrl+C or Alt+C: copy the entire content (unless the user selected part of it).
   // e.code is used because macOS Option+letter yields a symbol in e.key.
   document.addEventListener("keydown", (e) => {
@@ -324,11 +344,21 @@
       toggleWrap();
       return;
     }
+    if (e.key === "Escape" && e.shiftKey && !mod && !e.altKey) {
+      e.preventDefault();
+      toggleTheme();
+      return;
+    }
     if (e.shiftKey || !(mod || e.altKey) || (mod && e.altKey)) return;
     if (e.code === "KeyS") {
       e.preventDefault();
       if (mod) download();
       else toggleFormat();
+      return;
+    }
+    if (e.altKey && !mod && e.code === "KeyM" && PREVIEWABLE.includes(langId)) {
+      e.preventDefault();
+      togglePreview();
       return;
     }
     if (e.code === "KeyC") {

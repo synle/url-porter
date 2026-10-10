@@ -66,7 +66,7 @@ describe("fromContent", () => {
     ["name: initech\nport: 80", "yaml"],
     ["# FALCON\n\nsome text", "markdown"],
     ["query { pluto { id } }", "graphql"],
-    ["{a: 1}", "json5"],
+    ["{a: 1}", "json"],
   ])("%s → %s", (text, expected) => {
     expect(sniff(text)).toBe(expected);
   });
