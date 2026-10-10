@@ -269,6 +269,52 @@ describe("download", () => {
     expect(root.querySelector(".toast").textContent).toMatch(/^Downloaded original content as /);
     click.mockRestore();
   });
+
+  describe("on a CSP-sandboxed page (opaque origin, e.g. raw.githubusercontent.com)", () => {
+    beforeEach(() => {
+      Object.defineProperty(window, "origin", { value: "null", configurable: true });
+    });
+    afterEach(() => {
+      delete window.origin;
+    });
+
+    /**
+     * Load a page with a sendMessage stub and click the current toolbar's Download item.
+     * @param {unknown} reply - What the background answers.
+     * @returns {Promise<{root: ShadowRoot, sendMessage: import("vitest").Mock, click: import("vitest").MockInstance}>}
+     */
+    async function downloadVia(reply) {
+      const sendMessage = vi.fn(async () => reply);
+      vi.stubGlobal("chrome", {
+        runtime: { getURL: (p) => `file:///nonexistent/${p}`, sendMessage },
+      });
+      const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+      const { root } = await loadPage('{"falcon":2}');
+      root.querySelector(".menu .download").click();
+      await flush();
+      return { root, sendMessage, click };
+    }
+
+    it("hands the text to the background instead of an <a download> the page would block", async () => {
+      const { root, sendMessage, click } = await downloadVia({ ok: true });
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "Myevent.download",
+        text: '{"falcon":2}',
+        fileName: "content.txt",
+      });
+      expect(click).not.toHaveBeenCalled();
+      expect(root.querySelector(".toast").textContent).toBe(
+        "Downloaded original content as content.txt",
+      );
+      click.mockRestore();
+    });
+
+    it("says the download failed when the background reports failure", async () => {
+      const { root, click } = await downloadVia({ ok: false, error: "Download failed" });
+      expect(root.querySelector(".toast").textContent).toBe("Download failed");
+      click.mockRestore();
+    });
+  });
 });
 
 describe("theme", () => {

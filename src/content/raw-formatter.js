@@ -413,16 +413,36 @@
       return last || "content.txt";
     }
 
-    /** Download the displayed text as-is (formatted if formatted, original otherwise). @returns {void} */
+    /**
+     * Download the displayed text as-is (formatted if formatted, original otherwise).
+     * Pages served with CSP `sandbox` (opaque origin, e.g. raw.githubusercontent.com) silently block
+     * `<a download>`, so those go through the background's chrome.downloads instead.
+     * @returns {void}
+     */
     function download() {
+      const what = formatted ? "formatted" : "original";
+      const name = downloadName();
+      if (window.origin === "null" && chrome.runtime?.sendMessage) {
+        chrome.runtime
+          .sendMessage({ type: "Myevent.download", text: pre.textContent, fileName: name })
+          .then((res) => {
+            if (!res?.ok) throw new Error(res?.error || "download failed");
+            toast(`Downloaded ${what} content as ${name}`);
+          })
+          .catch((err) => {
+            console.warn("url-porter: download failed", err);
+            toast("Download failed");
+          });
+        return;
+      }
       const blob = new Blob([pre.textContent], { type: "text/plain;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = downloadName();
+      a.download = name;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 0);
-      toast(`Downloaded ${formatted ? "formatted" : "original"} content as ${a.download}`);
+      toast(`Downloaded ${what} content as ${name}`);
     }
 
     mainBtn.addEventListener("click", () => toggleFormat());

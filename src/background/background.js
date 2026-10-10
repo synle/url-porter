@@ -29,6 +29,7 @@ import {
   handleSelectionMenuClick,
   updateSelectionMenus,
 } from "../helpers/selectionViewer.js";
+import { downloadText } from "../helpers/downloadUtils.js";
 // Side-effect import: classic script that defines globalThis.UrlPorterFormat (language catalog).
 import "../content/format-detect.js";
 
@@ -150,6 +151,15 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       scheduleReconcile();
     });
     return;
+  }
+  if (request.type === "Myevent.download") {
+    downloadText(request)
+      .then(() => sendResponse({ ok: true }))
+      .catch((err) => {
+        console.warn("[background] download failed", err);
+        sendResponse({ ok: false, error: "Download failed" });
+      });
+    return true; // keep channel open for async response
   }
   if (request.type === "Myevent.selectionKind") {
     updateSelectionMenus(request).catch((err) =>
