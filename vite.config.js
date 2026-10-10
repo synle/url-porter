@@ -164,7 +164,14 @@ export default defineConfig({
         // Static selection viewer page (opened from the "Preview / Format Selection" context menus).
         const viewerDest = resolve(__dirname, "dist/viewer");
         mkdirSync(viewerDest, { recursive: true });
-        for (const name of ["textview.html", "textview.js", "jsonview.html", "jsonview.js"]) {
+        for (const name of [
+          "textview.html",
+          "textview.js",
+          "jsonview.html",
+          "jsonview.js",
+          "mdview.html",
+          "mdview.js",
+        ]) {
           copyFileSync(resolve(__dirname, "src/viewer", name), join(viewerDest, name));
         }
       },

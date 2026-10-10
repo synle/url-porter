@@ -11,7 +11,7 @@
    * @param {string} [opts.original] - Original text (default: pre's current text).
    * @param {string} [opts.langId] - Selected syntax id (default: detected).
    * @param {boolean} [opts.formatted] - Whether pre already shows formatted text.
-   * @param {HTMLIFrameElement} [opts.previewFrame] - Existing sandboxed preview frame to reuse.
+   * @param {HTMLIFrameElement} [opts.previewFrame] - Existing frame to host the Markdown preview (viewer tab); omitted on raw pages.
    * @param {boolean} [opts.preview] - Whether that frame is already showing a (Markdown) preview.
    * @param {boolean} [opts.autoPreview] - Open the selected syntax's preview right after mounting (e.g. JSON tree).
    * @param {string} [opts.fileName] - Download file name (default: last URL path segment).
@@ -41,19 +41,119 @@
     let preview = !!opts.preview;
     /** Kind of the preview currently shown; null when hidden. @type {"markdown"|"json"|null} */
     let shownKind = preview ? previewKind(langId) : null;
-    /** Extension page that renders the JSON tree; created on first use. @type {HTMLIFrameElement|null} */
-    let jsonFrame = null;
     /** Whether the page uses the dark theme; follows the OS preference (Shift+Esc overrides). @type {boolean} */
     let dark = !!window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-    // Preview renders in a script-less sandboxed iframe so markup in the page text can never run in the page origin.
-    const previewFrame = opts.previewFrame || document.createElement("iframe");
-    if (rawPage) {
-      previewFrame.setAttribute("sandbox", "allow-popups allow-popups-to-escape-sandbox");
-      // Pinned to the viewport (and page overflow hidden while shown) so only one scrollbar appears: the frame's, at the window edge.
-      previewFrame.style.cssText =
-        "display:none;position:fixed;inset:0;border:0;width:100%;height:100%;background:#fff;";
-      document.body.appendChild(previewFrame);
+    // Previews are pinned to the viewport (page overflow hidden while shown) so only one scrollbar appears: the frame's.
+    const FRAME_CSS =
+      "display:none;position:fixed;inset:0;border:0;width:100%;height:100%;background:transparent;";
+    /** Extension base URL, which is also the postMessage target origin for unsandboxed extension frames. @type {string} */
+    // String-derived: URL#origin is "null" for non-special schemes in some runtimes.
+    const extensionOrigin = chrome.runtime.getURL("").replace(/\/+$/, "");
 
+    /**
+     * An extension page shown in an iframe in place of the <pre>, fed by postMessage after a ready handshake.
+     * @param {object} cfg - Frame setup.
+     * @param {string} cfg.page - Extension path of the page.
+     * @param {string} cfg.type - postMessage type; the page answers `<type>:ready` once listening.
+     * @param {string} cfg.title - Frame title.
+     * @param {string} [cfg.sandbox] - Sandbox flags; a sandboxed page has an opaque origin, so messages target "*".
+     * @param {HTMLIFrameElement} [cfg.element] - Existing element to use (else one is created on first use).
+     * @returns {{post: (patch: object) => void, show: (on: boolean) => void}} Frame controls.
+     */
+    function framedView({ page, type, title, sandbox, element }) {
+      let frame = null;
+      let ready = false;
+      let payload = {};
+      const target = sandbox ? "*" : extensionOrigin;
+      /** Create (or adopt) the frame on first use; recreate if something removed it from the page. @returns {void} */
+      const ensure = () => {
+        if (frame && (frame.isConnected || frame === element)) return;
+        frame = element || document.createElement("iframe");
+        ready = false;
+        frame.title = title;
+        if (sandbox) frame.setAttribute("sandbox", sandbox);
+        else frame.removeAttribute("sandbox");
+        frame.setAttribute("allow", "clipboard-write");
+        if (!element) {
+          frame.style.cssText = FRAME_CSS;
+          document.body.appendChild(frame);
+        }
+        frame.hidden = false;
+        frame.src = chrome.runtime.getURL(page);
+      };
+      window.addEventListener("message", (e) => {
+        if (!frame || e.source !== frame.contentWindow || e.data?.type !== `${type}:ready`) return;
+        ready = true;
+        post({});
+      });
+      /**
+       * Merge into the payload and post it once the page is listening (the ready handshake re-sends it).
+       * @param {object} patch - Fields to update.
+       * @returns {void}
+       */
+      function post(patch) {
+        payload = { ...payload, ...patch };
+        if (frame && !frame.isConnected && frame !== element) frame = null;
+        if (frame && ready) frame.contentWindow.postMessage({ type, ...payload }, target);
+      }
+      return {
+        post,
+        show(on) {
+          if (on) ensure();
+          if (frame) frame.style.display = on ? "block" : "none";
+        },
+      };
+    }
+
+    /**
+     * Pages served with CSP `sandbox` (opaque origin, e.g. raw.githubusercontent.com) force their sandbox flags onto
+     * child frames, so no script runs in our extension frames there.
+     * @type {boolean}
+     */
+    const pageSandboxed = window.origin === "null";
+
+    /**
+     * Script-less Markdown preview for sandboxed pages: the rendered HTML goes straight into `srcdoc` (no copy-on-double-click).
+     * @param {HTMLIFrameElement} [element] - Existing element to use.
+     * @returns {{post: (patch: {html?: string}) => void, show: (on: boolean) => void}} Frame controls.
+     */
+    function srcdocView(element) {
+      const frame = element || document.createElement("iframe");
+      frame.title = "Markdown preview";
+      frame.setAttribute("sandbox", "allow-popups allow-popups-to-escape-sandbox");
+      if (!element) {
+        frame.style.cssText = FRAME_CSS;
+        document.body.appendChild(frame);
+      }
+      return {
+        post({ html }) {
+          if (typeof html === "string") frame.srcdoc = html;
+        },
+        show(on) {
+          frame.hidden = false;
+          frame.style.display = on ? "block" : "none";
+        },
+      };
+    }
+
+    /** Markdown preview: sandboxed (opaque origin, no extension APIs); the extension CSP keeps scripts in the Markdown inert. */
+    const mdView = pageSandboxed
+      ? srcdocView(opts.previewFrame)
+      : framedView({
+          page: "viewer/mdview.html",
+          type: "url-porter:md-view",
+          title: "Markdown preview",
+          sandbox: "allow-scripts allow-popups allow-popups-to-escape-sandbox",
+          element: opts.previewFrame,
+        });
+    /** JSON tree: framed because content scripts can't define custom elements in their isolated world. */
+    const jsonView = framedView({
+      page: "viewer/jsonview.html",
+      type: "url-porter:json-view",
+      title: "JSON tree",
+    });
+
+    if (rawPage) {
       // Hide Chrome's own JSON viewer chrome (the "Pretty-print" checkbox + its formatted pane, Chrome 131+);
       // it's injected as body siblings of the raw <pre>, so keep only the <pre> visible.
       for (const el of document.body.children) {
@@ -68,11 +168,10 @@
 
     /** Apply wrap + font styles to the <pre>; formatted output is always monospace. @returns {void} */
     function applyPreStyle() {
-      previewFrame.style.background = dark ? "#000" : "#fff";
       // Plain view: white on black (dark) or black on white (light), nothing fancier.
       document.body.style.background = dark ? "#000" : "#fff";
       document.body.style.color = dark ? "#fff" : "#000";
-      postJson({ dark });
+      jsonView.post({ dark });
       pre.style.whiteSpace = wrap ? "pre-wrap" : "pre";
       pre.style.overflowWrap = wrap ? "anywhere" : "normal";
       pre.style.fontFamily = formatted
@@ -109,11 +208,9 @@
       .menu div.action { display:grid; grid-template-columns:1.2em auto 1fr; align-items:baseline; column-gap:4px; }
       .menu .kbd { justify-self:end; padding-left:24px; opacity:.55; font-size:11px; }
       .menu hr { border:0; border-top:1px solid #ddd; margin:2px 0; }
-      .err { color:#c62828; background:#fff; padding:2px 6px; margin-top:2px; font:11px system-ui,sans-serif; max-width:320px; border-radius:4px; }
-      .toast { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:rgba(33,33,33,.92); color:#fff; padding:6px 12px; border-radius:4px; font:12px system-ui,sans-serif; box-shadow:0 1px 4px rgba(0,0,0,.3); pointer-events:none; white-space:nowrap; }
+      .toast { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:rgba(33,33,33,.92); color:#fff; padding:6px 12px; border-radius:4px; font:12px system-ui,sans-serif; box-shadow:0 1px 4px rgba(0,0,0,.3); pointer-events:none; width:max-content; max-width:80vw; overflow-wrap:anywhere; }
     </style>
     <div class="wrap"><button class="main"></button><button class="caret" title="Format, wrap, copy, download, or choose syntax">&#9662;</button><div class="menu"></div></div>
-    <div class="err" hidden></div>
     <div class="toast" hidden></div>`;
     /** @type {HTMLButtonElement} */
     const mainBtn = root.querySelector(".main");
@@ -122,26 +219,27 @@
     /** @type {HTMLDivElement} */
     const menu = root.querySelector(".menu");
     /** @type {HTMLDivElement} */
-    const errBox = root.querySelector(".err");
-    /** @type {HTMLDivElement} */
     const toastBox = root.querySelector(".toast");
     /** How long a toast stays visible. @type {number} */
     const TOAST_MS = 2000;
+    /** How long an error toast stays visible (longer: it carries the parser message). @type {number} */
+    const ERROR_TOAST_MS = 6000;
     /** Pending hide timer for the current toast. @type {ReturnType<typeof setTimeout> | undefined} */
     let toastTimer;
 
     /**
      * Show a short non-selectable status toast at the bottom; replaces any toast already showing.
      * @param {string} message - Text to show.
+     * @param {number} [ms] - How long it stays (default TOAST_MS).
      * @returns {void}
      */
-    function toast(message) {
+    function toast(message, ms = TOAST_MS) {
       clearTimeout(toastTimer);
       toastBox.textContent = message;
       toastBox.hidden = false;
       toastTimer = setTimeout(() => {
         toastBox.hidden = true;
-      }, TOAST_MS);
+      }, ms);
     }
 
     /** Flip soft wrap and announce the new state. @returns {void} */
@@ -218,9 +316,7 @@
       dark = on;
       if (shownKind === "markdown") {
         markdownToHtmlDocument(original, dark ? "dark" : "light")
-          .then((doc) => {
-            previewFrame.srcdoc = doc;
-          })
+          .then((html) => mdView.post({ html }))
           .catch((e) => console.warn("url-porter: markdown re-theme failed", e));
       }
       render();
@@ -275,66 +371,10 @@
     function setPreview(on, kind = "markdown") {
       preview = on;
       shownKind = on ? kind : null;
-      previewFrame.style.display = on && kind === "markdown" ? "block" : "none";
-      if (jsonFrame) jsonFrame.style.display = on && kind === "json" ? "block" : "none";
+      mdView.show(on && kind === "markdown");
+      jsonView.show(on && kind === "json");
       pre.style.display = on ? "none" : "block";
       document.documentElement.style.overflow = on ? "hidden" : "";
-    }
-
-    /** postMessage type shared with viewer/jsonview.js. @type {string} */
-    const JSON_VIEW_MESSAGE = "url-porter:json-view";
-    /** Origin of the extension page inside jsonFrame; messages go only there. @type {string} */
-    // String-derived: URL#origin is "null" for non-special schemes in some runtimes.
-    const extensionOrigin = chrome.runtime.getURL("").replace(/\/+$/, "");
-    /** Last payload for the JSON frame, re-sent once it reports ready. @type {{text?: string, dark: boolean}} */
-    let jsonPayload = { dark };
-    /** Whether the JSON frame has loaded and is listening. @type {boolean} */
-    let jsonReady = false;
-
-    /**
-     * Merge into the JSON frame payload and post it if the frame is ready (else it goes on the ready handshake).
-     * @param {{text?: string, dark?: boolean}} patch - Fields to update.
-     * @returns {void}
-     */
-    function postJson(patch) {
-      jsonPayload = { ...jsonPayload, ...patch };
-      dropDetachedJsonFrame();
-      if (jsonFrame && jsonReady) {
-        jsonFrame.contentWindow.postMessage(
-          { type: JSON_VIEW_MESSAGE, ...jsonPayload },
-          extensionOrigin,
-        );
-      }
-    }
-
-    /** Forget the JSON frame if something removed it from the page (its window is dead); it is recreated on next use. @returns {void} */
-    function dropDetachedJsonFrame() {
-      if (jsonFrame && !jsonFrame.isConnected) {
-        jsonFrame = null;
-        jsonReady = false;
-      }
-    }
-
-    /**
-     * Create the JSON tree frame (extension page viewer/jsonview.html) on first use.
-     * Framed rather than inlined because content scripts can't define custom elements in their isolated world.
-     * @returns {void}
-     */
-    function ensureJsonFrame() {
-      dropDetachedJsonFrame();
-      if (jsonFrame) return;
-      jsonFrame = document.createElement("iframe");
-      jsonFrame.title = "JSON tree";
-      jsonFrame.style.cssText =
-        "display:none;position:fixed;inset:0;border:0;width:100%;height:100%;background:transparent;";
-      window.addEventListener("message", (e) => {
-        if (!jsonFrame || e.source !== jsonFrame.contentWindow) return;
-        if (e.data?.type !== `${JSON_VIEW_MESSAGE}:ready`) return;
-        jsonReady = true;
-        postJson({});
-      });
-      jsonFrame.src = chrome.runtime.getURL("viewer/jsonview.html");
-      document.body.appendChild(jsonFrame);
     }
 
     /**
@@ -350,16 +390,19 @@
         render();
         return;
       }
+      if (kind === "json" && pageSandboxed) {
+        toast("JSON tree is unavailable on this sandboxed page");
+        return;
+      }
       if (kind === "json") {
-        ensureJsonFrame();
-        postJson({ text: original, dark });
+        jsonView.post({ text: original, dark });
         setPreview(true, "json");
         toast(`${PREVIEW_TOASTS.json} ON`);
         render();
         return;
       }
       try {
-        previewFrame.srcdoc = await markdownToHtmlDocument(original, dark ? "dark" : "light");
+        mdView.post({ html: await markdownToHtmlDocument(original, dark ? "dark" : "light") });
         setPreview(true, "markdown");
         toast(`${PREVIEW_TOASTS.markdown} ON`);
       } catch (e) {
@@ -369,9 +412,8 @@
       render();
     }
 
-    /** Format page text with the current language; show parse errors inline. @returns {Promise<void>} */
+    /** Format page text with the current language; parse errors go to an error toast. @returns {Promise<void>} */
     async function applyFormat() {
-      errBox.hidden = true;
       setPreview(false);
       try {
         pre.textContent = await formatText(original, langId);
@@ -380,16 +422,17 @@
       } catch (e) {
         pre.textContent = original;
         formatted = false;
-        errBox.textContent = `${langLabel(langId)}: ${String(e?.message || e).split("\n")[0]}`;
-        errBox.hidden = false;
-        toast(`Could not format as ${langLabel(langId)}`);
+        // The extension was reloaded/updated under this page: its bundles can't load until the page reloads.
+        const reason = chrome.runtime?.id
+          ? String(e?.message || e).split("\n")[0]
+          : "URL Porter was updated, reload this page";
+        toast(`Could not format as ${langLabel(langId)}: ${reason}`, ERROR_TOAST_MS);
       }
       render();
     }
 
     /** Revert to the original unformatted text and announce it. @returns {void} */
     function revertFormat() {
-      errBox.hidden = true;
       setPreview(false);
       pre.textContent = original;
       formatted = false;

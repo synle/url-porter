@@ -6,7 +6,7 @@
  * @returns {Promise<void>}
  */
 async function renderViewer() {
-  const { LANGUAGES, formatText, markdownToHtmlDocument } = globalThis.UrlPorterFormat;
+  const { LANGUAGES, formatText } = globalThis.UrlPorterFormat;
   const params = new URLSearchParams(location.search);
   const key = params.get("key") || "";
   const out = document.getElementById("out");
@@ -46,15 +46,8 @@ async function renderViewer() {
   if (params.get("mode") === "markdown") {
     document.title = "Markdown Preview";
     out.textContent = text;
-    try {
-      preview.srcdoc = await markdownToHtmlDocument(text);
-      preview.hidden = false;
-      mountToolbar({ langId: "markdown", preview: true });
-    } catch (e) {
-      showError(`Could not render Markdown: ${String(e?.message || e)}`);
-      out.hidden = false;
-      mountToolbar({ langId: "markdown" });
-    }
+    out.hidden = false;
+    mountToolbar({ langId: "markdown", autoPreview: true });
     return;
   }
 

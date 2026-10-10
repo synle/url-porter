@@ -52,7 +52,7 @@ beforeEach(() => {
     configurable: true,
   });
   vi.stubGlobal("chrome", {
-    runtime: { getURL: (p) => `file:///nonexistent/${p}` },
+    runtime: { id: "acme", getURL: (p) => `file:///nonexistent/${p}` },
   });
 });
 
@@ -129,9 +129,24 @@ describe("Format button", () => {
     const { root, pre } = await loadPage("{not json", "application/json");
     root.querySelector(".main").click();
     // Prettier's vendored bundle is absent in tests, so the fallback import rejects.
-    await vi.waitFor(() => expect(root.querySelector(".err").hidden).toBe(false));
+    await vi.waitFor(() =>
+      expect(root.querySelector(".toast").textContent).toMatch(
+        /^Could not format as JSON\/JSON5: \S/,
+      ),
+    );
     expect(pre.textContent).toBe("{not json");
-    expect(root.querySelector(".toast").textContent).toBe("Could not format as JSON/JSON5");
+    expect(root.querySelector(".err")).toBeNull();
+  });
+
+  it("tells the user to reload when the extension was updated under the page", async () => {
+    vi.stubGlobal("chrome", { runtime: { getURL: (p) => `file:///nonexistent/${p}` } });
+    const { root } = await loadPage("{not json", "application/json");
+    root.querySelector(".main").click();
+    await vi.waitFor(() =>
+      expect(root.querySelector(".toast").textContent).toBe(
+        "Could not format as JSON/JSON5: URL Porter was updated, reload this page",
+      ),
+    );
   });
 });
 
@@ -187,28 +202,88 @@ describe("markdown preview", () => {
     await vi.waitFor(() => expect(item(root, "Preview Markdown")).toBeDefined());
   });
 
-  it("renders the original markdown as HTML in a script-less sandboxed frame and toggles back", async () => {
+  /**
+   * Stub chrome so marked loads from node_modules and the Markdown page maps to an inert about:blank.
+   * @returns {void}
+   */
+  const stubMarked = () =>
     vi.stubGlobal("chrome", {
       runtime: {
+        id: "acme",
         getURL: (p) =>
           p === "vendor/marked/marked.esm.js"
             ? pathToFileURL(resolve("node_modules/marked/lib/marked.esm.js")).href
-            : `file:///nonexistent/${p}`,
+            : p === "viewer/mdview.html"
+              ? "about:blank#mdview"
+              : `chrome-extension://acme/${p}`,
       },
     });
+
+  /**
+   * The newest Markdown preview frame (toolbars from earlier tests keep their listeners).
+   * @returns {HTMLIFrameElement|undefined} The frame.
+   */
+  const mdFrame = () => [...document.querySelectorAll('iframe[title="Markdown preview"]')].at(-1);
+
+  it("renders into the sandboxed Markdown page (scripts allowed, never same-origin) and toggles back", async () => {
+    stubMarked();
     const { root, pre } = await loadPage("# Acme\n\n- **FALCON**\n", "text/markdown");
-    const frame = document.querySelector("iframe");
-    expect(frame.getAttribute("sandbox")).not.toContain("allow-scripts");
     item(root, "Preview Markdown").click();
-    await vi.waitFor(() => expect(frame.style.display).toBe("block"));
-    expect(frame.srcdoc).toContain("<h1>Acme</h1>");
-    expect(frame.srcdoc).toContain("<strong>FALCON</strong>");
+    await vi.waitFor(() => expect(mdFrame()?.style.display).toBe("block"));
+    const frame = mdFrame();
+    expect(frame.src).toBe("about:blank#mdview");
+    expect(frame.getAttribute("sandbox").split(" ")).toEqual([
+      "allow-scripts",
+      "allow-popups",
+      "allow-popups-to-escape-sandbox",
+    ]);
+    const post = vi.spyOn(frame.contentWindow, "postMessage");
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: { type: "url-porter:md-view:ready" },
+        source: frame.contentWindow,
+      }),
+    );
+    const [msg, target] = post.mock.calls.at(-1);
+    expect(target).toBe("*");
+    expect(msg.type).toBe("url-porter:md-view");
+    expect(msg.html).toContain("<h1>Acme</h1>");
+    expect(msg.html).toContain("<strong>FALCON</strong>");
+    expect(msg.html).toContain("--fg:#000;--bg:#fff;--link:#0645ad;");
     expect(pre.style.display).toBe("none");
     expect(root.querySelector(".toast").textContent).toBe("Markdown preview ON");
     item(root, "Preview Markdown").click();
     await flush();
     expect(frame.style.display).toBe("none");
     expect(pre.style.display).toBe("block");
+  });
+
+  describe("on a CSP-sandboxed page, where the page's sandbox blocks scripts in child frames", () => {
+    beforeEach(() => {
+      Object.defineProperty(window, "origin", { value: "null", configurable: true });
+    });
+    afterEach(() => {
+      delete window.origin;
+    });
+
+    it("falls back to a script-less srcdoc preview", async () => {
+      stubMarked();
+      const { root } = await loadPage("# Globex\n", "text/markdown");
+      item(root, "Preview Markdown").click();
+      await vi.waitFor(() => expect(mdFrame()?.srcdoc).toContain("<h1>Globex</h1>"));
+      expect(mdFrame().getAttribute("sandbox")).not.toContain("allow-scripts");
+      expect(mdFrame().getAttribute("src")).toBeNull();
+    });
+
+    it("says the JSON tree is unavailable instead of showing a dead frame", async () => {
+      const { root, pre } = await loadPage('{"team":"ORBIT"}');
+      item(root, "View JSON Tree").click();
+      await flush();
+      expect(root.querySelector(".toast").textContent).toBe(
+        "JSON tree is unavailable on this sandboxed page",
+      );
+      expect(pre.style.display).toBe("block");
+    });
   });
 });
 

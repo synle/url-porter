@@ -23,8 +23,8 @@ async function openViewer(search, session) {
       getURL: (p) =>
         p === "vendor/marked/marked.esm.js"
           ? pathToFileURL(resolve("node_modules/marked/lib/marked.esm.js")).href
-          : p === "viewer/jsonview.html"
-            ? "about:blank#jsonview" // jsdom can't load the extension page; keep the frame inert.
+          : p === "viewer/jsonview.html" || p === "viewer/mdview.html"
+            ? `about:blank#${p.slice(7, -5)}` // jsdom can't load extension pages; keep the frame inert.
             : `file:///nonexistent/${p}`,
     },
     storage: { session: { get: async (k) => (k in session ? { [k]: session[k] } : {}) } },
@@ -55,22 +55,38 @@ describe("textview", () => {
     expect($("err").textContent).toMatch(/^YAML: /);
   });
 
-  it("renders Markdown into the sandboxed preview frame", async () => {
+  /**
+   * Answer the Markdown page's ready handshake and return the HTML the toolbar posts to it.
+   * @returns {Promise<string>} Posted HTML document.
+   */
+  async function postedMarkdown() {
+    await vi.waitFor(() => expect($("preview").getAttribute("src")).toBe("about:blank#mdview"));
+    const post = vi.spyOn($("preview").contentWindow, "postMessage");
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: { type: "url-porter:md-view:ready" },
+        source: $("preview").contentWindow,
+      }),
+    );
+    await vi.waitFor(() => expect(post).toHaveBeenCalled());
+    return post.mock.calls.at(-1)[0].html;
+  }
+
+  it("renders Markdown in the sandboxed Markdown page frame", async () => {
     await openViewer("?mode=markdown&key=k", { k: "# Initech\n\n*PLUTO*" });
+    const html = await postedMarkdown();
     expect($("preview").hidden).toBe(false);
-    expect($("preview").getAttribute("sandbox")).not.toContain("allow-scripts");
-    expect($("preview").srcdoc).toContain("<h1>Initech</h1>");
-    expect($("preview").srcdoc).toContain("<em>PLUTO</em>");
-    expect($("out").hidden).toBe(true);
+    expect($("preview").getAttribute("sandbox")).not.toContain("allow-same-origin");
+    expect(html).toContain("<h1>Initech</h1>");
+    expect(html).toContain("<em>PLUTO</em>");
+    expect($("out").style.display).toBe("none");
   });
 
-  it("styles the Markdown preview black-on-white / white-on-black by OS theme, with explicit link colors", async () => {
+  it("styles the Markdown preview black on white with explicit link colors (light OS theme)", async () => {
     await openViewer("?mode=markdown&key=k", { k: "[Acme](https://acme.example)" });
-    const doc = $("preview").srcdoc;
-    expect(doc).toContain("@media (prefers-color-scheme: dark)");
-    expect(doc).toContain("--fg:#000;--bg:#fff;--link:#0645ad;");
-    expect(doc).toContain("--fg:#fff;--bg:#000;--link:#8ab4f8;");
-    expect(doc).toContain("a{color:var(--link);");
+    const html = await postedMarkdown();
+    expect(html).toContain("--fg:#000;--bg:#fff;--link:#0645ad;");
+    expect(html).toContain("a{color:var(--link);");
   });
 
   it("opens JSON mode with the formatted text and the JSON tree frame shown", async () => {

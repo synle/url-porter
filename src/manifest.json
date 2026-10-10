@@ -76,7 +76,9 @@
         "vendor/marked/*",
         "vendor/json-viewer/*",
         "viewer/jsonview.html",
-        "viewer/jsonview.js"
+        "viewer/jsonview.js",
+        "viewer/mdview.html",
+        "viewer/mdview.js"
       ],
       "matches": ["<all_urls>"]
     }
