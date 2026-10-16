@@ -493,16 +493,49 @@
 
     /**
      * Copy the whole displayed content (raw or formatted) verbatim — textContent keeps every space and newline.
-     * @returns {void}
+     * Falls back to the browser's native copy command when the async Clipboard API is unavailable or denied.
+     * @returns {Promise<void>} Resolves after reporting copy success or failure.
      */
-    function copyAll() {
-      navigator.clipboard
-        .writeText(pre.textContent)
-        .then(() => toast("All content copied to clipboard"))
-        .catch((err) => {
-          console.warn("url-porter: copy failed", err);
-          toast("Copy failed");
-        });
+    async function copyAll() {
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(pre.textContent);
+          toast("All content copied to clipboard");
+          return;
+        }
+      } catch (err) {
+        console.warn("url-porter: copy failed", err);
+      }
+
+      const copied = copyWithNativeCommand();
+      toast(copied ? "All content copied to clipboard" : "Copy failed");
+    }
+
+    /**
+     * Copy the displayed content with the browser's native command, restoring the user's selection afterward.
+     * @returns {boolean} Whether the browser reports a successful copy.
+     */
+    function copyWithNativeCommand() {
+      const selection = window.getSelection();
+      const ranges = selection
+        ? Array.from({ length: selection.rangeCount }, (_, i) =>
+            selection.getRangeAt(i).cloneRange(),
+          )
+        : [];
+      try {
+        if (!selection) return false;
+        const range = document.createRange();
+        range.selectNodeContents(pre);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        return document.execCommand("copy");
+      } catch (err) {
+        console.warn("url-porter: native copy failed", err);
+        return false;
+      } finally {
+        selection?.removeAllRanges();
+        ranges.forEach((range) => selection?.addRange(range));
+      }
     }
 
     // Native copy of a selection: write plain text only, so rich-text paste targets can't collapse the
@@ -510,8 +543,13 @@
     document.addEventListener("copy", (e) => {
       const sel = window.getSelection();
       if (!sel || sel.isCollapsed || !pre.contains(sel.anchorNode)) return;
-      e.clipboardData.setData("text/plain", sel.toString());
-      e.preventDefault();
+      try {
+        if (!e.clipboardData) return;
+        e.clipboardData.setData("text/plain", sel.toString());
+        e.preventDefault();
+      } catch (err) {
+        console.warn("url-porter: native copy failed", err);
+      }
     });
 
     // Keyboard shortcuts (only registered on pages we can format):
@@ -549,7 +587,17 @@
         const sel = String(window.getSelection() || "");
         const partial = mod && sel !== "" && sel !== pre.textContent;
         if (partial) return; // keep native copy of a partial selection
-        e.preventDefault();
+        if (mod) {
+          // Leave Ctrl/Cmd+C to the browser; selecting the content lets its native copy path handle it.
+          if (sel === "") {
+            const range = document.createRange();
+            range.selectNodeContents(pre);
+            window.getSelection()?.removeAllRanges();
+            window.getSelection()?.addRange(range);
+          }
+          return;
+        }
+        // Async failure cannot undo preventDefault, so keep this shortcut uncanceled too.
         copyAll();
       }
     });

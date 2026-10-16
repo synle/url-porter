@@ -38,14 +38,18 @@ const flush = () => new Promise((r) => setTimeout(r, 0));
 /**
  * Dispatch a keydown on the document.
  * @param {KeyboardEventInit} init - Key event fields.
- * @returns {void}
+ * @returns {KeyboardEvent} Dispatched event, including its cancellation state.
  */
-const press = (init) =>
-  document.dispatchEvent(
-    new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init }),
-  );
+const press = (init) => {
+  const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init });
+  document.dispatchEvent(event);
+  return event;
+};
 
 beforeEach(() => {
+  vi.spyOn(document, "addEventListener");
+  window.getSelection().removeAllRanges();
+  document.execCommand = vi.fn(() => false);
   writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     value: { writeText },
@@ -57,6 +61,10 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  for (const [type, listener, options] of document.addEventListener.mock.calls) {
+    document.removeEventListener(type, listener, options);
+  }
+  vi.restoreAllMocks();
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
@@ -288,6 +296,132 @@ describe("markdown preview", () => {
 });
 
 describe("copy", () => {
+  it("falls back to native copy when the Clipboard API is unavailable", async () => {
+    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    document.execCommand = vi.fn(() => true);
+    const { root } = await loadPage("copy me", "text/plain");
+
+    const event = press({ code: "KeyC", altKey: true });
+
+    expect(document.execCommand).toHaveBeenCalledWith("copy");
+    expect(event.defaultPrevented).toBe(false);
+    expect(root.querySelector(".toast").textContent).toBe("All content copied to clipboard");
+  });
+
+  it("lets Alt+C bubble when both clipboard methods fail", async () => {
+    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    document.execCommand = vi.fn(() => false);
+    const { root } = await loadPage("copy me", "text/plain");
+
+    const event = press({ code: "KeyC", altKey: true });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(root.querySelector(".toast").textContent).toBe("Copy failed");
+  });
+
+  it("falls back after async copy rejection and logs its error", async () => {
+    const error = new Error("Clipboard permission denied");
+    writeText.mockRejectedValue(error);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    let copiedText;
+    document.execCommand = vi.fn(() => {
+      copiedText = String(window.getSelection());
+      return true;
+    });
+    const { root } = await loadPage("  ORBIT\n", "text/plain");
+    const event = press({ code: "KeyC", altKey: true });
+    await flush();
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(copiedText).toBe("  ORBIT\n");
+    expect(warn).toHaveBeenCalledWith("url-porter: copy failed", error);
+    expect(root.querySelector(".toast").textContent).toBe("All content copied to clipboard");
+  });
+
+  it.each([{ ctrlKey: true }, { metaKey: true }])(
+    "leaves native copy uncanceled for %j",
+    async (modifier) => {
+      const { pre } = await loadPage("copy me", "text/plain");
+
+      const event = press({ code: "KeyC", ...modifier });
+
+      expect(event.defaultPrevented).toBe(false);
+      expect(String(window.getSelection())).toBe("copy me");
+      expect(writeText).not.toHaveBeenCalled();
+      expect(pre.textContent).toBe("copy me");
+    },
+  );
+
+  it("logs native copy errors and keeps Alt+C uncanceled", async () => {
+    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    const error = new Error("Copy command denied");
+    document.execCommand = () => {
+      throw error;
+    };
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { root } = await loadPage("ORBIT", "text/plain");
+    const event = press({ code: "KeyC", altKey: true });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(warn).toHaveBeenCalledWith("url-porter: native copy failed", error);
+    expect(root.querySelector(".toast").textContent).toBe("Copy failed");
+  });
+
+  it("restores a partial selection after menu-copying the full content", async () => {
+    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    const { root, pre } = await loadPage("ORBIT mission", "text/plain");
+    const range = document.createRange();
+    range.setStart(pre.firstChild, 0);
+    range.setEnd(pre.firstChild, 5);
+    window.getSelection().addRange(range);
+    let copiedText;
+    document.execCommand = () => {
+      copiedText = String(window.getSelection());
+      return true;
+    };
+
+    root.querySelector(".copy").click();
+
+    expect(copiedText).toBe("ORBIT mission");
+    expect(String(window.getSelection())).toBe("ORBIT");
+  });
+
+  it("keeps partial selections and native Cmd+C uncanceled", async () => {
+    const { pre } = await loadPage("ORBIT mission", "text/plain");
+    const range = document.createRange();
+    range.setStart(pre.firstChild, 0);
+    range.setEnd(pre.firstChild, 5);
+    window.getSelection().addRange(range);
+
+    const event = press({ code: "KeyC", metaKey: true });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(String(window.getSelection())).toBe("ORBIT");
+    expect(writeText).not.toHaveBeenCalled();
+  });
+
+  it("logs copy-event errors without canceling native copy", async () => {
+    const { pre } = await loadPage("ORBIT", "text/plain");
+    const range = document.createRange();
+    range.selectNodeContents(pre);
+    window.getSelection().addRange(range);
+    const error = new Error("Clipboard data denied");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const event = new Event("copy", { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "clipboardData", {
+      value: {
+        setData: () => {
+          throw error;
+        },
+      },
+    });
+
+    document.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(warn).toHaveBeenCalledWith("url-porter: native copy failed", error);
+  });
+
   it("Alt+C copies the full displayed text verbatim, whitespace included", async () => {
     const text = '{\n    "pluto":   [1,  2]\n}';
     const { root } = await loadPage(text, "text/plain");
@@ -338,7 +472,6 @@ describe("download", () => {
     const { root } = await loadPage('{"pluto":1}');
     press({ code: "KeyS", metaKey: true });
     const anchors = click.mock.contexts.filter((el) => el instanceof HTMLAnchorElement);
-    // Earlier tests' document listeners also fire; the newest page's download runs last.
     expect(anchors.at(-1).href).toBe("blob:acme");
     expect(await blobs.at(-1).text()).toBe('{"pluto":1}');
     expect(root.querySelector(".toast").textContent).toMatch(/^Downloaded original content as /);
