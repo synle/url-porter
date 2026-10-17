@@ -24,11 +24,7 @@ import { reconcileJiraTickets } from "../helpers/jiraTicketUtils.js";
 import { reconcileGoogleDrive } from "../helpers/googleDriveUtils.js";
 import { reconcileOnedrive } from "../helpers/onedriveUtils.js";
 import { reconcileAllBookmarkRules } from "../helpers/genericBookmarkRuleUtils.js";
-import {
-  createSelectionMenus,
-  handleSelectionMenuClick,
-  updateSelectionMenus,
-} from "../helpers/selectionViewer.js";
+import { createSelectionMenus, handleSelectionMenuClick } from "../helpers/selectionViewer.js";
 import { downloadText } from "../helpers/downloadUtils.js";
 // Side-effect import: classic script that defines globalThis.UrlPorterFormat (language catalog).
 import "../content/format-detect.js";
@@ -160,12 +156,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         sendResponse({ ok: false, error: "Download failed" });
       });
     return true; // keep channel open for async response
-  }
-  if (request.type === "Myevent.selectionKind") {
-    updateSelectionMenus(request).catch((err) =>
-      console.warn("[background] selection menu update failed", err),
-    );
-    return;
   }
   if (request.type === "Myevent.getBookmarks") {
     getNestedBookmarks().then(sendResponse);

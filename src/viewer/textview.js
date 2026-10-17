@@ -1,4 +1,4 @@
-/** Viewer page for context-menu selections: renders handed-off text as a Markdown preview, a JSON tree, or formatted monospace code. */
+/** Viewer page for context-menu selections: formats handed-off text with the chosen syntax. */
 /* global chrome */
 
 /**
@@ -42,28 +42,6 @@ async function renderViewer() {
       fileName: "selection.txt",
       ...state,
     });
-
-  if (params.get("mode") === "markdown") {
-    document.title = "Markdown Preview";
-    out.textContent = text;
-    out.hidden = false;
-    mountToolbar({ langId: "markdown", autoPreview: true });
-    return;
-  }
-
-  if (params.get("mode") === "json") {
-    document.title = "JSON Tree";
-    out.hidden = false;
-    try {
-      out.textContent = await formatText(text, "json");
-      mountToolbar({ langId: "json", formatted: true, autoPreview: true });
-    } catch (e) {
-      showError(`Not valid JSON: ${String(e?.message || e).split("\n")[0]}`);
-      out.textContent = text;
-      mountToolbar({ langId: "json" });
-    }
-    return;
-  }
 
   const lang = LANGUAGES.find((l) => l.id === params.get("lang"));
   out.hidden = false;

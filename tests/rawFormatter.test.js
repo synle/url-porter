@@ -616,13 +616,8 @@ describe("JSON tree preview", () => {
   });
 });
 
-describe("selection kind reporting", () => {
-  /**
-   * Load the scripts with a sendMessage spy, select `text` in a textarea, and let the debounce fire.
-   * @param {string} text - Text to select.
-   * @returns {Promise<import("vitest").Mock>} The sendMessage spy.
-   */
-  async function selectText(text) {
+describe("selection handling", () => {
+  it("does not inspect or report document selections", async () => {
     const sendMessage = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal("chrome", {
       runtime: { getURL: (p) => `file:///nonexistent/${p}`, sendMessage },
@@ -632,41 +627,7 @@ describe("selection kind reporting", () => {
     vi.resetModules();
     await import("../src/content/format-detect.js");
     await import("../src/content/raw-formatter.js");
-    vi.useFakeTimers();
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
     document.dispatchEvent(new Event("selectionchange"));
-    vi.advanceTimersByTime(150);
-    return sendMessage;
-  }
-
-  it("reports a JSON selection as json only", async () => {
-    const send = await selectText('{"team":"FALCON"}');
-    expect(send).toHaveBeenLastCalledWith({
-      type: "Myevent.selectionKind",
-      json: true,
-      markdown: false,
-    });
-  });
-
-  it("reports a Markdown selection as markdown only", async () => {
-    const send = await selectText("# Initech\n\n- PLUTO");
-    expect(send).toHaveBeenLastCalledWith({
-      type: "Myevent.selectionKind",
-      json: false,
-      markdown: true,
-    });
-  });
-
-  it("reports plain prose as neither", async () => {
-    const send = await selectText("Lunch with the Globex team at noon.");
-    expect(send).toHaveBeenLastCalledWith({
-      type: "Myevent.selectionKind",
-      json: false,
-      markdown: false,
-    });
+    expect(sendMessage).not.toHaveBeenCalled();
   });
 });

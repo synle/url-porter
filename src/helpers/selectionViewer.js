@@ -1,9 +1,7 @@
-/** Context-menu actions on selected text: preview it as rendered Markdown or a JSON tree, or format it with a chosen syntax, in a new viewer tab. */
+/** Context-menu action for formatting selected text with a chosen syntax in a new viewer tab. */
 
-/** Context menu ids. @type {{preview: string, json: string, formatParent: string, formatPrefix: string}} */
+/** Context menu ids. @type {{formatParent: string, formatPrefix: string}} */
 export const SELECTION_MENU = {
-  preview: "selection-preview-markdown",
-  json: "selection-view-json",
   formatParent: "selection-format",
   formatPrefix: "selection-format:",
 };
@@ -18,24 +16,11 @@ export const VIEWER_KEEP = 10;
 export const VIEWER_PAGE = "viewer/textview.html";
 
 /**
- * Register the selection context menus: "Preview Markdown" and "View as JSON" (hidden until the page reports a
- * matching selection, see updateSelectionMenus) plus a "Format" submenu with one item per language.
+ * Register the selection format submenu with one item per language.
  * @param {Array<{id: string, label: string}>} languages - Supported syntaxes.
  * @returns {void}
  */
 export function createSelectionMenus(languages) {
-  chrome.contextMenus.create({
-    id: SELECTION_MENU.preview,
-    title: "Preview Selection as Markdown",
-    contexts: ["selection"],
-    visible: false,
-  });
-  chrome.contextMenus.create({
-    id: SELECTION_MENU.json,
-    title: "View Selection as JSON Tree",
-    contexts: ["selection"],
-    visible: false,
-  });
   chrome.contextMenus.create({
     id: SELECTION_MENU.formatParent,
     title: "Format Selection as",
@@ -49,19 +34,6 @@ export function createSelectionMenus(languages) {
       contexts: ["selection"],
     });
   }
-}
-
-/**
- * Show only the preview items matching what the page's current selection really is.
- * Fed by `Myevent.selectionKind` from the content script; pages without it (chrome://, PDF) keep them hidden.
- * @param {{json?: unknown, markdown?: unknown}} kind - Selection classification.
- * @returns {Promise<void>}
- */
-export async function updateSelectionMenus(kind) {
-  await Promise.all([
-    chrome.contextMenus.update(SELECTION_MENU.preview, { visible: kind?.markdown === true }),
-    chrome.contextMenus.update(SELECTION_MENU.json, { visible: kind?.json === true }),
-  ]);
 }
 
 /**
@@ -119,7 +91,7 @@ async function stashText(text, now) {
 }
 
 /**
- * Handle a selection context-menu click: hand the text to the viewer page and open it next to the source tab.
+ * Handle an explicit format context-menu click: hand the text to the viewer page and open it next to the source tab.
  * @param {chrome.contextMenus.OnClickData} info - Click data.
  * @param {chrome.tabs.Tab} [tab] - Source tab.
  * @param {number} [now] - Timestamp (injectable for tests).
@@ -128,11 +100,7 @@ async function stashText(text, now) {
 export async function handleSelectionMenuClick(info, tab, now = Date.now()) {
   const id = String(info.menuItemId);
   let params;
-  if (id === SELECTION_MENU.preview) {
-    params = new URLSearchParams({ mode: "markdown" });
-  } else if (id === SELECTION_MENU.json) {
-    params = new URLSearchParams({ mode: "json" });
-  } else if (id.startsWith(SELECTION_MENU.formatPrefix)) {
+  if (id.startsWith(SELECTION_MENU.formatPrefix)) {
     params = new URLSearchParams({
       mode: "format",
       lang: id.slice(SELECTION_MENU.formatPrefix.length),

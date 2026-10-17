@@ -55,57 +55,8 @@ describe("textview", () => {
     expect($("err").textContent).toMatch(/^YAML: /);
   });
 
-  /**
-   * Answer the Markdown page's ready handshake and return the HTML the toolbar posts to it.
-   * @returns {Promise<string>} Posted HTML document.
-   */
-  async function postedMarkdown() {
-    await vi.waitFor(() => expect($("preview").getAttribute("src")).toBe("about:blank#mdview"));
-    const post = vi.spyOn($("preview").contentWindow, "postMessage");
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        data: { type: "url-porter:md-view:ready" },
-        source: $("preview").contentWindow,
-      }),
-    );
-    await vi.waitFor(() => expect(post).toHaveBeenCalled());
-    return post.mock.calls.at(-1)[0].html;
-  }
-
-  it("renders Markdown in the sandboxed Markdown page frame", async () => {
-    await openViewer("?mode=markdown&key=k", { k: "# Initech\n\n*PLUTO*" });
-    const html = await postedMarkdown();
-    expect($("preview").hidden).toBe(false);
-    expect($("preview").getAttribute("sandbox")).not.toContain("allow-same-origin");
-    expect(html).toContain("<h1>Initech</h1>");
-    expect(html).toContain("<em>PLUTO</em>");
-    expect($("out").style.display).toBe("none");
-  });
-
-  it("styles the Markdown preview black on white with explicit link colors (light OS theme)", async () => {
-    await openViewer("?mode=markdown&key=k", { k: "[Acme](https://acme.example)" });
-    const html = await postedMarkdown();
-    expect(html).toContain("--fg:#000;--bg:#fff;--link:#0645ad;");
-    expect(html).toContain("a{color:var(--link);");
-  });
-
-  it("opens JSON mode with the formatted text and the JSON tree frame shown", async () => {
-    await openViewer("?mode=json&key=k", { k: '{"globex":[1]}' });
-    expect(document.title).toBe("JSON Tree");
-    expect($("out").textContent).toBe('{\n  "globex": [\n    1\n  ]\n}');
-    const frame = document.querySelector('iframe[title="JSON tree"]');
-    expect(frame.src).toBe("about:blank#jsonview");
-    expect(frame.style.display).toBe("block");
-  });
-
-  it("shows the raw text and an error when JSON mode gets invalid JSON", async () => {
-    await openViewer("?mode=json&key=k", { k: "{oops" });
-    expect($("out").textContent).toBe("{oops");
-    expect($("err").textContent).toMatch(/^Not valid JSON: /);
-  });
-
   it("reports a missing selection", async () => {
-    await openViewer("?mode=markdown&key=gone", {});
+    await openViewer("?mode=format&lang=yaml&key=gone", {});
     expect($("err").textContent).toMatch(/no longer available/);
   });
 
