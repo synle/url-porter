@@ -613,46 +613,6 @@
 
   globalThis.UrlPorterRawFormatter = { mount };
 
-  /** Debounce for selection reports, so dragging a selection doesn't spam the background. @type {number} */
-  const SELECTION_REPORT_MS = 150;
-
-  /**
-   * Report what the current selection is (real JSON / real Markdown) so the background can show only the
-   * matching context-menu preview items. Sends only on change; re-sends on tab focus because menus are global.
-   * @returns {void}
-   */
-  function watchSelectionKind() {
-    const { isJsonBlob, isMarkdownBlob } = globalThis.UrlPorterFormat;
-    let last = "";
-    let timer;
-    /** @param {boolean} force - Send even when unchanged (tab regained focus). @returns {void} */
-    const report = (force) => {
-      const el = document.activeElement;
-      const text =
-        el && /^(TEXTAREA|INPUT)$/.test(el.tagName) && typeof el.selectionStart === "number"
-          ? el.value.slice(el.selectionStart, el.selectionEnd)
-          : String(window.getSelection() || "");
-      const kind = { json: isJsonBlob(text), markdown: isMarkdownBlob(text) };
-      const sig = JSON.stringify(kind);
-      if (!force && sig === last) return;
-      last = sig;
-      try {
-        chrome.runtime.sendMessage({ type: "Myevent.selectionKind", ...kind })?.catch?.(() => {});
-      } catch {
-        // Extension reloaded under this page; the context is gone and nothing can be reported.
-      }
-    };
-    document.addEventListener("selectionchange", () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => report(false), SELECTION_REPORT_MS);
-    });
-    window.addEventListener("focus", () => report(true));
-  }
-
-  if (globalThis.UrlPorterFormat && typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
-    watchSelectionKind();
-  }
-
   // Auto-mount only on Chrome raw text responses, rendered as <body><pre>…</pre></body>.
   if (!globalThis.UrlPorterFormat || !document.body || document.contentType === "text/html") return;
   const pre = document.body.querySelector(":scope > pre");
