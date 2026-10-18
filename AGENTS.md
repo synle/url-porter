@@ -116,8 +116,9 @@ Standard status icons in bookmark title prefixes; reuse for any future status tr
 ## CI/CD
 
 - **build-main**: push/PR to main. Reusable workflow from `synle/workflows`: runs `package-syle`, formats, commits, deploys to GitHub Pages. PRs get a zip artifact + download comment.
-- **release-official**: manual dispatch only. Bumps version (`npm version minor`) → draft → build → changelog → publish `url-porter.zip`, tag `v{version}`. Use `/release-official`.
-- **release-beta**: manual dispatch only. Beta-marked draft prerelease, tag `release-beta-{date}-{sha}`, name "URL Porter (Beta)". Use `/release-beta`.
+- **Release skill**: use `/skill:release`. Every unspecified release is official; beta requires explicit beta/prerelease/test wording. The skill proceeds without confirmation prompts, summarizes commits since the last official release, and leaves custom notes/changesets unset.
+- **release-official**: manual dispatch only. Bumps version (`npm version minor`) → draft → build → changelog → publish `url-porter.zip`, tag `v{version}`.
+- **release-beta**: manual dispatch only and explicit opt-in. Beta-marked draft prerelease, tag `release-beta-{date}-{sha}`, name "URL Porter (Beta)".
 - **cleanup-artifacts / cleanup-pr-artifacts**: scheduled and PR-close cleanup.
 
 ## GitHub Raw File URLs
