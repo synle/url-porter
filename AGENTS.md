@@ -113,6 +113,12 @@ Standard status icons in bookmark title prefixes; reuse for any future status tr
 | ⚪    | Not started / backlog        |
 | ❌    | Blocked / abandoned / failed |
 
+## Repo Agent Skills
+
+- Store every repo-local skill at `.claude/skills/<name>/SKILL.md`.
+- Migrate legacy command files or flat skill files into that directory-based layout; preserve the skill name, behavior, and references.
+- Do not add new repo skills under `.claude/commands/` or as `.claude/skills/<name>.md`.
+
 ## CI/CD
 
 - **build-main**: push/PR to main. Reusable workflow from `synle/workflows`: runs `package-syle`, formats, commits, deploys to GitHub Pages. PRs get a zip artifact + download comment.
