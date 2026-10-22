@@ -90,9 +90,14 @@ With `npm run dev`, the extension auto-reloads on file changes.
 | `npm run format`   | Format code with oxfmt                               |
 | `npm run validate` | Run all quality checks: test + lint + build + format |
 
+### Agent Skills
+
+Repository skills live in `.agents/skills/<name>/SKILL.md`, a shared, agent-neutral layout. Each skill has its own kebab-case directory and `name` and `description` frontmatter. The release skill is defined in [`.agents/skills/release/SKILL.md`](.agents/skills/release/SKILL.md).
+
 ### Project Structure
 
 ```
+.agents/skills/      # Shared agent skills (one <name>/SKILL.md per skill)
 src/
 ├── background/      # Service worker (redirect rules, context menus, omnibox, bookmark sync)
 ├── content/         # Content scripts (PR status, Jira status, Keep markdown, fav export, raw formatter)

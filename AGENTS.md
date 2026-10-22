@@ -115,9 +115,10 @@ Standard status icons in bookmark title prefixes; reuse for any future status tr
 
 ## Repo Agent Skills
 
-- Store every repo-local skill at `.claude/skills/<name>/SKILL.md`.
-- Migrate legacy command files or flat skill files into that directory-based layout; preserve the skill name, behavior, and references.
-- Do not add new repo skills under `.claude/commands/` or as `.claude/skills/<name>.md`.
+- Store every repo-local skill at `.agents/skills/<name>/SKILL.md` as the shared, agent-neutral source.
+- Migrate legacy command files, Claude-specific skill directories, or flat skill files into that directory-based layout; preserve the skill name, behavior, and references.
+- Match the kebab-case directory name to the frontmatter `name`; keep portable frontmatter limited to `name` and `description`.
+- Do not add new repo skills under `.claude/commands/`, `.claude/skills/`, or as flat `.agents/skills/<name>.md` files.
 
 ## CI/CD
 
