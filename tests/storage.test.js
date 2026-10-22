@@ -126,8 +126,13 @@ describe("storage", () => {
   });
 
   describe("sync URL", () => {
-    it("returns default sync URL when not set", async () => {
-      expect(await storage.getSyncUrl()).toBe(storage.DEFAULT_SYNC_URL);
+    it("returns the .json default sync URL when not set", async () => {
+      expect(await storage.getSyncUrl()).toBe("https://synle.github.io/fav/url-porter.json");
+    });
+
+    it("preserves a saved .jsonc sync URL", async () => {
+      storageData.syncUrl = "https://acme.example.com/config.jsonc";
+      expect(await storage.getSyncUrl()).toBe("https://acme.example.com/config.jsonc");
     });
 
     it("round-trips through setSyncUrlToStorage", async () => {

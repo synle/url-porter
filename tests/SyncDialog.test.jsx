@@ -18,6 +18,7 @@ describe("SyncDialog", () => {
     reset();
     storageData.syncUrl = "https://my.sync.example.com/config.json";
     globalThis.fetch = vi.fn();
+    chrome.runtime.sendMessage.mockClear();
   });
 
   afterEach(() => {
@@ -85,7 +86,7 @@ describe("SyncDialog", () => {
     expect(storageData.homepageUrl).toBe("https://home.example.com");
   });
 
-  it("accepts a JSONC response with comments and trailing commas", async () => {
+  it("stores JSONC as structured config and notifies the background", async () => {
     const onSuccess = vi.fn();
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -99,7 +100,18 @@ describe("SyncDialog", () => {
     render(<SyncDialog open={true} onClose={() => {}} onSuccess={onSuccess} onError={() => {}} />);
     fireEvent.click(await screen.findByRole("button", { name: /Sync Now/i }));
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+    expect(globalThis.fetch).toHaveBeenCalledWith("https://my.sync.example.com/config.json", {
+      method: "GET",
+    });
+    expect(storageData.jsonConfig).toEqual([{ from: "falcon", to: "https://falcon.example.com" }]);
     expect(storageData.homepageUrl).toBe("https://acme.example.com");
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledExactlyOnceWith({
+      type: "Myevent.updateConfig",
+    });
+    expect(onSuccess).toHaveBeenCalledWith({
+      homepage: "https://acme.example.com",
+      configs: [{ from: "falcon", to: "https://falcon.example.com" }],
+    });
   });
 
   it("invokes onError with a JSONC parse message on malformed input", async () => {
@@ -109,6 +121,9 @@ describe("SyncDialog", () => {
     fireEvent.click(await screen.findByRole("button", { name: /Sync Now/i }));
     await waitFor(() => expect(onError).toHaveBeenCalled());
     expect(onError.mock.calls[0][0]).toMatch(/^Sync failed: Invalid JSONC: /);
+    expect(storageData.jsonConfig).toBeUndefined();
+    expect(storageData.homepageUrl).toBeUndefined();
+    expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
   });
 
   it("triggers onClose when Cancel is clicked", async () => {

@@ -71,7 +71,9 @@ To customize the default sync server URL at build time:
 VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL=https://your-server.com/config.json
 ```
 
-Default: `https://synle.github.io/fav/url-porter.jsonc`. The response is parsed as JSONC (comments and trailing commas allowed).
+Default: `https://synle.github.io/fav/url-porter.json`, including `npm run package-syle` builds. This fallback applies only when no sync URL is saved; existing saved URLs are preserved.
+
+The lenient `jsonc-parser` is used only when ingesting a remote sync response, allowing comments and trailing commas regardless of the URL's extension. Redirect configs are then serialized as JSON and stored as structured values, the homepage is saved separately, and `Myevent.updateConfig` tells the background worker to read storage and register redirects/reconcile bookmarks. The background worker does not parse JSONC. Advanced Mode saves strip comments before `JSON.parse`; file imports and the JSON tree viewer continue to use strict JSON parsing.
 
 ### Load in Chrome
 

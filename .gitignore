@@ -41,6 +41,8 @@ desktop.ini
 .terraform
 .ipynb_checkpoints
 /.history/
+# Local agent worktrees must never be tracked as submodules.
+/.claude/worktrees/
 /bin/
 /obj/
 _build
