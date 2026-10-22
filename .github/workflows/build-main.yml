@@ -15,9 +15,11 @@ concurrency:
 
 jobs:
   build:
+    needs: coverage
     # https://github.com/synle/workflows/blob/main/.github/workflows/build-and-commit-sh.yml
     uses: synle/workflows/.github/workflows/build-and-commit-sh.yml@main
     with:
+      amend-triggering-commit: true
       deploy-to-pages: true
     permissions:
       contents: write

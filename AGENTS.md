@@ -115,6 +115,7 @@ Standard status icons in bookmark title prefixes; reuse for any future status tr
 
 ## Repo Agent Skills
 
+- Use `AGENTS.md` for shared context. Migrate same-scope `CLAUDE.md` guidance into it, preserving distinct instructions and updating references; retain compatibility when a verified consumer still requires the old path.
 - Store every repo-local skill at `.agents/skills/<name>/SKILL.md` as the shared, agent-neutral source.
 - Migrate legacy command files, Claude-specific skill directories, or flat skill files into that directory-based layout; preserve the skill name, behavior, and references.
 - Match the kebab-case directory name to the frontmatter `name`; keep portable frontmatter limited to `name` and `description`.
@@ -122,7 +123,7 @@ Standard status icons in bookmark title prefixes; reuse for any future status tr
 
 ## CI/CD
 
-- **build-main**: push/PR to main. Reusable workflow from `synle/workflows`: runs `package-syle`, formats, commits, deploys to GitHub Pages. PRs get a zip artifact + download comment.
+- **build-main**: push/PR to main/master and manual revalidation dispatch. Calls the shared build workflow with `amend-triggering-commit: true` and `deploy-to-pages: true`, gated on the existing coverage job. Runs `package-syle`, formats, and checks lint/tests before amending branch pushes with an explicit triggering-SHA lease. PRs and dispatches never commit; Pages deploys only on push. PRs retain the zip artifact + download comment.
 - **Release skill**: use `/skill:release`. Every unspecified release is official; beta requires explicit beta/prerelease/test wording. The skill proceeds without confirmation prompts, summarizes commits since the last official release, and leaves custom notes/changesets unset.
 - **release-official**: manual dispatch only. Bumps version (`npm version minor`) → draft → build → changelog → publish `url-porter.zip`, tag `v{version}`.
 - **release-beta**: manual dispatch only and explicit opt-in. Beta-marked draft prerelease, tag `release-beta-{date}-{sha}`, name "URL Porter (Beta)".

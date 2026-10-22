@@ -141,13 +141,15 @@ Then load the `url-porter` folder as an unpacked extension in Chrome.
 
 ## CI/CD
 
-| Workflow                 | Trigger                                | What it does                                                                   |
-| ------------------------ | -------------------------------------- | ------------------------------------------------------------------------------ |
-| **build-main**           | Push/PR to main or `workflow_dispatch` | Builds, tests, formats, deploys to GitHub Pages                                |
-| **build-main** (PR)      | Pull requests                          | Uploads `url-porter.zip` artifact + download comment                           |
-| **release-official**     | Manual dispatch                        | Bumps version, builds, creates GitHub release, tags `v{version}`               |
-| **release-beta**         | Manual dispatch                        | Draft prerelease tagged `release-beta-{date}-{sha}`, named "URL Porter (Beta)" |
-| **cleanup-artifacts**    | Weekly (Sunday)                        | Deletes old artifacts, draft releases, stale workflow runs                     |
-| **cleanup-pr-artifacts** | PR closed                              | Cleans up artifacts from closed PRs                                            |
+| Workflow                 | Trigger                                       | What it does                                                                      |
+| ------------------------ | --------------------------------------------- | --------------------------------------------------------------------------------- |
+| **build-main**           | Push/PR to main/master or `workflow_dispatch` | Coverage-gated shared build, lint/tests, format; push-only amend and Pages deploy |
+| **build-main** (PR)      | Pull requests                                 | Uploads `url-porter.zip` artifact + download comment                              |
+| **release-official**     | Manual dispatch                               | Bumps version, builds, creates GitHub release, tags `v{version}`                  |
+| **release-beta**         | Manual dispatch                               | Draft prerelease tagged `release-beta-{date}-{sha}`, named "URL Porter (Beta)"    |
+| **cleanup-artifacts**    | Weekly (Sunday)                               | Deletes old artifacts, draft releases, stale workflow runs                        |
+| **cleanup-pr-artifacts** | PR closed                                     | Cleans up artifacts from closed PRs                                               |
+
+Build CI opts into the shared workflow's `amend-triggering-commit` mode. Successful branch pushes fold build/format changes into the triggering commit with an explicit SHA lease; PR and manual-dispatch runs validate without rewriting history or deploying Pages. Existing coverage reports and PR zip/comment jobs remain separate.
 
 Versioning: `package.json` is the single source of truth; `src/manifest.json` syncs during build/bundle.
