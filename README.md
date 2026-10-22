@@ -30,6 +30,10 @@ A Chrome extension that lets you configure redirect rules and set a custom homep
 
 The config is a JSON array of redirect rules. Each rule is an object with `from` (pattern) and `to` (destination), or a shorthand array `["keyword", "url"]`.
 
+Redirect-rule rebuilds run sequentially when install, sync, and UI updates overlap, preventing duplicate rule IDs. Alias-chain destinations such as `["acme/repos", "http://acme/repo"]` remain supported.
+
+Use **Advanced Mode** to edit and save the full config below. A production-bundle regression test covers opening the editor, changing a setting, and saving it without React errors.
+
 Full config format (Advanced Mode, export, import):
 
 ```json

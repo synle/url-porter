@@ -69,7 +69,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CallSplitIcon from "@mui/icons-material/CallSplit";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
-import Editor from "react-simple-code-editor";
+import EditorModule from "react-simple-code-editor";
 import { highlight, languages } from "prismjs/components/prism-core";
 import "prismjs/components/prism-json";
 
@@ -123,6 +123,9 @@ import {
   getHistoryEntryLimit,
   setHistoryEntryLimit,
 } from "../../helpers/historyUtils.js";
+
+/** CommonJS editor exports are wrapped in production but unwrapped by the test/dev loader. */
+const Editor = EditorModule.default ?? EditorModule;
 
 /** React component for the main options page content, including clean and advanced modes. */
 function OptionsContent() {

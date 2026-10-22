@@ -279,12 +279,25 @@ chrome.omnibox.onInputEntered.addListener(async (text, disposition) => {
 
 // --- Redirect Rules ---
 
+/** @type {Promise<void>} Completion of the last queued redirect-rule rebuild. */
+let redirectUpdateQueue = Promise.resolve();
+
 /**
- * Replace all dynamic redirect rules with the current config.
- * Each config entry becomes a declarativeNetRequest rule that redirects
- * main_frame requests matching the urlFilter pattern.
+ * Queue a full redirect-rule rebuild so install, message, and storage events
+ * cannot interleave removals and additions using the same rule IDs.
+ * @returns {Promise<void>} Resolves after this request's rebuild completes.
  */
-async function updateRedirectRules() {
+function updateRedirectRules() {
+  redirectUpdateQueue = redirectUpdateQueue.then(replaceRedirectRules);
+  return redirectUpdateQueue;
+}
+
+/**
+ * Replace dynamic rules from the latest stored config; log failures without
+ * rejecting so a failed rebuild cannot block later queued updates.
+ * @returns {Promise<void>} Resolves after attempting every normalized rule.
+ */
+async function replaceRedirectRules() {
   try {
     const oldRules = await chrome.declarativeNetRequest.getDynamicRules();
     const removeRuleIds = oldRules.map((rule) => rule.id);

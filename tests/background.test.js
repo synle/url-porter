@@ -472,6 +472,92 @@ describe("background — updateRedirectRules", () => {
     expect(dynamicRules.length).toBe(2);
   });
 
+  it("serializes overlapping install, message, and storage refreshes without duplicate IDs", async () => {
+    storageData.jsonConfig = [
+      ["acme/repo", "https://example.com/repos"],
+      ["acme/repos", "http://acme/repo"],
+    ];
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    chrome.declarativeNetRequest.updateDynamicRules.mockImplementation(
+      async ({ removeRuleIds = [], addRules = [] }) => {
+        const nextRules = dynamicRules.filter((rule) => !removeRuleIds.includes(rule.id));
+        const ids = new Set(nextRules.map((rule) => rule.id));
+        for (const rule of addRules) {
+          if (ids.has(rule.id))
+            throw new Error(`Rule with id ${rule.id} does not have a unique ID.`);
+          ids.add(rule.id);
+        }
+        dynamicRules = [...nextRules, ...addRules];
+      },
+    );
+    try {
+      const installed = listeners.onInstalled[0]();
+      listeners.message[0]({ type: "Myevent.updateConfig" }, {}, () => {});
+      listeners.storageChanged[0]({ jsonConfig: {} }, "sync");
+      await installed;
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(errors.mock.calls).toEqual([]);
+      expect(dynamicRules).toEqual([
+        {
+          id: 1,
+          condition: { urlFilter: "||acme/repo^", resourceTypes: ["main_frame"] },
+          action: { type: "redirect", redirect: { url: "https://example.com/repos" } },
+        },
+        {
+          id: 2,
+          condition: { urlFilter: "||acme/repos^", resourceTypes: ["main_frame"] },
+          action: { type: "redirect", redirect: { url: "http://acme/repo" } },
+        },
+      ]);
+    } finally {
+      errors.mockRestore();
+    }
+  });
+
+  it("reads the latest config for a refresh queued during an active rebuild", async () => {
+    storageData.jsonConfig = [["acme", "https://acme.test"]];
+    let release;
+    const paused = new Promise((resolve) => {
+      release = resolve;
+    });
+    chrome.declarativeNetRequest.updateDynamicRules.mockImplementationOnce(() => paused);
+    listeners.message[0]({ type: "Myevent.updateConfig" }, {}, () => {});
+    await vi.advanceTimersByTimeAsync(0);
+    storageData.jsonConfig = [["globex", "https://globex.test"]];
+    listeners.storageChanged[0]({ jsonConfig: {} }, "sync");
+    release();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(dynamicRules).toEqual([
+      {
+        id: 1,
+        condition: { urlFilter: "||globex^", resourceTypes: ["main_frame"] },
+        action: { type: "redirect", redirect: { url: "https://globex.test" } },
+      },
+    ]);
+  });
+
+  it("continues queued refreshes after an earlier rebuild fails", async () => {
+    storageData.jsonConfig = [["acme", "https://acme.test"]];
+    const failure = new Error("Rule storage unavailable");
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    chrome.declarativeNetRequest.getDynamicRules.mockRejectedValueOnce(failure);
+    try {
+      listeners.message[0]({ type: "Myevent.updateConfig" }, {}, () => {});
+      listeners.storageChanged[0]({ jsonConfig: {} }, "sync");
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(errors.mock.calls).toEqual([["Failed to update redirect rules:", failure]]);
+      expect(dynamicRules).toEqual([
+        {
+          id: 1,
+          condition: { urlFilter: "||acme^", resourceTypes: ["main_frame"] },
+          action: { type: "redirect", redirect: { url: "https://acme.test" } },
+        },
+      ]);
+    } finally {
+      errors.mockRestore();
+    }
+  });
+
   it("skips rules that fail to add (per-rule try/catch)", async () => {
     storageData.jsonConfig = [
       { from: "gh", to: "github.com" },
