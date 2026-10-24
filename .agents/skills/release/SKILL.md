@@ -1,6 +1,6 @@
 ---
 name: release
-description: Trigger a Skippy release. Use for any request to release, publish, ship, cut a version, create release artifacts, or run a release workflow.
+description: Trigger a repository release. Use for any request to release, publish, ship, cut a version, create release artifacts, or run a release workflow.
 ---
 
 # Release

@@ -1,148 +1,81 @@
 # AGENTS
 
-Guidance for agents working in this repo.
+Guidance for agents working in this repository.
 
-## Project Overview
+## Project and Context
 
-URL Porter is a Chrome Extension (Manifest V3) for custom URL redirect rules (aliases → URLs), a custom new tab homepage, and remote config sync. Built with React 19, MUI 9, Vite 8.
+URL Porter is a Chrome Manifest V3 extension for redirect aliases, a custom new tab homepage, bookmark reconciliation, and remote config sync. Extension pages use React and MUI; Vite builds the pages and service worker. Content scripts and viewer pages also run outside React.
 
-## Build & Development Commands
-
-```bash
-npm run dev          # Watch-mode build to dist/
-npm run build        # One-off production build → dist/ (also generates types/)
-npm run bundle       # Create url-porter.zip from dist/
-npm run package      # build + bundle
-npm run lint         # ESLint
-npm run format       # oxfmt
-npm run validate     # test + lint + build + format
-```
-
-Tests use Vitest (`npm test`). Test files live in `tests/` at the project root (never inside `src/` — build hooks can delete files there). Chrome APIs are mocked via `vi.stubGlobal`. Use fictional names in fixtures (Acme, Globex, Initech; FALCON, PLUTO, ORBIT). Node pinned to 20.19.1 via Volta.
-
-`.vscode/launch.json` has debug configs for Vitest run-all, Vitest current-file, and a watch-mode dev build.
-
-Env var `VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL` customizes the sync server URL at build time.
-
-## Local Development with Chrome
-
-1. `npm run dev`
-2. Chrome → `chrome://extensions/` → Developer mode → **Load unpacked** → select `dist/`.
-3. Edit files — Vite rebuilds and the extension auto-reloads.
-
-Tip: pin the extension to the toolbar for quick access to the Add Link popup.
-
-## Architecture
-
-**Extension entry points** (each a separate Vite input):
-
-- `src/background/background.js` — Service worker: `chrome.declarativeNetRequest` redirect rules, context menus, omnibox ("go"), message handling.
-- `src/pages/options/` — Settings UI: "Clean" (table) and "Advanced" (full-config JSON editor) modes, homepage, folder name, history limits, bookmark rules.
-- `src/pages/addlink/` — Popup to quick-add current page as a redirect rule.
-- `src/pages/addrule/` — Page to add a bookmark rule, opened from context menu with auto-filled fields derived from the current page.
-- `src/pages/newtab/` — New tab override redirecting to the configured homepage.
-- `src/viewer/textview.{html,js}` — Static (non-Vite, copied by `vite.config.js`) viewer opened by the "Preview Selection as Markdown" / "Format Selection as ▸ <syntax>" context menus (`src/helpers/selectionViewer.js`); reads the selection from `chrome.storage.session` and reuses `format-detect.js` helpers.
-- `src/pages/history/` — Audit trail of redirect rule changes (search, restore, bulk delete).
-
-**Shared helpers** (`src/helpers/`):
-
-- `storage.js` — Chrome storage wrappers. Config rules use `chrome.storage.sync`; homepage, sync URL, folder name, history use `chrome.storage.local`.
-- `configUtils.js` — Normalizes entries for `declarativeNetRequest`. Only file with TypeScript declarations (emitted to `types/`).
-- `historyUtils.js` — History tracking with configurable limits (5000 aliases, 20 entries per alias).
-- `configAnalysis.js` — Broken link detection, conflict/duplicate resolution. Pure functions for Options page health checks.
-- `historyStatsUtils.js` — Browse history stats aggregation (most visited URLs grouped by path). Used by HistoryStatsSection on the Stats tab.
-- `fieldHelpers.js` — Shared form field placeholder/helper text constants.
-- `ruleDerivation.js` — Derives bookmark rule fields from a URL (`escapeRegex`, `deriveRuleFromUrl`). Used by AddRule page.
-- `bookmarkUtils.js` — Bookmark sync: maintains a configurable folder (default "url-porter") under Other Bookmarks mirroring config entries. Dedupes by title (later wins), preserves sort order (updates in-place, appends new), resolves short-link chains (`a` → `aaa` → full URL).
-- Bucket reconcilers (`prUtils`, `githubRepoUtils`, `figmaMockUtils`, `jiraTicketUtils`, `googleDriveUtils`, `onedriveUtils`) — each rebuilds a subfolder under the url-porter folder from browser history and bookmarks. **All bookmark walkers must skip the url-porter folder** (accept `porterFolderId`, skip matching nodes) or previously-built titles get re-parsed and data accumulates every cycle.
-- `managedFolderUtils.js` — `rebuildManagedSubfolder()`: builds a replacement in a staging folder (`<name> (updating…)`), swaps only once populated. Never `chrome.bookmarks.removeTree` your own folder first — the MV3 worker can die at any `await`, leaving no folder. Orphaned staging folders are cleaned up next run.
-- `genericBookmarkRuleUtils.js` — User-defined rules (in `chrome.storage.local` key `bookmarkRules`) generalizing the reconciler pattern: history keywords, URL match regex, dedup key regex, title cleanup, sort. Managed by BookmarkRulesSection / context menu "Add Bookmark Rule for This Site". Included in import/export. Reserved folder names blocked.
-
-**Content scripts** (`src/content/`, copied verbatim, registered in `manifest.json`): `content-utils.js` (error page detection, staggered reload), `pr-status-github.js` (github.com, _.githubprivate.com, *.ghe.com → `Myevent.prStatus`), `pr-status-azure.js` (*.visualstudio.com, dev.azure.com → same `dedupeKey` for both URL formats), `jira-status.js` (_.atlassian.net/browse/* → `Myevent.jiraStatus`), `keep.js` (markdown preview button in Keep note modals), `fav.js` (bookmark export for synle.github.io/fav via `Myevent.getBookmarks`).
-
-**Data flows**:
-
-- Status tracking: content script detects status → message to background → stored in `chrome.storage.local` (`prStatuses` / `jiraStatuses`, keyed by canonical URL) → reconcilers prefix titles with status emoji. Priority: stored > old title prefix > none.
-- Config: UI saves → `storage.js` → `"Myevent.updateConfig"` message → background updates dynamic rules → history logged → bookmarks reconciled.
-
-**Full config JSON** (Advanced Mode editor, export, import; plain `[]` configs array also accepted for backward compat):
-
-```json
-{
-  "homepage": "https://example.com",
-  "configs": [{ "from": "alias", "to": "https://target.com" }],
-  "bookmarkRules": [],
-  "bookmarkFolderName": "url-porter",
-  "historyAliasLimit": 5000,
-  "historyEntryLimit": 20,
-  "githubOrgThreshold": 3,
-  "statsVisitThreshold": 3,
-  "statsMaxResults": 200,
-  "statsLookbackMonths": 6
-}
-```
-
-**Theme** (`src/theme.jsx`): auto light/dark, animations disabled, compact sizing, ripple disabled.
-
-## Build System
-
-`vite.config.js` post-build plugins copy the manifest, move generated HTML to `dist/pages/[name]/`, fix asset paths, clean up `dist/src/`. Output must match paths in `manifest.json`.
-
-Content scripts are not Vite inputs — add a `copyFileSync` call in `vite.config.js` and register in `manifest.json`.
-
-In dev mode (`--watch`), manifest name becomes "URL Porter (DEV)" and `dev-reload.js` polls a timestamp file to trigger reload. Dev-only.
-
-Versioning: `package.json` is the single source of truth; `src/manifest.json` and `dist/manifest.json` sync during build/bundle. Version bumps happen only in release-official, never during CI builds.
+Read [DEV.md](DEV.md) for commands, Chrome development, and CI/release mechanics. Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing entry points, storage, messages, reconcilers, or formatters. [README.md](README.md) owns user-facing features and configuration examples; manifests and source files override historical plan summaries.
 
 ## Quality Checklist (mandatory)
 
-After every change:
+After every change, run `npm run validate`; all checks must pass. Batch related edits before this final gate. The script runs tests, Oxlint, declaration generation, production build, and oxfmt; formatting can modify files.
 
-1. Run `npm run validate` — all checks must pass (enforced by `.claude/settings.json` hooks).
-2. Add JSDoc to all functions, constants, types, interfaces. Script files start with `/** Description. */` header.
-3. Update README.md when adding or changing features.
+- Keep tests in root `tests/`, never inside `src/`.
+- Use Vitest and mock Chrome APIs with `vi.stubGlobal`. Use fictional fixture names such as Acme, Globex, Initech, FALCON, PLUTO, and ORBIT.
+- Add JSDoc to all functions, constants, types, and interfaces. Script files start with a `/** Description. */` header.
+- Update README.md when adding or changing features. Keep the developer and architecture maps aligned when their contracts change.
+- `.claude/settings.json` has a Claude Stop hook that runs validation when tracked changes remain. Other agents must run the gate themselves.
+
+## Runtime and Build Boundaries
+
+- `package.json` owns commands and dependency versions; its Volta configuration pins Node 20.19.1. See DEV.md for CI runtime differences.
+- Keep generated `dist/`, `types/`, `coverage/`, and `url-porter.zip` out of source edits.
+- `vite.config.js` and `src/manifest.json` must agree on packaged paths. Content scripts are copied verbatim, not Vite inputs; register them in the manifest and build-copy plugin.
+- Static viewer assets and bundled formatter libraries also require build-copy entries. Preserve their manifest resource declarations when used from web pages.
+- `package.json` is the version source. Vite writes the packaged manifest version; bundling also patches the tracked source manifest without reformatting it.
+- Only `release-official` bumps the version. Ordinary builds and `build-main` never bump it.
+- Keep local agent worktrees untracked. `/.claude/worktrees/` is ignored; the former accidental gitlink was removed, not restored as a submodule.
+
+## Behavioral Invariants
+
+- Keep redirect rebuilds serialized across install, message, and sync-storage events. The queue covers the complete remove/read/add cycle and must recover after failure.
+- Bookmark reconciliation has a separate debounce/serialization mechanism. Do not substitute it for the redirect queue.
+- Collectors feeding bookmark reconcilers must skip the managed root using `porterFolderId`, including nested walkers, or generated bookmarks feed back into later runs.
+- Root alias reconciliation must skip subfolders during deduplication and URL updates. Managed folders may share titles with aliases.
+- Use `rebuildManagedSubfolder()` from `managedFolderUtils.js`: populate staging before deleting the live folder. Never delete the live folder first; MV3 can stop at any `await`.
+- Preserve alias-chain bookmark resolution, existing bookmark order, in-place updates, and later-title-wins deduplication.
+- Keep built-in subfolder names reserved when validating custom bookmark rules.
+- Persist settings before sending `Myevent.updateConfig`, including blur-based saves that require background reconciliation.
+- Keep remote JSONC ingestion separate from stored structured configs and strict file-import/JSON-tree parsing. Advanced Mode also accepts legacy configs arrays; file import requires an object containing `configs`.
+- Preserve the production editor interop adapter, `EditorModule.default ?? EditorModule`. Loader-only UI tests do not cover the production CommonJS export shape.
+- Raw-page syntax detection and explicit selection formatting are different paths. Selection menus respect the chosen syntax; the old automatic/Markdown-only selection entries no longer exist.
+- Preserve native `Ctrl/Cmd+C` handling and partial selections. Copy actions must retain the Clipboard API fallback without canceling copy shortcuts on failure.
+- Preserve sandboxed Markdown rendering, the script-less fallback, JSON-tree sandbox restrictions, and background-mediated downloads on sandboxed pages.
+- Pass parsed values to the JSON viewer's `.data` property. The library treats string data as a URL and fetches it; preserve the wrapper used for primitives.
+
+## Code and UI Conventions
+
+- Use ES modules for bundled code and the background worker. Copied content scripts remain classic scripts; preserve their shared globals and manifest load order.
+- Use React hooks for component state. React pages share `src/theme.jsx`: automatic light/dark mode, compact sizing, disabled animations and ripple.
+- Do not repeat `size="small"` on components whose theme default already supplies it.
+- Normalize redirect filters through `configUtils.js`: `from` receives `||` / `^`, and destinations without HTTP(S) receive `https://`.
+- Use `react-simple-code-editor` with Prism.js for Advanced Mode; retain the extension-compatible editor rather than introducing Monaco.
 
 ## Status Emoji Convention
 
-Standard status icons in bookmark title prefixes; reuse for any future status tracking:
+Reuse these bookmark-title status prefixes:
 
-| Emoji | Meaning                      |
-| ----- | ---------------------------- |
-| 🔵    | In progress / active / open  |
-| ✅    | Done / closed / merged       |
-| ⚪    | Not started / backlog        |
-| ❌    | Blocked / abandoned / failed |
+| Emoji | Meaning                                           |
+| ----- | ------------------------------------------------- |
+| 🔵    | In progress / active / open                       |
+| ✅    | Done / merged / closed Jira ticket                |
+| ⚪    | Not started / backlog                             |
+| ❌    | Blocked / abandoned / failed / closed unmerged PR |
 
-## Repo Agent Skills
+## Shared Agent Context and Skills
 
-- Use `AGENTS.md` for shared context. Migrate same-scope `CLAUDE.md` guidance into it, preserving distinct instructions and updating references; retain compatibility when a verified consumer still requires the old path.
-- Store every repo-local skill at `.agents/skills/<name>/SKILL.md` as the shared, agent-neutral source.
-- Migrate legacy command files, Claude-specific skill directories, or flat skill files into that directory-based layout; preserve the skill name, behavior, and references.
-- Match the kebab-case directory name to the frontmatter `name`; keep portable frontmatter limited to `name` and `description`.
-- Do not add new repo skills under `.claude/commands/`, `.claude/skills/`, or as flat `.agents/skills/<name>.md` files.
+- `AGENTS.md` owns shared agent rules. Migrate same-scope `CLAUDE.md` guidance here, preserving distinct instructions and updating references.
+- Retain a compatibility link or thin adapter only when a verified consumer requires the old context path.
+- Store each repository skill at `.agents/skills/<name>/SKILL.md`. The kebab-case folder must match frontmatter `name`; portable frontmatter contains only `name` and `description`.
+- Migrate legacy command files, Claude-specific skill directories, and flat skill files into that layout while preserving names, behavior, and references.
+- Do not add skills under `.claude/commands/`, `.claude/skills/`, or flat `.agents/skills/<name>.md` paths.
+- For releases, read `.agents/skills/release/SKILL.md`. Its official-by-default routing overrides generic release skills; beta requires explicit beta/prerelease/test wording.
+- The release skill proceeds without confirmation prompts, summarizes commits since the last official release, and leaves custom notes and changesets unset.
 
-## CI/CD
+## GitHub and Merge Policy
 
-- **build-main**: push/PR to main/master and manual revalidation dispatch. Calls the shared build workflow with `amend-triggering-commit: true` and `deploy-to-pages: true`, gated on the existing coverage job. Runs `package-syle`, formats, and checks lint/tests before amending branch pushes with an explicit triggering-SHA lease. PRs and dispatches never commit; Pages deploys only on push. PRs retain the zip artifact + download comment.
-- **Release skill**: use `/skill:release`. Every unspecified release is official; beta requires explicit beta/prerelease/test wording. The skill proceeds without confirmation prompts, summarizes commits since the last official release, and leaves custom notes/changesets unset.
-- **release-official**: manual dispatch only. Bumps version (`npm version minor`) → draft → build → changelog → publish `url-porter.zip`, tag `v{version}`.
-- **release-beta**: manual dispatch only and explicit opt-in. Beta-marked draft prerelease, tag `release-beta-{date}-{sha}`, name "URL Porter (Beta)".
-- **cleanup-artifacts / cleanup-pr-artifacts**: scheduled and PR-close cleanup.
+Fetch raw file content through `https://github.com/{owner}/{repo}/blob/head/{path}?raw=1`, never the Contents API or raw.githubusercontent.com.
 
-## GitHub Raw File URLs
-
-Fetch raw file content via `https://github.com/{owner}/{repo}/blob/head/{path}?raw=1` — never the Contents API or raw.githubusercontent.com.
-
-## Key Conventions
-
-- ES modules throughout (`"type": "module"` in package.json and manifest background).
-- React state via hooks only.
-- URL normalization: `from` gets `||` prefix and `^` suffix (`normalizeFrom`); `to` gets `https://` if no protocol.
-- All pages share `src/theme.jsx`; component sizes default to small globally — don't set `size="small"` per component.
-- Settings that auto-save on blur send `"Myevent.updateConfig"` to trigger background reconciliation.
-- JSON editor uses `react-simple-code-editor` + Prism.js (Monaco doesn't work in extensions).
-
-## Git / PR Merge Policy
-
-- Squash merge only — one commit per PR, no merge or rebase merges.
-- Local branch sync via `git merge origin/main` is fine; PR merges stay squash.
+Squash merge only: one commit per PR, no merge or rebase merges. Local branch synchronization may use `git merge origin/main`; PR merges remain squash.

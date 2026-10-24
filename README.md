@@ -57,6 +57,8 @@ Full config format (Advanced Mode, export, import):
 
 ## Development
 
+Contributor map: [DEV.md](DEV.md) for commands, debugging, and CI; [ARCHITECTURE.md](ARCHITECTURE.md) for runtime and storage boundaries; [AGENTS.md](AGENTS.md) for agent rules.
+
 Prerequisites: Node.js 20.19+ ([Volta](https://volta.sh/) pins 20.19.1) and npm.
 
 ```bash
@@ -92,7 +94,7 @@ With `npm run dev`, the extension auto-reloads on file changes.
 | `npm run bundle`   | Create `url-porter.zip` from `dist/`                 |
 | `npm run package`  | Build + bundle                                       |
 | `npm test`         | Run all tests with Vitest                            |
-| `npm run lint`     | ESLint                                               |
+| `npm run lint`     | Oxlint                                               |
 | `npm run format`   | Format code with oxfmt                               |
 | `npm run validate` | Run all quality checks: test + lint + build + format |
 
@@ -115,6 +117,7 @@ src/
 │   ├── history/     # Audit trail of redirect rule changes
 │   ├── newtab/      # New tab override
 │   └── options/     # Settings UI (table mode + JSON editor + Stats)
+├── viewer/          # Static selection, Markdown, and JSON tree viewers
 ├── manifest.json    # Chrome extension manifest (Manifest V3)
 └── theme.jsx        # MUI theme (auto light/dark, compact sizing, no animations)
 tests/               # Vitest test files (Chrome APIs mocked via vi.stubGlobal)
@@ -154,4 +157,4 @@ Then load the `url-porter` folder as an unpacked extension in Chrome.
 
 Build CI opts into the shared workflow's `amend-triggering-commit` mode. Successful branch pushes fold build/format changes into the triggering commit with an explicit SHA lease; PR and manual-dispatch runs validate without rewriting history or deploying Pages. Existing coverage reports and PR zip/comment jobs remain separate.
 
-Versioning: `package.json` is the single source of truth; `src/manifest.json` syncs during build/bundle.
+Versioning: `package.json` is the single source of truth. Vite updates `dist/manifest.json`; bundling also patches the version in `src/manifest.json`.
