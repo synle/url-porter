@@ -23,6 +23,16 @@ URL Porter is one Chrome Manifest V3 extension, not a hosted application or mono
 
 React pages share `src/theme.jsx`: OS-based light/dark colors, compact component defaults, no ripple, and disabled transition creation. Static viewers and content scripts do not use that React theme.
 
+## Local Diagnostics
+
+`src/content/diagnostics.js` is a classic reporter shared through side-effect imports by the worker and React theme. The manifest loads its copied asset at `document_start` before other content scripts. The selection viewer loads it before formatter scripts; sandboxed Markdown/JSON previews remain unchanged and outside this recorder.
+
+The worker calls `startBackground()` synchronously and owns the only diagnostics storage writer. Internal `UrlPorter.diagnostics.record` messages accept allowlisted errors from this extension; sender identity determines context. Only the exact Options page can use `get` and `clear`. These actions share the append queue, preventing concurrent appends or clear from restoring stale records. Failed writes recover the queue and return typed failure acknowledgements without recursive logging.
+
+`chrome.storage.local.urlPorterDiagnostics` holds at most 100 records. Each context limits events to 60 per minute, and the worker limits pending writes to 20. Records retain only safe fields and extension-owned file positions. Readback revalidates stored records; arbitrary messages, raw stacks, page URLs, and settings are never added to diagnostics. The export includes coarse environment metadata and a worker-local drop count. No network calls, management permission, heartbeats, or ports are added.
+
+Redirect and bookmark reconciliation record start/completion breadcrumbs and selected caught failures. Worker/profile/install events are neutral observations; neither idle gaps nor incomplete operations imply crashes. `DiagnosticsDialog.jsx` provides on-demand read, export through the existing downloads permission, and clear with readback. Diagnostics remain separate from config export/import and remote sync.
+
 ## Configuration and Storage
 
 `src/helpers/storage.js` wraps settings persistence. Redirect rules live under `chrome.storage.sync.jsonConfig` as structured arrays, not JSONC text. Homepage, sync URL, bookmark rules/folder name, limits, and stats settings use local storage. History and status helpers also persist locally.

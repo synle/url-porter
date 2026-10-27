@@ -135,7 +135,7 @@ export default defineConfig({
           resolve(__dirname, "src/content/jira-status.js"),
           join(contentDir, "jira-status.js"),
         );
-        for (const name of ["format-detect.js", "raw-formatter.js"]) {
+        for (const name of ["diagnostics.js", "format-detect.js", "raw-formatter.js"]) {
           copyFileSync(resolve(__dirname, "src/content", name), join(contentDir, name));
         }
         // Vendor Prettier standalone ESM + plugins; raw-formatter.js lazy-imports them.

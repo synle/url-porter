@@ -53,6 +53,9 @@ function buildTree() {
 
 const chrome = {
   runtime: {
+    id: "test",
+    getManifest: () => ({ version: "2.20.0" }),
+    onStartup: { addListener: vi.fn() },
     lastError: null,
     onInstalled: { addListener: (fn) => listeners.onInstalled.push(fn) },
     onMessage: { addListener: (fn) => listeners.message.push(fn) },
@@ -112,7 +115,13 @@ const chrome = {
     getChildren: vi.fn(async (id) => mockBookmarks.filter((b) => b.parentId === id)),
     getTree: vi.fn(async () => buildTree()),
     create: vi.fn(async ({ parentId, title, url, index }) => {
-      const node = { id: String(nextBookmarkId++), parentId, title, url, index };
+      const node = {
+        id: String(nextBookmarkId++),
+        parentId,
+        title,
+        url,
+        index,
+      };
       mockBookmarks.push(node);
       return node;
     }),
@@ -221,7 +230,10 @@ describe("background — onInstalled", () => {
       expect.objectContaining({ id: "add-bookmark-rule" }),
     );
     expect(chrome.contextMenus.create).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "selection-format:json", parentId: "selection-format" }),
+      expect.objectContaining({
+        id: "selection-format:json",
+        parentId: "selection-format",
+      }),
     );
     expect(chrome.omnibox.setDefaultSuggestion).toHaveBeenCalled();
   });
@@ -280,7 +292,11 @@ describe("background — message handler", () => {
 
   it("handles Myevent.prStatus", async () => {
     listeners.message[0](
-      { type: "Myevent.prStatus", url: "https://github.com/a/b/pull/1", status: "merged" },
+      {
+        type: "Myevent.prStatus",
+        url: "https://github.com/a/b/pull/1",
+        status: "merged",
+      },
       {},
       () => {},
     );
@@ -382,7 +398,9 @@ describe("background — omnibox", () => {
 
   it("onInputEntered navigates directly when input is a URL (currentTab)", async () => {
     await listeners.omniboxEntered[0]("https://direct.example.com", "currentTab");
-    expect(chrome.tabs.update).toHaveBeenCalledWith({ url: "https://direct.example.com" });
+    expect(chrome.tabs.update).toHaveBeenCalledWith({
+      url: "https://direct.example.com",
+    });
   });
 
   it("onInputEntered opens in newForegroundTab", async () => {
@@ -392,13 +410,18 @@ describe("background — omnibox", () => {
 
   it("onInputEntered opens in newBackgroundTab", async () => {
     await listeners.omniboxEntered[0]("https://x.com", "newBackgroundTab");
-    expect(chrome.tabs.create).toHaveBeenCalledWith({ url: "https://x.com", active: false });
+    expect(chrome.tabs.create).toHaveBeenCalledWith({
+      url: "https://x.com",
+      active: false,
+    });
   });
 
   it("onInputEntered resolves alias when input is not a URL", async () => {
     storageData.jsonConfig = [{ from: "||gh^", to: "https://github.com" }];
     await listeners.omniboxEntered[0]("gh", "currentTab");
-    expect(chrome.tabs.update).toHaveBeenCalledWith({ url: "https://github.com" });
+    expect(chrome.tabs.update).toHaveBeenCalledWith({
+      url: "https://github.com",
+    });
   });
 });
 
@@ -500,12 +523,21 @@ describe("background — updateRedirectRules", () => {
       expect(dynamicRules).toEqual([
         {
           id: 1,
-          condition: { urlFilter: "||acme/repo^", resourceTypes: ["main_frame"] },
-          action: { type: "redirect", redirect: { url: "https://example.com/repos" } },
+          condition: {
+            urlFilter: "||acme/repo^",
+            resourceTypes: ["main_frame"],
+          },
+          action: {
+            type: "redirect",
+            redirect: { url: "https://example.com/repos" },
+          },
         },
         {
           id: 2,
-          condition: { urlFilter: "||acme/repos^", resourceTypes: ["main_frame"] },
+          condition: {
+            urlFilter: "||acme/repos^",
+            resourceTypes: ["main_frame"],
+          },
           action: { type: "redirect", redirect: { url: "http://acme/repo" } },
         },
       ]);
@@ -545,7 +577,29 @@ describe("background — updateRedirectRules", () => {
       listeners.message[0]({ type: "Myevent.updateConfig" }, {}, () => {});
       listeners.storageChanged[0]({ jsonConfig: {} }, "sync");
       await vi.advanceTimersByTimeAsync(2000);
-      expect(errors.mock.calls).toEqual([["Failed to update redirect rules:", failure]]);
+      expect(errors.mock.calls).toEqual([
+        [
+          "[URL Porter diagnostics] Extension JavaScript failure",
+          {
+            kind: "error",
+            operation: "redirect_rebuild",
+            errorName: "Error",
+            frames: [],
+            context: "background",
+            timestamp: Date.now() - 2000,
+            version: "2.20.0",
+          },
+        ],
+      ]);
+      expect(storageData.urlPorterDiagnostics).toContainEqual({
+        kind: "error",
+        operation: "redirect_rebuild",
+        errorName: "Error",
+        frames: [],
+        context: "background",
+        timestamp: Date.now() - 2000,
+        version: "2.20.0",
+      });
       expect(dynamicRules).toEqual([
         {
           id: 1,

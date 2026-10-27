@@ -78,6 +78,8 @@ The production Options test builds an in-memory bundle and exercises open/edit/s
 
 Inspect service-worker logs through the extension's inspection link at `chrome://extensions/`. Inspect the relevant page or content-script context for UI, raw formatting, and preview behavior.
 
+Options → Diagnostics provides persistent local observations, JSON export, and clear with readback. See README.md's Crash Triage section for Brave/Windows attribution limits and isolation steps. `tests/diagnostics.test.js` covers reporter/storage/message contracts; `tests/DiagnosticsDialog.test.jsx` covers inspect/export/clear and visible errors. Production builds copy `src/content/diagnostics.js`; the manifest loads it before site scripts at `document_start`. Native crash capture and Windows reproduction require manual testing on the affected machine.
+
 Coverage thresholds live in `vite.config.js` under `test.coverage.thresholds`. The coverage job's step-summary text contains stale hardcoded floors; use the configuration and actual coverage result, not that text.
 
 ## Making Changes

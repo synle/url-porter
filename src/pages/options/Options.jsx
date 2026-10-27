@@ -77,6 +77,7 @@ import { ThemeContextProvider } from "../../theme.jsx";
 import SyncDialog from "../../components/SyncDialog.jsx";
 import BookmarkRulesSection from "../../components/BookmarkRulesSection.jsx";
 import HistoryStatsSection from "../../components/HistoryStatsSection.jsx";
+import DiagnosticsDialog from "../../components/DiagnosticsDialog.jsx";
 import {
   getConfig,
   setConfig,
@@ -168,7 +169,11 @@ function OptionsContent() {
   const [sortDir, setSortDir] = useState("asc");
 
   // Snackbar
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   // History limits
   const [historyAliasLimitValue, setHistoryAliasLimitValue] = useState(5000);
@@ -179,7 +184,10 @@ function OptionsContent() {
   // Broken link checker state
   const [brokenLinks, setBrokenLinks] = useState({}); // {[origIndex]: errorMsg}
   const [linkCheckRunning, setLinkCheckRunning] = useState(false);
-  const [linkCheckProgress, setLinkCheckProgress] = useState({ checked: 0, total: 0 });
+  const [linkCheckProgress, setLinkCheckProgress] = useState({
+    checked: 0,
+    total: 0,
+  });
 
   // Config health dialog state
   const [healthDialogOpen, setHealthDialogOpen] = useState(false);
@@ -596,7 +604,9 @@ function OptionsContent() {
       statsMaxResults: smr,
       statsLookbackMonths: slm,
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -792,7 +802,9 @@ function OptionsContent() {
             color="inherit"
             startIcon={<AddLinkIcon />}
             onClick={() => {
-              chrome.tabs.create({ url: chrome.runtime.getURL("pages/addlink/addlink.html") });
+              chrome.tabs.create({
+                url: chrome.runtime.getURL("pages/addlink/addlink.html"),
+              });
             }}
           >
             Add Link
@@ -827,6 +839,7 @@ function OptionsContent() {
               ? `${linkCheckProgress.checked}/${linkCheckProgress.total}`
               : "Check Links"}
           </Button>
+          <DiagnosticsDialog />
           <Button color="inherit" startIcon={<HealthAndSafetyIcon />} onClick={handleConfigHealth}>
             Config Health
           </Button>
@@ -1012,13 +1025,21 @@ function OptionsContent() {
                     </TableCell>
                     <TableCell
                       onClick={() => handleSort("from")}
-                      sx={{ cursor: "pointer", fontWeight: "bold", userSelect: "none" }}
+                      sx={{
+                        cursor: "pointer",
+                        fontWeight: "bold",
+                        userSelect: "none",
+                      }}
                     >
                       From{sortIndicator("from")}
                     </TableCell>
                     <TableCell
                       onClick={() => handleSort("to")}
-                      sx={{ cursor: "pointer", fontWeight: "bold", userSelect: "none" }}
+                      sx={{
+                        cursor: "pointer",
+                        fontWeight: "bold",
+                        userSelect: "none",
+                      }}
                     >
                       To{sortIndicator("to")}
                     </TableCell>
@@ -1067,7 +1088,13 @@ function OptionsContent() {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                            }}
+                          >
                             {brokenLinks[entry._origIndex] && (
                               <Tooltip title={`Broken: ${brokenLinks[entry._origIndex]}`}>
                                 <WarningAmberIcon
@@ -1078,7 +1105,12 @@ function OptionsContent() {
                               </Tooltip>
                             )}
                             <Tooltip title={entry.to || ""}>
-                              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                              <span
+                                style={{
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}
+                              >
                                 {entry.to}
                               </span>
                             </Tooltip>
@@ -1452,7 +1484,14 @@ function OptionsContent() {
         </DialogContent>
         <DialogActions>
           <Button
-            onClick={() => setDuplicateDialog({ open: false, index: -1, oldTo: "", context: "" })}
+            onClick={() =>
+              setDuplicateDialog({
+                open: false,
+                index: -1,
+                oldTo: "",
+                context: "",
+              })
+            }
           >
             Cancel
           </Button>
@@ -1484,7 +1523,13 @@ function OptionsContent() {
             <Box sx={{ mb: 3 }}>
               <Typography
                 variant="subtitle1"
-                sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}
+                sx={{
+                  fontWeight: "bold",
+                  mb: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
               >
                 <ContentCopyIcon fontSize="small" color="error" />
                 Duplicate Aliases ({healthResults.duplicates.length})
@@ -1512,7 +1557,13 @@ function OptionsContent() {
             <Box sx={{ mb: 3 }}>
               <Typography
                 variant="subtitle1"
-                sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}
+                sx={{
+                  fontWeight: "bold",
+                  mb: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
               >
                 <CallSplitIcon fontSize="small" color="warning" />
                 Redirect Chains ({healthResults.chains.length})
@@ -1541,7 +1592,13 @@ function OptionsContent() {
             <Box sx={{ mb: 3 }}>
               <Typography
                 variant="subtitle1"
-                sx={{ fontWeight: "bold", mb: 1, display: "flex", alignItems: "center", gap: 1 }}
+                sx={{
+                  fontWeight: "bold",
+                  mb: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
               >
                 <CompareArrowsIcon fontSize="small" color="info" />
                 Overlapping Aliases ({healthResults.overlaps.length})

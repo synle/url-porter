@@ -25,6 +25,34 @@ A Chrome extension that lets you configure redirect rules and set a custom homep
 - **Omnibox Integration** - Type "go" in the address bar to search your rules
 - **Context Menu** - Right-click to quick-add a rule or bookmark rule for the current site
 - **Light/Dark Mode** - Adapts to system theme
+- **Local Diagnostics** - Options → Diagnostics shows, exports, and clears bounded JavaScript failure records and background-operation breadcrumbs. No telemetry uploads or extra permissions.
+
+## Crash Triage (Brave / Windows)
+
+**Options → Diagnostics → Export diagnostics** saves `url-porter-diagnostics.json`. Recording starts after this version loads; it cannot recover evidence from earlier crashes.
+
+The recorder keeps the latest 100 observations in `chrome.storage.local`, surviving browser restarts until cleared or the extension is removed. Writes are serialized. Each reporter and worker accepts at most 60 events per minute; the worker allows at most 20 pending writes. Overload drops events instead of growing memory or retrying. The export includes the current worker's drop count.
+
+Records contain timestamps, extension version, execution context, error type, extension-owned script positions, and known operation names. The export adds coarse OS and Chromium version information. Arbitrary error messages, raw stack text, website URLs/titles, configuration, selected text, and installed-extension inventories are excluded. Nothing is uploaded automatically. Review before sharing; normal browser consoles can still contain unrelated existing application logs.
+
+Captured failures include uncaught JavaScript errors, unhandled rejections, and selected caught background failures: redirects, bookmark reconciliation/reads, downloads, selection viewing, and tracked-pattern loading. Content reporters only accept errors with this extension's script locations. React pages and the selection viewer also install global handlers. Sandboxed previews, handled errors elsewhere, native crashes, and OOM kills may leave no record. Abrupt termination can lose the latest writes.
+
+**A worker start is not a crash.** MV3 normally stops idle service workers. An operation-start without completion is only an observation, not proof of abnormal termination. There are no heartbeat timers, keepalive ports, shutdown-cleanliness guesses, or automatic blame labels. Error records establish extension JavaScript involvement, not the cause of a native browser crash.
+
+After the next Windows incident:
+
+1. Record the local time and timezone, last action, and whether one tab, an extension page, or the whole browser closed. Export diagnostics after restarting.
+2. Record the exact Brave version and OS from `brave://version`. Do not share that entire page; profile paths and command-line arguments can contain private information.
+3. Open `brave://crashes`. If a report exists, manually submit it when appropriate and retain its **Uploaded crash report ID** for Brave support.
+4. Compare the incident time with error types and script positions in the export. An empty log does not exonerate URL Porter or prove a browser bug.
+5. Reproduce in a separate test profile without sync or sensitive data. Compare URL Porter alone, URL Porter disabled, and other extensions added individually.
+6. Keep workload and versions unchanged; record attempts and failures. If crashes persist with URL Porter disabled, investigate Brave, other extensions, memory, GPU acceleration, and Windows drivers separately.
+
+Change one variable at a time. Correlation is not proof of fault. An extension cannot read the native dump or infer its signature from JavaScript logs.
+
+Maintainers: URL Porter maintainers; triage guidance reviewed 2026-10-27. Native Brave/Windows reproduction is still required before claiming a crash fix.
+
+Sources: [Chrome worker lifecycle](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle), [storage persistence](https://developer.chrome.com/docs/extensions/reference/api/storage), [content-script isolation](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts), and [Brave manual crash reports](https://support.brave.app/hc/en-us/articles/22281484910221-How-do-I-manually-submit-crash-reports).
 
 ## Configuration
 

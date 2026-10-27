@@ -8,6 +8,7 @@
  * - Sync bookmarks with config on every change
  */
 
+import "../content/diagnostics.js";
 import { normalizeEntriesForRedirect, normalizeEntry, stripAlias } from "../helpers/configUtils.js";
 import {
   getConfig,
@@ -28,6 +29,9 @@ import { createSelectionMenus, handleSelectionMenuClick } from "../helpers/selec
 import { downloadText } from "../helpers/downloadUtils.js";
 // Side-effect import: classic script that defines globalThis.UrlPorterFormat (language catalog).
 import "../content/format-detect.js";
+
+/** Shared local diagnostics; no timers or ports keep the worker alive. */
+const diagnostics = globalThis.UrlPorterDiagnostics;
 
 // --- Lifecycle ---
 
@@ -59,9 +63,9 @@ chrome.runtime.onInstalled.addListener(async () => {
 
 /** Handle context menu clicks for Add Link, Add Bookmark Rule, and the selection viewer items. */
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  handleSelectionMenuClick(info, tab).catch((err) =>
-    console.warn("[background] selection viewer failed", err),
-  );
+  handleSelectionMenuClick(info, tab).catch((err) => {
+    void diagnostics.reportError(err, "selection_viewer");
+  });
   if (info.menuItemId === "add-to-url-porter") {
     const url = encodeURIComponent(tab.url || "");
     const title = encodeURIComponent(tab.title || "");
@@ -128,8 +132,9 @@ async function runReconcile() {
   }
 }
 
-/** Re-sync rules and bookmarks when UI pages send an update event. */
+/** Route settings and content messages; ignore malformed payloads. Diagnostics use a separate listener. */
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  if (!request || typeof request !== "object" || Array.isArray(request)) return;
   if (request.type === "Myevent.updateConfig") {
     refreshCustomTrackedPatterns();
     updateRedirectRules().then(scheduleReconcile);
@@ -152,7 +157,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     downloadText(request)
       .then(() => sendResponse({ ok: true }))
       .catch((err) => {
-        console.warn("[background] download failed", err);
+        void diagnostics.reportError(err, "download");
         sendResponse({ ok: false, error: "Download failed" });
       });
     return true; // keep channel open for async response
@@ -162,6 +167,9 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     return true; // keep channel open for async response
   }
 });
+
+// Register synchronously after the application listener, before any asynchronous work can finish.
+diagnostics.startBackground();
 
 /**
  * Collect all bookmarks from nested subfolders of the url-porter folder.
@@ -188,7 +196,7 @@ async function getNestedBookmarks() {
     }
     return bookmarks;
   } catch (err) {
-    console.error("[background] getNestedBookmarks failed:", err);
+    await diagnostics.reportError(err, "bookmark_read");
     return [];
   }
 }
@@ -294,16 +302,20 @@ function updateRedirectRules() {
 
 /**
  * Replace dynamic rules from the latest stored config; log failures without
- * rejecting so a failed rebuild cannot block later queued updates.
+ * rejecting so a failed rebuild cannot block later queued updates. Persist bounded operation breadcrumbs and errors.
  * @returns {Promise<void>} Resolves after attempting every normalized rule.
  */
 async function replaceRedirectRules() {
+  await diagnostics.operation("operation_started", "redirect_rebuild");
   try {
     const oldRules = await chrome.declarativeNetRequest.getDynamicRules();
     const removeRuleIds = oldRules.map((rule) => rule.id);
 
     // Remove all old rules first
-    await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds, addRules: [] });
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds,
+      addRules: [],
+    });
 
     const raw = await getConfig();
     const configs = normalizeEntriesForRedirect(raw);
@@ -330,33 +342,28 @@ async function replaceRedirectRules() {
         });
         added++;
       } catch (error) {
-        const from = rule.condition.urlFilter;
-        const to = rule.action.redirect.url;
-        console.error(`Skipping bad redirect rule: "${from}" → "${to}" — ${error.message}`);
+        await diagnostics.reportError(error, "redirect_rebuild");
       }
     }
 
-    console.log(`Updated ${added}/${rules.length} redirect rule(s)`);
+    console.log("Updated redirect rules:", added, "/", rules.length);
+    await diagnostics.operation("operation_completed", "redirect_rebuild");
   } catch (error) {
-    console.error("Failed to update redirect rules:", error);
+    await diagnostics.reportError(error, "redirect_rebuild");
   }
 }
 
 // --- Bookmark Sync ---
 
-/** Load config from storage and reconcile the bookmark folder. */
+/** Load and reconcile bookmarks; persist bounded observations without config data. @returns {Promise<void>} */
 async function reconcileBookmarksFromStorage() {
-  console.log("[background] reconcileBookmarksFromStorage: starting...");
+  await diagnostics.operation("operation_started", "bookmark_reconcile");
   try {
     const raw = await getConfig();
     console.log(
       "[background] reconcileBookmarksFromStorage: got config with",
       raw?.length,
       "entries",
-    );
-    console.log(
-      "[background] reconcileBookmarksFromStorage: raw config:",
-      JSON.stringify(raw, null, 2),
     );
     await reconcileBookmarks(raw);
     console.log("[background] reconcileBookmarksFromStorage: bookmarks reconciled successfully");
@@ -376,8 +383,9 @@ async function reconcileBookmarksFromStorage() {
     console.log(
       "[background] reconcileBookmarksFromStorage: custom bookmark rules reconciled successfully",
     );
+    await diagnostics.operation("operation_completed", "bookmark_reconcile");
   } catch (error) {
-    console.error("[background] reconcileBookmarksFromStorage: FAILED:", error, error?.stack);
+    await diagnostics.reportError(error, "bookmark_reconcile");
   }
 }
 
@@ -404,7 +412,7 @@ let customTrackedPatterns = [];
 
 /**
  * Refresh cached custom tracked site patterns from stored bookmark rules.
- * Called on startup and whenever config changes.
+ * Called on startup and whenever config changes; records storage failure without persisting patterns.
  * @returns {Promise<void>}
  */
 async function refreshCustomTrackedPatterns() {
@@ -420,8 +428,9 @@ async function refreshCustomTrackedPatterns() {
         }
       })
       .filter(Boolean);
-  } catch {
+  } catch (error) {
     customTrackedPatterns = [];
+    await diagnostics.reportError(error, "tracked_patterns");
   }
 }
 

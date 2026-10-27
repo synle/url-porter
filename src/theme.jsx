@@ -3,6 +3,7 @@
  * All extension pages wrap their content in <ThemeContextProvider>.
  */
 
+import "./content/diagnostics.js";
 import { useMemo } from "react";
 import { createTheme, ThemeProvider, CssBaseline, useMediaQuery } from "@mui/material";
 
