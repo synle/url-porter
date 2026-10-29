@@ -27,20 +27,21 @@ The watch build names the extension **URL Porter (DEV)**. Pin its toolbar action
 
 `package.json` is authoritative; do not infer commands from old plan logs.
 
-| Command                 | Purpose                                                                                          |
-| ----------------------- | ------------------------------------------------------------------------------------------------ |
-| `npm run dev`           | Generate declarations, then watch-build to `dist/`.                                              |
-| `npm run build:types`   | Emit declarations into `types/`; currently only `src/helpers/configUtils.js` is included.        |
-| `npm run build`         | Generate declarations and produce a one-off production build.                                    |
-| `npm run bundle`        | Zip the existing `dist/`; synchronize source and packaged manifest versions from `package.json`. |
-| `npm run package`       | Build, then bundle.                                                                              |
-| `npm run package-syle`  | Package using the repository's configured sync-server override.                                  |
-| `npm test`              | Run Vitest once, using JSDOM.                                                                    |
-| `npm run test:coverage` | Run Vitest with V8 coverage and configured thresholds.                                           |
-| `npm run lint`          | Run Oxlint with `.oxlintrc.json`, not ESLint.                                                    |
-| `npm run format`        | Write repository formatting with oxfmt.                                                          |
-| `npm run format:check`  | Check formatting without writing.                                                                |
-| `npm run validate`      | Run tests → lint → declaration generation/build → formatting.                                    |
+| Command                         | Purpose                                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `npm run dev`                   | Generate declarations, then watch-build to `dist/`.                                              |
+| `npm run build:types`           | Emit declarations into `types/`; currently only `src/helpers/configUtils.js` is included.        |
+| `npm run build`                 | Generate declarations and produce a one-off production build.                                    |
+| `npm run bundle`                | Zip the existing `dist/`; synchronize source and packaged manifest versions from `package.json`. |
+| `npm run package`               | Build, then bundle.                                                                              |
+| `npm run package-syle`          | Package using the repository's configured sync-server override.                                  |
+| `npm test`                      | Run Vitest once, using JSDOM.                                                                    |
+| `npm run test:update-snapshots` | Run Vitest once and regenerate snapshots, including inline snapshots.                            |
+| `npm run test:coverage`         | Run Vitest with V8 coverage and configured thresholds.                                           |
+| `npm run lint`                  | Run Oxlint with `.oxlintrc.json`, not ESLint.                                                    |
+| `npm run format`                | Write repository formatting with oxfmt.                                                          |
+| `npm run format:check`          | Check formatting without writing.                                                                |
+| `npm run validate`              | Run tests → lint → declaration generation/build → formatting.                                    |
 
 `build.sh` calls `npm run package-syle`. Bundling requires a pre-existing build; it does not rebuild application code. `npm run validate` does not create the zip or run coverage.
 
@@ -64,6 +65,21 @@ npm test -- tests/SyncDialog.test.jsx
 npm test -- tests/background.test.js
 npm test -- tests/Options.production.test.jsx
 ```
+
+### Inline Snapshots
+
+Use inline snapshots for focused, deterministic structured output so expected values stay beside the assertion. Keep simpler value checks and intentional partial contracts explicit.
+
+Regenerate all snapshots, or pass a test-file filter for a focused update:
+
+```bash
+npm run test:update-snapshots
+npm run test:update-snapshots -- tests/configUtils.test.js
+```
+
+This command rewrites expected snapshots; it does not prove the new output is correct. Review every snapshot diff against the intended contract before accepting it. Do not regenerate snapshots merely to clear a failing test.
+
+### Related Test Suites
 
 Use related files for the area being changed:
 

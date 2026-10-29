@@ -21,7 +21,13 @@ const chrome = {
     getChildren: vi.fn(async (id) => mockBookmarks.filter((b) => b.parentId === id)),
     getTree: vi.fn(async () => [buildTree()]),
     create: vi.fn(async ({ parentId, title, url, index }) => {
-      const node = { id: String(nextBookmarkId++), parentId, title, url, index };
+      const node = {
+        id: String(nextBookmarkId++),
+        parentId,
+        title,
+        url,
+        index,
+      };
       mockBookmarks.push(node);
       return node;
     }),
@@ -321,7 +327,12 @@ describe("reconcileBookmarkRule", () => {
     // Pre-existing subfolder with old bookmark
     mockBookmarks.push(
       { id: "70", parentId: "10", title: "acme docs" },
-      { id: "71", parentId: "70", title: "Old Entry", url: "https://acme.example.com/docs/old" },
+      {
+        id: "71",
+        parentId: "70",
+        title: "Old Entry",
+        url: "https://acme.example.com/docs/old",
+      },
     );
 
     chrome.history.search.mockResolvedValue([
@@ -369,7 +380,13 @@ describe("reconcileBookmarkRule", () => {
 
     const subfolder = mockBookmarks.find((b) => b.title === "acme docs" && b.parentId === "10");
     const children = mockBookmarks.filter((b) => b.parentId === subfolder.id);
-    expect(children.map((c) => c.title)).toEqual(["Second", "Third", "First"]);
+    expect(children.map((c) => c.title)).toMatchInlineSnapshot(`
+      [
+        "Second",
+        "Third",
+        "First",
+      ]
+    `);
   });
 
   it("sorts by title ascending", async () => {
@@ -395,7 +412,13 @@ describe("reconcileBookmarkRule", () => {
 
     const subfolder = mockBookmarks.find((b) => b.title === "acme docs" && b.parentId === "10");
     const children = mockBookmarks.filter((b) => b.parentId === subfolder.id);
-    expect(children.map((c) => c.title)).toEqual(["Alpha", "Middle", "Zebra"]);
+    expect(children.map((c) => c.title)).toMatchInlineSnapshot(`
+      [
+        "Alpha",
+        "Middle",
+        "Zebra",
+      ]
+    `);
   });
 
   it("skips invalid rule gracefully", async () => {
@@ -415,7 +438,11 @@ describe("reconcileBookmarkRule", () => {
     );
 
     chrome.history.search.mockResolvedValue([
-      { url: "https://acme.example.com/docs/test", title: "Test - Acme Docs", lastVisitTime: 1000 },
+      {
+        url: "https://acme.example.com/docs/test",
+        title: "Test - Acme Docs",
+        lastVisitTime: 1000,
+      },
     ]);
 
     await reconcileBookmarkRule(sampleRule());
@@ -442,7 +469,11 @@ describe("reconcileAllBookmarkRules", () => {
     storageData.bookmarkRules = [sampleRule({ enabled: false })];
 
     chrome.history.search.mockResolvedValue([
-      { url: "https://acme.example.com/docs/test", title: "Test - Acme Docs", lastVisitTime: 1000 },
+      {
+        url: "https://acme.example.com/docs/test",
+        title: "Test - Acme Docs",
+        lastVisitTime: 1000,
+      },
     ]);
 
     await reconcileAllBookmarkRules();
@@ -455,7 +486,11 @@ describe("reconcileAllBookmarkRules", () => {
     storageData.bookmarkRules = [sampleRule({ enabled: true })];
 
     chrome.history.search.mockResolvedValue([
-      { url: "https://acme.example.com/docs/test", title: "Test - Acme Docs", lastVisitTime: 1000 },
+      {
+        url: "https://acme.example.com/docs/test",
+        title: "Test - Acme Docs",
+        lastVisitTime: 1000,
+      },
     ]);
 
     await reconcileAllBookmarkRules();

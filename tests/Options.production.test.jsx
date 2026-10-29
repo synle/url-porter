@@ -62,7 +62,14 @@ it("production bundle opens, edits, and saves Advanced mode without React errors
     });
     const editor = document.querySelector("textarea");
     const config = JSON.parse(editor.value);
-    expect(config.configs).toEqual([["acme/repos", "http://acme/repo"]]);
+    expect(config.configs).toMatchInlineSnapshot(`
+      [
+        [
+          "acme/repos",
+          "http://acme/repo",
+        ],
+      ]
+    `);
     const nextConfig = { ...config, homepage: "https://globex.test/" };
     const setter = Object.getOwnPropertyDescriptor(
       dom.window.HTMLTextAreaElement.prototype,
@@ -75,7 +82,9 @@ it("production bundle opens, edits, and saves Advanced mode without React errors
     );
     save.click();
     await vi.waitFor(() => expect(storageData.homepageUrl).toBe("https://globex.test/"));
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "Myevent.updateConfig" });
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+      type: "Myevent.updateConfig",
+    });
     expect(errors).toEqual([]);
   } finally {
     dom.window.close();

@@ -119,41 +119,45 @@ describe("background observations", () => {
     listeners.startup();
     listeners.installed();
     const result = await rpc("get");
-    expect(result.report.records).toEqual([
+    expect(result.report.records).toMatchInlineSnapshot(`
+      [
+        {
+          "context": "background",
+          "frames": [],
+          "kind": "worker_started",
+          "timestamp": 1700000000000,
+          "version": "2.20.0",
+        },
+        {
+          "context": "background",
+          "frames": [],
+          "kind": "worker_started",
+          "timestamp": 1700000600000,
+          "version": "2.20.0",
+        },
+        {
+          "context": "background",
+          "frames": [],
+          "kind": "browser_started",
+          "timestamp": 1700000600000,
+          "version": "2.20.0",
+        },
+        {
+          "context": "background",
+          "frames": [],
+          "kind": "extension_installed",
+          "timestamp": 1700000600000,
+          "version": "2.20.0",
+        },
+      ]
+    `);
+    expect(result.report.environment).toMatchInlineSnapshot(`
       {
-        kind: "worker_started",
-        frames: [],
-        context: "background",
-        timestamp: NOW,
-        version: "2.20.0",
-      },
-      {
-        kind: "worker_started",
-        frames: [],
-        context: "background",
-        timestamp: NOW + 600000,
-        version: "2.20.0",
-      },
-      {
-        kind: "browser_started",
-        frames: [],
-        context: "background",
-        timestamp: NOW + 600000,
-        version: "2.20.0",
-      },
-      {
-        kind: "extension_installed",
-        frames: [],
-        context: "background",
-        timestamp: NOW + 600000,
-        version: "2.20.0",
-      },
-    ]);
-    expect(result.report.environment).toEqual({
-      extensionVersion: "2.20.0",
-      chromiumVersion: "130.0.0.0",
-      os: "Windows",
-    });
+        "chromiumVersion": "130.0.0.0",
+        "extensionVersion": "2.20.0",
+        "os": "Windows",
+      }
+    `);
     expect(vi.getTimerCount()).toBe(0);
   });
 
@@ -167,24 +171,28 @@ describe("background observations", () => {
     });
     listeners.unhandledrejection({ reason: "SECRET selected text" });
     const result = await rpc("get");
-    expect(result.report.records.slice(1)).toEqual([
-      {
-        kind: "error",
-        errorName: "TypeError",
-        frames: ["background/background.js:4:2"],
-        context: "background",
-        timestamp: NOW,
-        version: "2.20.0",
-      },
-      {
-        kind: "unhandled_rejection",
-        errorName: "UnknownError",
-        frames: [],
-        context: "background",
-        timestamp: NOW,
-        version: "2.20.0",
-      },
-    ]);
+    expect(result.report.records.slice(1)).toMatchInlineSnapshot(`
+      [
+        {
+          "context": "background",
+          "errorName": "TypeError",
+          "frames": [
+            "background/background.js:4:2",
+          ],
+          "kind": "error",
+          "timestamp": 1700000000000,
+          "version": "2.20.0",
+        },
+        {
+          "context": "background",
+          "errorName": "UnknownError",
+          "frames": [],
+          "kind": "unhandled_rejection",
+          "timestamp": 1700000000000,
+          "version": "2.20.0",
+        },
+      ]
+    `);
     expect(JSON.stringify(result)).not.toMatch(/SECRET|private\.test|acme\/|selected text/);
     expect(console.error.mock.calls[0]).toEqual([
       "[URL Porter diagnostics] Extension JavaScript failure",
@@ -202,17 +210,19 @@ describe("background observations", () => {
       { ok: true },
       { ok: true },
     ]);
-    expect((await rpc("get")).report.records).toEqual([
-      {
-        kind: "error",
-        errorName: "RangeError",
-        operation: "download",
-        frames: [],
-        context: "background",
-        timestamp: NOW,
-        version: "2.20.0",
-      },
-    ]);
+    expect((await rpc("get")).report.records).toMatchInlineSnapshot(`
+      [
+        {
+          "context": "background",
+          "errorName": "RangeError",
+          "frames": [],
+          "kind": "error",
+          "operation": "download",
+          "timestamp": 1700000000000,
+          "version": "2.20.0",
+        },
+      ]
+    `);
   });
 
   it("does not lose concurrent reports", async () => {
@@ -222,11 +232,14 @@ describe("background observations", () => {
       api.reportError(new SyntaxError("private"), "redirect_rebuild"),
       api.operation("operation_completed", "redirect_rebuild"),
     ]);
-    expect((await rpc("get")).report.records.slice(1).map((record) => record.kind)).toEqual([
-      "operation_started",
-      "error",
-      "operation_completed",
-    ]);
+    expect((await rpc("get")).report.records.slice(1).map((record) => record.kind))
+      .toMatchInlineSnapshot(`
+      [
+        "operation_started",
+        "error",
+        "operation_completed",
+      ]
+    `);
   });
 
   it("bounds retention across worker starts and evicts the oldest record", async () => {
@@ -241,20 +254,24 @@ describe("background observations", () => {
     await load();
     const records = (await rpc("get")).report.records;
     expect(records).toHaveLength(100);
-    expect(records[0]).toEqual({
-      kind: "worker_started",
-      frames: [],
-      timestamp: 1,
-      context: "background",
-      version: "2.19.0",
-    });
-    expect(records[99]).toEqual({
-      kind: "worker_started",
-      frames: [],
-      timestamp: NOW,
-      context: "background",
-      version: "2.20.0",
-    });
+    expect(records[0]).toMatchInlineSnapshot(`
+      {
+        "context": "background",
+        "frames": [],
+        "kind": "worker_started",
+        "timestamp": 1,
+        "version": "2.19.0",
+      }
+    `);
+    expect(records[99]).toMatchInlineSnapshot(`
+      {
+        "context": "background",
+        "frames": [],
+        "kind": "worker_started",
+        "timestamp": 1700000000000,
+        "version": "2.20.0",
+      }
+    `);
   });
 
   it("bounds pending writes and reports dropped events without a retry loop", async () => {
@@ -333,15 +350,17 @@ describe("background observations", () => {
         message: "SECRET",
       },
     ];
-    expect((await rpc("get")).report.records).toEqual([
-      {
-        kind: "error",
-        frames: [],
-        timestamp: NOW,
-        context: "background",
-        version: "unknown",
-      },
-    ]);
+    expect((await rpc("get")).report.records).toMatchInlineSnapshot(`
+      [
+        {
+          "context": "background",
+          "frames": [],
+          "kind": "error",
+          "timestamp": 1700000000000,
+          "version": "unknown",
+        },
+      ]
+    `);
     data.urlPorterDiagnostics = { invalid: "SECRET" };
     expect((await rpc("get")).report.records).toEqual([]);
   });
@@ -422,14 +441,18 @@ describe("message trust boundary", () => {
         { id: "acme", url: "https://acme.test" },
       ),
     ).toEqual({ ok: true });
-    expect((await rpc("get")).report.records[1]).toEqual({
-      kind: "error",
-      errorName: "TypeError",
-      frames: ["content/fav.js:1:2"],
-      context: "content_script",
-      timestamp: NOW,
-      version: "2.20.0",
-    });
+    expect((await rpc("get")).report.records[1]).toMatchInlineSnapshot(`
+      {
+        "context": "content_script",
+        "errorName": "TypeError",
+        "frames": [
+          "content/fav.js:1:2",
+        ],
+        "kind": "error",
+        "timestamp": 1700000000000,
+        "version": "2.20.0",
+      }
+    `);
   });
 
   it("ignores unrelated messages without claiming their response channel", async () => {
@@ -460,18 +483,22 @@ describe("content and extension-page reporters", () => {
       colno: 2,
       error: new TypeError("PRIVATE"),
     });
-    expect(chrome.runtime.sendMessage.mock.calls).toEqual([
+    expect(chrome.runtime.sendMessage.mock.calls).toMatchInlineSnapshot(`
       [
-        {
-          type: "UrlPorter.diagnostics.record",
-          event: {
-            kind: "error",
-            errorName: "TypeError",
-            frames: ["content/fav.js:4:2"],
+        [
+          {
+            "event": {
+              "errorName": "TypeError",
+              "frames": [
+                "content/fav.js:4:2",
+              ],
+              "kind": "error",
+            },
+            "type": "UrlPorter.diagnostics.record",
           },
-        },
-      ],
-    ]);
+        ],
+      ]
+    `);
   });
 
   it("captures extension-origin content rejections without copying raw stack lines", async () => {
@@ -482,42 +509,52 @@ describe("content and extension-page reporters", () => {
         stack: `RangeError: SECRET\n at ${ROOT}content/raw-formatter.js:3:7?token=SECRET`,
       },
     });
-    expect(chrome.runtime.sendMessage.mock.calls).toEqual([
+    expect(chrome.runtime.sendMessage.mock.calls).toMatchInlineSnapshot(`
       [
-        {
-          type: "UrlPorter.diagnostics.record",
-          event: {
-            kind: "unhandled_rejection",
-            errorName: "RangeError",
-            frames: ["content/raw-formatter.js:3:7"],
+        [
+          {
+            "event": {
+              "errorName": "RangeError",
+              "frames": [
+                "content/raw-formatter.js:3:7",
+              ],
+              "kind": "unhandled_rejection",
+            },
+            "type": "UrlPorter.diagnostics.record",
           },
-        },
-      ],
-    ]);
+        ],
+      ]
+    `);
   });
 
   it("captures stackless failures on trusted extension pages", async () => {
     await load("page");
     listeners.error({});
     listeners.unhandledrejection({ reason: null });
-    expect(chrome.runtime.sendMessage.mock.calls).toEqual([
+    expect(chrome.runtime.sendMessage.mock.calls).toMatchInlineSnapshot(`
       [
-        {
-          type: "UrlPorter.diagnostics.record",
-          event: { kind: "error", errorName: "UnknownError", frames: [] },
-        },
-      ],
-      [
-        {
-          type: "UrlPorter.diagnostics.record",
-          event: {
-            kind: "unhandled_rejection",
-            errorName: "UnknownError",
-            frames: [],
+        [
+          {
+            "event": {
+              "errorName": "UnknownError",
+              "frames": [],
+              "kind": "error",
+            },
+            "type": "UrlPorter.diagnostics.record",
           },
-        },
-      ],
-    ]);
+        ],
+        [
+          {
+            "event": {
+              "errorName": "UnknownError",
+              "frames": [],
+              "kind": "unhandled_rejection",
+            },
+            "type": "UrlPorter.diagnostics.record",
+          },
+        ],
+      ]
+    `);
   });
 
   it("warns once when the worker is unreachable and never starts a keepalive", async () => {
@@ -542,10 +579,12 @@ describe("content and extension-page reporters", () => {
     vi.resetModules();
     await import("../src/content/diagnostics.js");
     expect(globalThis.UrlPorterDiagnostics).toBe(api);
-    expect(globalThis.addEventListener.mock.calls.map(([name]) => name)).toEqual([
-      "error",
-      "unhandledrejection",
-    ]);
+    expect(globalThis.addEventListener.mock.calls.map(([name]) => name)).toMatchInlineSnapshot(`
+      [
+        "error",
+        "unhandledrejection",
+      ]
+    `);
     vi.stubGlobal("UrlPorterDiagnostics", undefined);
     vi.stubGlobal("chrome", undefined);
     vi.resetModules();

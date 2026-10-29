@@ -51,7 +51,12 @@ describe("bookmarkUtils", () => {
       ]);
       const created = mockBookmarks.filter((b) => b.parentId === porter.id && b.url);
       expect(created).toHaveLength(2);
-      expect(created.map((b) => b.url).sort()).toEqual(["https://a.com", "https://b.com"]);
+      expect(created.map((b) => b.url).sort()).toMatchInlineSnapshot(`
+        [
+          "https://a.com",
+          "https://b.com",
+        ]
+      `);
     });
 
     it("updates existing bookmark URL in place when it changed", async () => {

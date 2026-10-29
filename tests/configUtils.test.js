@@ -196,11 +196,21 @@ describe("validateAlias", () => {
 
 describe("normalizeEntry", () => {
   it("normalizes {from, to} objects", () => {
-    expect(normalizeEntry({ from: "a", to: "b" })).toEqual({ from: "a", to: "b" });
+    expect(normalizeEntry({ from: "a", to: "b" })).toMatchInlineSnapshot(`
+      {
+        "from": "a",
+        "to": "b",
+      }
+    `);
   });
 
   it("normalizes [from, to] arrays", () => {
-    expect(normalizeEntry(["a", "b"])).toEqual({ from: "a", to: "b" });
+    expect(normalizeEntry(["a", "b"])).toMatchInlineSnapshot(`
+      {
+        "from": "a",
+        "to": "b",
+      }
+    `);
   });
 
   it("returns null for invalid input", () => {
@@ -213,10 +223,18 @@ describe("normalizeEntry", () => {
 describe("normalizeEntries", () => {
   it("normalizes a mixed array of valid and invalid entries", () => {
     const out = normalizeEntries([{ from: "a", to: "b" }, ["c", "d"], null, "not-entry"]);
-    expect(out).toEqual([
-      { from: "a", to: "b" },
-      { from: "c", to: "d" },
-    ]);
+    expect(out).toMatchInlineSnapshot(`
+      [
+        {
+          "from": "a",
+          "to": "b",
+        },
+        {
+          "from": "c",
+          "to": "d",
+        },
+      ]
+    `);
   });
 
   it("returns [] for non-array input", () => {

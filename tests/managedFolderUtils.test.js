@@ -172,6 +172,12 @@ describe("managedFolderUtils — rebuildManagedSubfolder", () => {
       },
     });
 
-    expect(subfolderTitlesIn(porter.id)).toEqual(["prs", "github repos", "jira tickets"]);
+    expect(subfolderTitlesIn(porter.id)).toMatchInlineSnapshot(`
+      [
+        "prs",
+        "github repos",
+        "jira tickets",
+      ]
+    `);
   });
 });

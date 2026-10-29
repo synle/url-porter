@@ -28,7 +28,11 @@ describe("onedriveUtils — reconcileOnedrive", () => {
   it("skips reconcile when url-porter folder is missing", async () => {
     setHistory({
       "onedrive.live.com": [
-        { url: "https://onedrive.live.com/edit.aspx?resid=ABC", title: "Doc", lastVisitTime: 1 },
+        {
+          url: "https://onedrive.live.com/edit.aspx?resid=ABC",
+          title: "Doc",
+          lastVisitTime: 1,
+        },
       ],
     });
     await reconcileOnedrive();
@@ -138,7 +142,11 @@ describe("onedriveUtils — reconcileOnedrive", () => {
     addMockFolder("2", "url-porter");
     setHistory({
       "sharepoint.com": [
-        { url: "https://acme.sharepoint.com/:w:/g/p/u/NOTITLE", title: "", lastVisitTime: 1 },
+        {
+          url: "https://acme.sharepoint.com/:w:/g/p/u/NOTITLE",
+          title: "",
+          lastVisitTime: 1,
+        },
       ],
     });
     await reconcileOnedrive();
@@ -153,7 +161,11 @@ describe("onedriveUtils — reconcileOnedrive", () => {
     addMockBookmark(stale.id, "Stale", "https://acme.sharepoint.com/:w:/g/p/u/STALE", 1);
     setHistory({
       "sharepoint.com": [
-        { url: "https://acme.sharepoint.com/:w:/g/p/u/FRESH", title: "Fresh", lastVisitTime: 100 },
+        {
+          url: "https://acme.sharepoint.com/:w:/g/p/u/FRESH",
+          title: "Fresh",
+          lastVisitTime: 100,
+        },
       ],
     });
     await reconcileOnedrive();
@@ -194,16 +206,22 @@ describe("onedriveUtils — reconcileOnedrive", () => {
     addMockFolder(porter.id, "google drive");
     setHistory({
       "sharepoint.com": [
-        { url: "https://acme.sharepoint.com/:w:/g/p/u/X", title: "X", lastVisitTime: 1 },
+        {
+          url: "https://acme.sharepoint.com/:w:/g/p/u/X",
+          title: "X",
+          lastVisitTime: 1,
+        },
       ],
     });
     await reconcileOnedrive();
-    expect(subfolderOrder(porter.id)).toEqual([
-      "prs",
-      "github repos",
-      "jira tickets",
-      "google drive",
-      "onedrive",
-    ]);
+    expect(subfolderOrder(porter.id)).toMatchInlineSnapshot(`
+      [
+        "prs",
+        "github repos",
+        "jira tickets",
+        "google drive",
+        "onedrive",
+      ]
+    `);
   });
 });

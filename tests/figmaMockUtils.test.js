@@ -40,7 +40,11 @@ describe("figmaMockUtils — reconcileFigmaMocks", () => {
           title: "Design",
           lastVisitTime: 100,
         },
-        { url: "https://www.figma.com/file/XYZ789/Old-File", title: "Old File", lastVisitTime: 50 },
+        {
+          url: "https://www.figma.com/file/XYZ789/Old-File",
+          title: "Old File",
+          lastVisitTime: 50,
+        },
         {
           url: "https://www.figma.com/proto/PROTO1/Prototype-Name",
           title: "Proto",
@@ -87,8 +91,16 @@ describe("figmaMockUtils — reconcileFigmaMocks", () => {
     addMockFolder("2", "url-porter");
     setHistory({
       "figma.com": [
-        { url: "https://cream-stone-68528668.figma.site/", title: "Figma Site", lastVisitTime: 1 },
-        { url: "https://www.figma.com/design/REAL/Real-Mock", title: "Real", lastVisitTime: 2 },
+        {
+          url: "https://cream-stone-68528668.figma.site/",
+          title: "Figma Site",
+          lastVisitTime: 1,
+        },
+        {
+          url: "https://www.figma.com/design/REAL/Real-Mock",
+          title: "Real",
+          lastVisitTime: 2,
+        },
       ],
     });
     await reconcileFigmaMocks();
@@ -112,7 +124,11 @@ describe("figmaMockUtils — reconcileFigmaMocks", () => {
     addMockBookmark(stale.id, "Stale", "https://www.figma.com/design/STALE/Stale-Slug", 1);
     setHistory({
       "figma.com": [
-        { url: "https://www.figma.com/design/NEW/Fresh-Slug", title: "Fresh", lastVisitTime: 100 },
+        {
+          url: "https://www.figma.com/design/NEW/Fresh-Slug",
+          title: "Fresh",
+          lastVisitTime: 100,
+        },
       ],
     });
     await reconcileFigmaMocks();
@@ -128,13 +144,25 @@ describe("figmaMockUtils — reconcileFigmaMocks", () => {
     addMockFolder(porter.id, "prs");
     addMockFolder(porter.id, "github repos");
     setHistory({
-      "figma.com": [{ url: "https://www.figma.com/design/ABC/Mock", title: "M", lastVisitTime: 1 }],
+      "figma.com": [
+        {
+          url: "https://www.figma.com/design/ABC/Mock",
+          title: "M",
+          lastVisitTime: 1,
+        },
+      ],
     });
     await reconcileFigmaMocks();
     const order = mockBookmarks
       .filter((b) => b.parentId === porter.id && !b.url)
       .map((b) => b.title);
-    expect(order).toEqual(["prs", "github repos", "figma mocks"]);
+    expect(order).toMatchInlineSnapshot(`
+      [
+        "prs",
+        "github repos",
+        "figma mocks",
+      ]
+    `);
   });
 
   it("walks bookmarks tree for figma URLs", async () => {
@@ -173,11 +201,23 @@ describe("figmaMockUtils — reconcileFigmaMocks", () => {
     addMockFolder("2", "url-porter");
     setHistory({
       "figma.com": [
-        { url: "https://www.figma.com/design/AAA/Good-One", title: "A", lastVisitTime: 300 },
+        {
+          url: "https://www.figma.com/design/AAA/Good-One",
+          title: "A",
+          lastVisitTime: 300,
+        },
         // A lone "%" makes decodeURIComponent throw URIError, which used to
         // abort the whole history loop and drop every mock after this one.
-        { url: "https://www.figma.com/design/BAD/100%-Redesign", title: "B", lastVisitTime: 200 },
-        { url: "https://www.figma.com/design/CCC/Good-Two", title: "C", lastVisitTime: 100 },
+        {
+          url: "https://www.figma.com/design/BAD/100%-Redesign",
+          title: "B",
+          lastVisitTime: 200,
+        },
+        {
+          url: "https://www.figma.com/design/CCC/Good-Two",
+          title: "C",
+          lastVisitTime: 100,
+        },
       ],
     });
 
@@ -197,8 +237,16 @@ describe("figmaMockUtils — reconcileFigmaMocks", () => {
 
     setHistory({
       "figma.com": [
-        { url: "https://www.figma.com/design/AAA/Good-One", title: "A", lastVisitTime: 300 },
-        { url: "https://www.figma.com/design/BOOM/Explodes", title: "B", lastVisitTime: 200 },
+        {
+          url: "https://www.figma.com/design/AAA/Good-One",
+          title: "A",
+          lastVisitTime: 300,
+        },
+        {
+          url: "https://www.figma.com/design/BOOM/Explodes",
+          title: "B",
+          lastVisitTime: 200,
+        },
       ],
     });
 

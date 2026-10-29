@@ -28,7 +28,11 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
   it("skips reconcile when url-porter folder is missing", async () => {
     setHistory({
       "docs.google.com": [
-        { url: "https://docs.google.com/document/d/DOC1/edit", title: "Doc", lastVisitTime: 1 },
+        {
+          url: "https://docs.google.com/document/d/DOC1/edit",
+          title: "Doc",
+          lastVisitTime: 1,
+        },
       ],
     });
     await reconcileGoogleDrive();
@@ -122,7 +126,11 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
     addMockFolder("2", "url-porter");
     setHistory({
       "docs.google.com": [
-        { url: "https://docs.google.com/document/d/DOCONLY/edit", title: "", lastVisitTime: 10 },
+        {
+          url: "https://docs.google.com/document/d/DOCONLY/edit",
+          title: "",
+          lastVisitTime: 10,
+        },
       ],
     });
     await reconcileGoogleDrive();
@@ -159,16 +167,22 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
     addMockFolder(porter.id, "jira tickets");
     setHistory({
       "docs.google.com": [
-        { url: "https://docs.google.com/document/d/X/edit", title: "X", lastVisitTime: 1 },
+        {
+          url: "https://docs.google.com/document/d/X/edit",
+          title: "X",
+          lastVisitTime: 1,
+        },
       ],
     });
     await reconcileGoogleDrive();
-    expect(subfolderOrder(porter.id)).toEqual([
-      "prs",
-      "github repos",
-      "jira tickets",
-      "google drive",
-    ]);
+    expect(subfolderOrder(porter.id)).toMatchInlineSnapshot(`
+      [
+        "prs",
+        "github repos",
+        "jira tickets",
+        "google drive",
+      ]
+    `);
   });
 
   it("falls back to figma index when jira is missing", async () => {
@@ -178,16 +192,22 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
     addMockFolder(porter.id, "figma mocks");
     setHistory({
       "docs.google.com": [
-        { url: "https://docs.google.com/document/d/X/edit", title: "X", lastVisitTime: 1 },
+        {
+          url: "https://docs.google.com/document/d/X/edit",
+          title: "X",
+          lastVisitTime: 1,
+        },
       ],
     });
     await reconcileGoogleDrive();
-    expect(subfolderOrder(porter.id)).toEqual([
-      "prs",
-      "github repos",
-      "figma mocks",
-      "google drive",
-    ]);
+    expect(subfolderOrder(porter.id)).toMatchInlineSnapshot(`
+      [
+        "prs",
+        "github repos",
+        "figma mocks",
+        "google drive",
+      ]
+    `);
   });
 
   it("falls back to github repos index when no jira or figma", async () => {
@@ -196,12 +216,22 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
     addMockFolder(porter.id, "github repos");
     setHistory({
       "docs.google.com": [
-        { url: "https://docs.google.com/document/d/X/edit", title: "X", lastVisitTime: 1 },
+        {
+          url: "https://docs.google.com/document/d/X/edit",
+          title: "X",
+          lastVisitTime: 1,
+        },
       ],
     });
     await reconcileGoogleDrive();
     // github repos is the last sibling — google drive is placed right after it.
-    expect(subfolderOrder(porter.id)).toEqual(["prs", "github repos", "google drive"]);
+    expect(subfolderOrder(porter.id)).toMatchInlineSnapshot(`
+      [
+        "prs",
+        "github repos",
+        "google drive",
+      ]
+    `);
   });
 
   it("survives history.search errors", async () => {
@@ -231,7 +261,11 @@ describe("googleDriveUtils — reconcileGoogleDrive", () => {
     chrome.bookmarks.getTree.mockRejectedValueOnce(new Error("tree boom"));
     setHistory({
       "docs.google.com": [
-        { url: "https://docs.google.com/document/d/X/edit", title: "X", lastVisitTime: 1 },
+        {
+          url: "https://docs.google.com/document/d/X/edit",
+          title: "X",
+          lastVisitTime: 1,
+        },
       ],
     });
     await reconcileGoogleDrive();

@@ -22,6 +22,7 @@
     "package": "npm run build && npm run bundle",
     "package-syle": "VITE_DEFAULT_URL_PORTER_SYNC_SERVER_URL=https://synle.github.io/fav/url-porter.json npm run package",
     "test": "vitest run",
+    "test:update-snapshots": "vitest run --update",
     "test:coverage": "vitest run --coverage",
     "lint": "oxlint .",
     "format": "oxfmt --write .",

@@ -23,7 +23,13 @@ const chrome = {
     getChildren: vi.fn(async (id) => mockBookmarks.filter((b) => b.parentId === id)),
     getTree: vi.fn(async () => [buildTree()]),
     create: vi.fn(async ({ parentId, title, url, index }) => {
-      const node = { id: String(nextBookmarkId++), parentId, title, url, index };
+      const node = {
+        id: String(nextBookmarkId++),
+        parentId,
+        title,
+        url,
+        index,
+      };
       mockBookmarks.push(node);
       return node;
     }),
@@ -354,7 +360,11 @@ describe("jiraTicketUtils — feedback loop prevention", () => {
       if (text === "jira") {
         return [
           { url: `${base}ORBIT-9`, title: "[ORBIT-9] Older", lastVisitTime: 1 },
-          { url: `${base}ORBIT-10`, title: "[ORBIT-10] Newer", lastVisitTime: 2 },
+          {
+            url: `${base}ORBIT-10`,
+            title: "[ORBIT-10] Newer",
+            lastVisitTime: 2,
+          },
         ];
       }
       return [];
@@ -368,6 +378,11 @@ describe("jiraTicketUtils — feedback loop prevention", () => {
       .filter((b) => b.parentId === miscFolder.id && b.url)
       .map((b) => b.url.split("/browse/")[1]);
     // Newest first. localeCompare put "ORBIT-9" ahead of "ORBIT-10".
-    expect(order).toEqual(["ORBIT-10", "ORBIT-9"]);
+    expect(order).toMatchInlineSnapshot(`
+      [
+        "ORBIT-10",
+        "ORBIT-9",
+      ]
+    `);
   });
 });

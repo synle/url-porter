@@ -520,27 +520,40 @@ describe("background — updateRedirectRules", () => {
       await installed;
       await vi.advanceTimersByTimeAsync(2000);
       expect(errors.mock.calls).toEqual([]);
-      expect(dynamicRules).toEqual([
-        {
-          id: 1,
-          condition: {
-            urlFilter: "||acme/repo^",
-            resourceTypes: ["main_frame"],
+      expect(dynamicRules).toMatchInlineSnapshot(`
+        [
+          {
+            "action": {
+              "redirect": {
+                "url": "https://example.com/repos",
+              },
+              "type": "redirect",
+            },
+            "condition": {
+              "resourceTypes": [
+                "main_frame",
+              ],
+              "urlFilter": "||acme/repo^",
+            },
+            "id": 1,
           },
-          action: {
-            type: "redirect",
-            redirect: { url: "https://example.com/repos" },
+          {
+            "action": {
+              "redirect": {
+                "url": "http://acme/repo",
+              },
+              "type": "redirect",
+            },
+            "condition": {
+              "resourceTypes": [
+                "main_frame",
+              ],
+              "urlFilter": "||acme/repos^",
+            },
+            "id": 2,
           },
-        },
-        {
-          id: 2,
-          condition: {
-            urlFilter: "||acme/repos^",
-            resourceTypes: ["main_frame"],
-          },
-          action: { type: "redirect", redirect: { url: "http://acme/repo" } },
-        },
-      ]);
+        ]
+      `);
     } finally {
       errors.mockRestore();
     }
@@ -559,13 +572,25 @@ describe("background — updateRedirectRules", () => {
     listeners.storageChanged[0]({ jsonConfig: {} }, "sync");
     release();
     await vi.advanceTimersByTimeAsync(2000);
-    expect(dynamicRules).toEqual([
-      {
-        id: 1,
-        condition: { urlFilter: "||globex^", resourceTypes: ["main_frame"] },
-        action: { type: "redirect", redirect: { url: "https://globex.test" } },
-      },
-    ]);
+    expect(dynamicRules).toMatchInlineSnapshot(`
+      [
+        {
+          "action": {
+            "redirect": {
+              "url": "https://globex.test",
+            },
+            "type": "redirect",
+          },
+          "condition": {
+            "resourceTypes": [
+              "main_frame",
+            ],
+            "urlFilter": "||globex^",
+          },
+          "id": 1,
+        },
+      ]
+    `);
   });
 
   it("continues queued refreshes after an earlier rebuild fails", async () => {
@@ -600,13 +625,25 @@ describe("background — updateRedirectRules", () => {
         timestamp: Date.now() - 2000,
         version: "2.20.0",
       });
-      expect(dynamicRules).toEqual([
-        {
-          id: 1,
-          condition: { urlFilter: "||acme^", resourceTypes: ["main_frame"] },
-          action: { type: "redirect", redirect: { url: "https://acme.test" } },
-        },
-      ]);
+      expect(dynamicRules).toMatchInlineSnapshot(`
+        [
+          {
+            "action": {
+              "redirect": {
+                "url": "https://acme.test",
+              },
+              "type": "redirect",
+            },
+            "condition": {
+              "resourceTypes": [
+                "main_frame",
+              ],
+              "urlFilter": "||acme^",
+            },
+            "id": 1,
+          },
+        ]
+      `);
     } finally {
       errors.mockRestore();
     }

@@ -32,8 +32,19 @@ beforeEach(() => vi.unstubAllGlobals());
 describe("jsonview", () => {
   it("sets the parsed object (never a string, which the component would fetch as a URL)", async () => {
     const tree = await openPage();
-    post({ type: "url-porter:json-view", text: '{"team":"FALCON","n":[1]}', dark: false });
-    expect(tree.data).toEqual({ team: "FALCON", n: [1] });
+    post({
+      type: "url-porter:json-view",
+      text: '{"team":"FALCON","n":[1]}',
+      dark: false,
+    });
+    expect(tree.data).toMatchInlineSnapshot(`
+      {
+        "n": [
+          1,
+        ],
+        "team": "FALCON",
+      }
+    `);
     expect(tree.getAttribute("theme")).toBe("default-light");
   });
 

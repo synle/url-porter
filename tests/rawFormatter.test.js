@@ -41,7 +41,11 @@ const flush = () => new Promise((r) => setTimeout(r, 0));
  * @returns {KeyboardEvent} Dispatched event, including its cancellation state.
  */
 const press = (init) => {
-  const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init });
+  const event = new KeyboardEvent("keydown", {
+    bubbles: true,
+    cancelable: true,
+    ...init,
+  });
   document.dispatchEvent(event);
   return event;
 };
@@ -93,14 +97,40 @@ describe("Format button", () => {
       d.querySelector(".label").textContent,
       d.querySelector(".kbd").textContent,
     ]);
-    expect(rows).toEqual([
-      ["", "Format JSON/JSON5", "Alt + S / Option + S"],
-      ["\u2713", "Wrap lines", "Ctrl + Shift + Enter / Cmd + Shift + Enter"],
-      ["", "Dark mode", "Shift + Esc"],
-      ["", "View JSON Tree", "Alt + M / Option + M"],
-      ["", "Copy to clipboard", "Ctrl + C / Cmd + C"],
-      ["", "Download", "Ctrl + S / Cmd + S"],
-    ]);
+    expect(rows).toMatchInlineSnapshot(`
+      [
+        [
+          "",
+          "Format JSON/JSON5",
+          "Alt + S / Option + S",
+        ],
+        [
+          "✓",
+          "Wrap lines",
+          "Ctrl + Shift + Enter / Cmd + Shift + Enter",
+        ],
+        [
+          "",
+          "Dark mode",
+          "Shift + Esc",
+        ],
+        [
+          "",
+          "View JSON Tree",
+          "Alt + M / Option + M",
+        ],
+        [
+          "",
+          "Copy to clipboard",
+          "Ctrl + C / Cmd + C",
+        ],
+        [
+          "",
+          "Download",
+          "Ctrl + S / Cmd + S",
+        ],
+      ]
+    `);
     expect(root.querySelector("style").textContent).toMatch(/\.menu \.kbd \{[^}]*opacity:\.55/);
   });
 
@@ -147,7 +177,9 @@ describe("Format button", () => {
   });
 
   it("tells the user to reload when the extension was updated under the page", async () => {
-    vi.stubGlobal("chrome", { runtime: { getURL: (p) => `file:///nonexistent/${p}` } });
+    vi.stubGlobal("chrome", {
+      runtime: { getURL: (p) => `file:///nonexistent/${p}` },
+    });
     const { root } = await loadPage("{not json", "application/json");
     root.querySelector(".main").click();
     await vi.waitFor(() =>
@@ -240,11 +272,13 @@ describe("markdown preview", () => {
     await vi.waitFor(() => expect(mdFrame()?.style.display).toBe("block"));
     const frame = mdFrame();
     expect(frame.src).toBe("about:blank#mdview");
-    expect(frame.getAttribute("sandbox").split(" ")).toEqual([
-      "allow-scripts",
-      "allow-popups",
-      "allow-popups-to-escape-sandbox",
-    ]);
+    expect(frame.getAttribute("sandbox").split(" ")).toMatchInlineSnapshot(`
+      [
+        "allow-scripts",
+        "allow-popups",
+        "allow-popups-to-escape-sandbox",
+      ]
+    `);
     const post = vi.spyOn(frame.contentWindow, "postMessage");
     window.dispatchEvent(
       new MessageEvent("message", {
@@ -268,7 +302,10 @@ describe("markdown preview", () => {
 
   describe("on a CSP-sandboxed page, where the page's sandbox blocks scripts in child frames", () => {
     beforeEach(() => {
-      Object.defineProperty(window, "origin", { value: "null", configurable: true });
+      Object.defineProperty(window, "origin", {
+        value: "null",
+        configurable: true,
+      });
     });
     afterEach(() => {
       delete window.origin;
@@ -297,7 +334,10 @@ describe("markdown preview", () => {
 
 describe("copy", () => {
   it("falls back to native copy when the Clipboard API is unavailable", async () => {
-    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: undefined,
+      configurable: true,
+    });
     document.execCommand = vi.fn(() => true);
     const { root } = await loadPage("copy me", "text/plain");
 
@@ -309,7 +349,10 @@ describe("copy", () => {
   });
 
   it("lets Alt+C bubble when both clipboard methods fail", async () => {
-    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: undefined,
+      configurable: true,
+    });
     document.execCommand = vi.fn(() => false);
     const { root } = await loadPage("copy me", "text/plain");
 
@@ -353,7 +396,10 @@ describe("copy", () => {
   );
 
   it("logs native copy errors and keeps Alt+C uncanceled", async () => {
-    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: undefined,
+      configurable: true,
+    });
     const error = new Error("Copy command denied");
     document.execCommand = () => {
       throw error;
@@ -368,7 +414,10 @@ describe("copy", () => {
   });
 
   it("restores a partial selection after menu-copying the full content", async () => {
-    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: undefined,
+      configurable: true,
+    });
     const { root, pre } = await loadPage("ORBIT mission", "text/plain");
     const range = document.createRange();
     range.setStart(pre.firstChild, 0);
@@ -480,7 +529,10 @@ describe("download", () => {
 
   describe("on a CSP-sandboxed page (opaque origin, e.g. raw.githubusercontent.com)", () => {
     beforeEach(() => {
-      Object.defineProperty(window, "origin", { value: "null", configurable: true });
+      Object.defineProperty(window, "origin", {
+        value: "null",
+        configurable: true,
+      });
     });
     afterEach(() => {
       delete window.origin;
@@ -518,7 +570,10 @@ describe("download", () => {
     });
 
     it("says the download failed when the background reports failure", async () => {
-      const { root, click } = await downloadVia({ ok: false, error: "Download failed" });
+      const { root, click } = await downloadVia({
+        ok: false,
+        error: "Download failed",
+      });
       expect(root.querySelector(".toast").textContent).toBe("Download failed");
       click.mockRestore();
     });
@@ -591,7 +646,10 @@ describe("JSON tree preview", () => {
     press({ code: "KeyM", altKey: true });
     const post = vi.spyOn(jsonFrame().contentWindow, "postMessage");
     window.dispatchEvent(
-      new MessageEvent("message", { data: { type: "url-porter:json-view:ready" }, source: window }),
+      new MessageEvent("message", {
+        data: { type: "url-porter:json-view:ready" },
+        source: window,
+      }),
     );
     expect(post).not.toHaveBeenCalled();
   });
@@ -623,7 +681,10 @@ describe("selection handling", () => {
       runtime: { getURL: (p) => `file:///nonexistent/${p}`, sendMessage },
     });
     document.body.innerHTML = "<p>Acme</p>";
-    Object.defineProperty(document, "contentType", { value: "text/html", configurable: true });
+    Object.defineProperty(document, "contentType", {
+      value: "text/html",
+      configurable: true,
+    });
     vi.resetModules();
     await import("../src/content/format-detect.js");
     await import("../src/content/raw-formatter.js");

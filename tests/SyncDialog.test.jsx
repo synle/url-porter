@@ -60,9 +60,10 @@ describe("SyncDialog", () => {
 
   it("invokes onError when response shape is invalid", async () => {
     const onError = vi.fn();
-    globalThis.fetch = vi
-      .fn()
-      .mockResolvedValue({ ok: true, text: async () => '{ "randomKey": true }' });
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => '{ "randomKey": true }',
+    });
     render(<SyncDialog open={true} onClose={() => {}} onSuccess={() => {}} onError={onError} />);
     fireEvent.click(await screen.findByRole("button", { name: /Sync Now/i }));
     await waitFor(() => expect(onError).toHaveBeenCalled());
@@ -103,7 +104,14 @@ describe("SyncDialog", () => {
     expect(globalThis.fetch).toHaveBeenCalledWith("https://my.sync.example.com/config.json", {
       method: "GET",
     });
-    expect(storageData.jsonConfig).toEqual([{ from: "falcon", to: "https://falcon.example.com" }]);
+    expect(storageData.jsonConfig).toMatchInlineSnapshot(`
+      [
+        {
+          "from": "falcon",
+          "to": "https://falcon.example.com",
+        },
+      ]
+    `);
     expect(storageData.homepageUrl).toBe("https://acme.example.com");
     expect(chrome.runtime.sendMessage).toHaveBeenCalledExactlyOnceWith({
       type: "Myevent.updateConfig",

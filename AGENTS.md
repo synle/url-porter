@@ -14,6 +14,7 @@ Batch related edits, then run `npm run validate`; all checks must pass. The scri
 
 - Keep tests in root `tests/`, never inside `src/`.
 - Use Vitest and mock Chrome APIs with `vi.stubGlobal`. Use fictional fixture names such as Acme, Globex, Initech, FALCON, PLUTO, and ORBIT.
+- Prefer `toMatchInlineSnapshot` for stable, readable structured outputs instead of large literal `toEqual` expectations. Keep scalar, empty-result, relational, asymmetric, and intentional partial `toMatchObject` assertions explicit when clearer. Pin nondeterministic fields before snapshotting. Follow the regeneration and review workflow in DEV.md.
 - Add JSDoc to all functions, constants, types, and interfaces. Script files start with a `/** Description. */` header.
 - Update README.md when adding or changing features. Keep the developer and architecture maps aligned when their contracts change.
 - `.claude/settings.json` has a Claude Stop hook that runs validation when tracked changes remain. Other agents must run the gate themselves.

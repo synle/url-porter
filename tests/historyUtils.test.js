@@ -166,7 +166,13 @@ describe("historyUtils", () => {
       ]);
 
       const history = await getHistory();
-      expect(Object.keys(history).sort()).toEqual(["||alpha^", "||bravo^", "||charlie^"]);
+      expect(Object.keys(history).sort()).toMatchInlineSnapshot(`
+        [
+          "||alpha^",
+          "||bravo^",
+          "||charlie^",
+        ]
+      `);
     });
 
     it("keeps every entry when the same alias is written concurrently", async () => {
@@ -177,10 +183,12 @@ describe("historyUtils", () => {
 
       const history = await getHistory();
       expect(history["||dup^"]).toHaveLength(2);
-      expect(history["||dup^"].map((e) => e.to).sort()).toEqual([
-        "https://one.example.com",
-        "https://two.example.com",
-      ]);
+      expect(history["||dup^"].map((e) => e.to).sort()).toMatchInlineSnapshot(`
+        [
+          "https://one.example.com",
+          "https://two.example.com",
+        ]
+      `);
     });
   });
 });

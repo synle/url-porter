@@ -28,7 +28,13 @@ describe("githubRepoUtils — reconcileGitHubRepos", () => {
 
   it("skips reconcile when url-porter folder is missing", async () => {
     setHistory({
-      "github.com": [{ url: "https://github.com/acme/widget", title: "widget", lastVisitTime: 1 }],
+      "github.com": [
+        {
+          url: "https://github.com/acme/widget",
+          title: "widget",
+          lastVisitTime: 1,
+        },
+      ],
     });
     await reconcileGitHubRepos();
     expect(mockBookmarks.find((b) => b.title === "github repos")).toBeUndefined();
@@ -44,12 +50,32 @@ describe("githubRepoUtils — reconcileGitHubRepos", () => {
     addMockFolder("2", "url-porter");
     setHistory({
       "github.com": [
-        { url: "https://github.com/settings/profile", title: "Settings", lastVisitTime: 1 },
-        { url: "https://github.com/marketplace/actions", title: "Marketplace", lastVisitTime: 2 },
-        { url: "https://github.com/explore", title: "Explore", lastVisitTime: 3 },
-        { url: "https://github.com/notifications", title: "Notifications", lastVisitTime: 4 },
+        {
+          url: "https://github.com/settings/profile",
+          title: "Settings",
+          lastVisitTime: 1,
+        },
+        {
+          url: "https://github.com/marketplace/actions",
+          title: "Marketplace",
+          lastVisitTime: 2,
+        },
+        {
+          url: "https://github.com/explore",
+          title: "Explore",
+          lastVisitTime: 3,
+        },
+        {
+          url: "https://github.com/notifications",
+          title: "Notifications",
+          lastVisitTime: 4,
+        },
         { url: "https://github.com/pulls", title: "Pulls", lastVisitTime: 5 },
-        { url: "https://github.com/acme/widget", title: "real repo", lastVisitTime: 100 },
+        {
+          url: "https://github.com/acme/widget",
+          title: "real repo",
+          lastVisitTime: 100,
+        },
       ],
     });
     await reconcileGitHubRepos();
@@ -74,9 +100,21 @@ describe("githubRepoUtils — reconcileGitHubRepos", () => {
     addMockFolder("2", "url-porter");
     setHistory({
       "github.com": [
-        { url: "https://github.com/acme/widget.git", title: "w", lastVisitTime: 1 },
-        { url: "https://github.com/acme/gadget.git", title: "g", lastVisitTime: 2 },
-        { url: "https://github.com/acme/sprocket.git", title: "s", lastVisitTime: 3 },
+        {
+          url: "https://github.com/acme/widget.git",
+          title: "w",
+          lastVisitTime: 1,
+        },
+        {
+          url: "https://github.com/acme/gadget.git",
+          title: "g",
+          lastVisitTime: 2,
+        },
+        {
+          url: "https://github.com/acme/sprocket.git",
+          title: "s",
+          lastVisitTime: 3,
+        },
       ],
     });
     await reconcileGitHubRepos();
@@ -97,11 +135,27 @@ describe("githubRepoUtils — reconcileGitHubRepos", () => {
     setHistory({
       "github.com": [
         // big org (3 repos)
-        { url: "https://github.com/bigorg/repo1", title: "r1", lastVisitTime: 1 },
-        { url: "https://github.com/bigorg/repo2", title: "r2", lastVisitTime: 2 },
-        { url: "https://github.com/bigorg/repo3", title: "r3", lastVisitTime: 3 },
+        {
+          url: "https://github.com/bigorg/repo1",
+          title: "r1",
+          lastVisitTime: 1,
+        },
+        {
+          url: "https://github.com/bigorg/repo2",
+          title: "r2",
+          lastVisitTime: 2,
+        },
+        {
+          url: "https://github.com/bigorg/repo3",
+          title: "r3",
+          lastVisitTime: 3,
+        },
         // small org (1 repo)
-        { url: "https://github.com/tinyorg/lone", title: "lone", lastVisitTime: 4 },
+        {
+          url: "https://github.com/tinyorg/lone",
+          title: "lone",
+          lastVisitTime: 4,
+        },
       ],
     });
     await reconcileGitHubRepos();
@@ -135,7 +189,11 @@ describe("githubRepoUtils — reconcileGitHubRepos", () => {
     addMockBookmark("1", "Existing", "https://github.com/acme/widget/issues/5", 100);
     setHistory({
       "github.com": [
-        { url: "https://github.com/acme/widget/pulls", title: "newer", lastVisitTime: 200 },
+        {
+          url: "https://github.com/acme/widget/pulls",
+          title: "newer",
+          lastVisitTime: 200,
+        },
       ],
     });
     await reconcileGitHubRepos();
@@ -157,8 +215,16 @@ describe("githubRepoUtils — reconcileGitHubRepos", () => {
     setHistory({
       "github.com": [
         { url: "https://github.com/acme/fresh", title: "f", lastVisitTime: 1 },
-        { url: "https://github.com/acme/fresh2", title: "f2", lastVisitTime: 2 },
-        { url: "https://github.com/acme/fresh3", title: "f3", lastVisitTime: 3 },
+        {
+          url: "https://github.com/acme/fresh2",
+          title: "f2",
+          lastVisitTime: 2,
+        },
+        {
+          url: "https://github.com/acme/fresh3",
+          title: "f3",
+          lastVisitTime: 3,
+        },
       ],
     });
     await reconcileGitHubRepos();
@@ -175,7 +241,12 @@ describe("githubRepoUtils — reconcileGitHubRepos", () => {
       "github.com": [{ url: "https://github.com/acme/widget", title: "w", lastVisitTime: 1 }],
     });
     await reconcileGitHubRepos();
-    expect(subfolderOrder(porter.id)).toEqual(["prs", "github repos"]);
+    expect(subfolderOrder(porter.id)).toMatchInlineSnapshot(`
+      [
+        "prs",
+        "github repos",
+      ]
+    `);
   });
 
   it("places github repos at index 0 when prs is missing", async () => {
@@ -211,12 +282,32 @@ describe("githubRepoUtils — reconcileGitHubRepos", () => {
     addMockFolder("2", "url-porter");
     setHistory({
       "github.com": [
-        { url: "https://github.com/apps/some-app", title: "App", lastVisitTime: 1 },
-        { url: "https://github.com/codespaces/fuzzy-name", title: "Codespace", lastVisitTime: 2 },
-        { url: "https://github.com/advisories/GHSA-xxxx", title: "Advisory", lastVisitTime: 3 },
+        {
+          url: "https://github.com/apps/some-app",
+          title: "App",
+          lastVisitTime: 1,
+        },
+        {
+          url: "https://github.com/codespaces/fuzzy-name",
+          title: "Codespace",
+          lastVisitTime: 2,
+        },
+        {
+          url: "https://github.com/advisories/GHSA-xxxx",
+          title: "Advisory",
+          lastVisitTime: 3,
+        },
         // Case-insensitive: the route is the same regardless of casing.
-        { url: "https://github.com/Settings/profile", title: "Settings", lastVisitTime: 4 },
-        { url: "https://github.com/acme/widget", title: "widget", lastVisitTime: 5 },
+        {
+          url: "https://github.com/Settings/profile",
+          title: "Settings",
+          lastVisitTime: 4,
+        },
+        {
+          url: "https://github.com/acme/widget",
+          title: "widget",
+          lastVisitTime: 5,
+        },
       ],
     });
 

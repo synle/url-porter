@@ -42,7 +42,10 @@ function validateImportPayload(data) {
     return { valid: false, error: "Invalid file: expected a JSON object." };
   }
   if (!("configs" in data) || !Array.isArray(data.configs)) {
-    return { valid: false, error: 'Invalid file: must contain a "configs" array.' };
+    return {
+      valid: false,
+      error: 'Invalid file: must contain a "configs" array.',
+    };
   }
   return { valid: true };
 }
@@ -64,7 +67,14 @@ describe("buildExportPayload", () => {
       { from: "gh", to: "https://github.com" },
     ]);
     expect(payload.homepage).toBe("https://example.com");
-    expect(payload.configs).toEqual([{ from: "gh", to: "https://github.com" }]);
+    expect(payload.configs).toMatchInlineSnapshot(`
+      [
+        {
+          "from": "gh",
+          "to": "https://github.com",
+        },
+      ]
+    `);
   });
 
   it("works with empty configs and includes default settings", () => {
@@ -110,13 +120,25 @@ describe("buildExportPayload", () => {
     expect(payload.statsVisitThreshold).toBe(10);
     expect(payload.statsMaxResults).toBe(500);
     expect(payload.statsLookbackMonths).toBe(12);
-    expect(payload.bookmarkRules).toEqual([{ id: "r1", name: "initech docs" }]);
+    expect(payload.bookmarkRules).toMatchInlineSnapshot(`
+      [
+        {
+          "id": "r1",
+          "name": "initech docs",
+        },
+      ]
+    `);
   });
 
   it("round-trips full config with all settings through JSON", () => {
     const payload = buildExportPayload("https://home.com", [{ from: "a", to: "https://a.com" }], {
       bookmarkRules: [
-        { id: "r1", name: "globex wiki", historyKeywords: ["globex.com"], enabled: true },
+        {
+          id: "r1",
+          name: "globex wiki",
+          historyKeywords: ["globex.com"],
+          enabled: true,
+        },
       ],
       bookmarkFolderName: "custom-folder",
       historyAliasLimit: 2000,
@@ -248,7 +270,12 @@ describe("validateImportPayload with full config fields", () => {
 describe("buildExportPayload with bookmarkRules", () => {
   it("includes bookmarkRules when provided", () => {
     const rules = [
-      { id: "r1", name: "initech docs", historyKeywords: ["initech.com"], enabled: true },
+      {
+        id: "r1",
+        name: "initech docs",
+        historyKeywords: ["initech.com"],
+        enabled: true,
+      },
     ];
     const payload = buildExportPayload("https://home.com", [{ from: "a", to: "https://a.com" }], {
       bookmarkRules: rules,
@@ -275,7 +302,9 @@ describe("buildExportPayload with bookmarkRules", () => {
         enabled: true,
       },
     ];
-    const payload = buildExportPayload("https://home.com", [], { bookmarkRules: rules });
+    const payload = buildExportPayload("https://home.com", [], {
+      bookmarkRules: rules,
+    });
     const json = JSON.stringify(payload, null, 2);
     const parsed = JSON.parse(json);
     expect(parsed.bookmarkRules).toEqual(rules);

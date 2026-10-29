@@ -35,21 +35,33 @@ describe("createSelectionMenus", () => {
       { id: "yaml", label: "YAML" },
     ]);
     const calls = chrome.contextMenus.create.mock.calls.map(([o]) => o);
-    expect(calls).toEqual([
-      { id: "selection-format", title: "Format Selection as", contexts: ["selection"] },
-      {
-        id: "selection-format:json",
-        parentId: "selection-format",
-        title: "JSON",
-        contexts: ["selection"],
-      },
-      {
-        id: "selection-format:yaml",
-        parentId: "selection-format",
-        title: "YAML",
-        contexts: ["selection"],
-      },
-    ]);
+    expect(calls).toMatchInlineSnapshot(`
+      [
+        {
+          "contexts": [
+            "selection",
+          ],
+          "id": "selection-format",
+          "title": "Format Selection as",
+        },
+        {
+          "contexts": [
+            "selection",
+          ],
+          "id": "selection-format:json",
+          "parentId": "selection-format",
+          "title": "JSON",
+        },
+        {
+          "contexts": [
+            "selection",
+          ],
+          "id": "selection-format:yaml",
+          "parentId": "selection-format",
+          "title": "YAML",
+        },
+      ]
+    `);
   });
 });
 
@@ -58,10 +70,14 @@ describe("getSelectedText", () => {
     chrome.scripting.executeScript.mockResolvedValue([{ result: "# Acme\n\n- FALCON" }]);
     const text = await getSelectedText({ selectionText: "# Acme - FALCON", frameId: 3 }, { id: 7 });
     expect(text).toBe("# Acme\n\n- FALCON");
-    expect(chrome.scripting.executeScript.mock.calls[0][0].target).toEqual({
-      tabId: 7,
-      frameIds: [3],
-    });
+    expect(chrome.scripting.executeScript.mock.calls[0][0].target).toMatchInlineSnapshot(`
+      {
+        "frameIds": [
+          3,
+        ],
+        "tabId": 7,
+      }
+    `);
   });
 
   it("falls back to selectionText when injection is blocked", async () => {
@@ -79,7 +95,10 @@ describe("handleSelectionMenuClick", () => {
   it("opens the chosen format next to the source tab with the text stashed", async () => {
     chrome.scripting.executeScript.mockResolvedValue([{ result: "#!/bin/bash\nprintf 'Acme\\n'" }]);
     const handled = await handleSelectionMenuClick(
-      { menuItemId: `${SELECTION_MENU.formatPrefix}yaml`, selectionText: "ignored" },
+      {
+        menuItemId: `${SELECTION_MENU.formatPrefix}yaml`,
+        selectionText: "ignored",
+      },
       { id: 2, index: 4 },
       1000,
     );
@@ -113,7 +132,10 @@ describe("handleSelectionMenuClick", () => {
   it("keeps only the newest handed-off selections", async () => {
     for (let t = 1; t <= VIEWER_KEEP + 3; t++) {
       await handleSelectionMenuClick(
-        { menuItemId: `${SELECTION_MENU.formatPrefix}yaml`, selectionText: `n${t}` },
+        {
+          menuItemId: `${SELECTION_MENU.formatPrefix}yaml`,
+          selectionText: `n${t}`,
+        },
         undefined,
         t,
       );

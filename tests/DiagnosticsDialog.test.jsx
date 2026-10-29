@@ -47,9 +47,15 @@ describe("DiagnosticsDialog", () => {
     expect(screen.getByText(/Normal MV3 worker stops are not crashes/).textContent).toContain(
       "cannot be identified from these records alone",
     );
-    expect(chrome.runtime.sendMessage.mock.calls).toEqual([
-      [{ type: "UrlPorter.diagnostics.get" }],
-    ]);
+    expect(chrome.runtime.sendMessage.mock.calls).toMatchInlineSnapshot(`
+      [
+        [
+          {
+            "type": "UrlPorter.diagnostics.get",
+          },
+        ],
+      ]
+    `);
     expect(chrome.downloads.download).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -86,11 +92,25 @@ describe("DiagnosticsDialog", () => {
         JSON.stringify({ ...REPORT, records: [] }, null, 2),
       ),
     );
-    expect(chrome.runtime.sendMessage.mock.calls).toEqual([
-      [{ type: "UrlPorter.diagnostics.get" }],
-      [{ type: "UrlPorter.diagnostics.clear" }],
-      [{ type: "UrlPorter.diagnostics.get" }],
-    ]);
+    expect(chrome.runtime.sendMessage.mock.calls).toMatchInlineSnapshot(`
+      [
+        [
+          {
+            "type": "UrlPorter.diagnostics.get",
+          },
+        ],
+        [
+          {
+            "type": "UrlPorter.diagnostics.clear",
+          },
+        ],
+        [
+          {
+            "type": "UrlPorter.diagnostics.get",
+          },
+        ],
+      ]
+    `);
     expect(chrome.downloads.download).not.toHaveBeenCalled();
   });
 
