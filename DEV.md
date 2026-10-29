@@ -13,6 +13,8 @@ npm run dev
 
 `npm run dev` generates declarations once, then runs a watch-mode extension build into `dist/`; it does not start a web development server.
 
+Check `node --version` before recording validation results; shell PATH can bypass Volta's pin. With Volta installed, `volta run --bundled-npm npm run validate` uses the repository pin and its bundled npm. Native formatter/linter bindings must match that runtime's architecture; an x64 runtime cannot use installed arm64 bindings.
+
 ### Load in Chrome
 
 1. Open `chrome://extensions/` and enable Developer mode.
@@ -73,14 +75,27 @@ Use related files for the area being changed:
 | Formatter and selection handoff   | `tests/rawFormatter.test.js`, `tests/formatDetect.test.js`, `tests/selectionViewer.test.js`, `tests/textview.test.js`    |
 | Preview frames and downloads      | `tests/mdview.test.js`, `tests/jsonview.test.js`, `tests/downloadUtils.test.js`                                          |
 | Source manifest version patching  | `tests/manifestVersion.test.js`                                                                                          |
+| Local diagnostics                 | `tests/diagnostics.test.js`, `tests/DiagnosticsDialog.test.jsx`, `tests/background.test.js`                              |
 
-The production Options test builds an in-memory bundle and exercises open/edit/save in JSDOM. Keep it when changing the editor adapter at `src/pages/options/Options.jsx:128` or bundler interop. `.vscode/launch.json` provides run-all, debug-current-test, and watch-build configurations.
+The production Options test builds an in-memory bundle and exercises open/edit/save in JSDOM. Keep it when changing `EditorModule.default ?? EditorModule` in `src/pages/options/Options.jsx` or bundler interop. `.vscode/launch.json` provides run-all, debug-current-test, and watch-build configurations.
+
+Known lifecycle gap: `tests/AddRule.test.jsx` cleans up rendered UI but does not drain the one-second `window.close()` timer in `src/pages/addrule/AddRule.jsx`. A full run can report `ReferenceError: window is not defined` after teardown even when all assertions pass. Treat that run as failed; a passing focused rerun does not fix timer ownership.
 
 Inspect service-worker logs through the extension's inspection link at `chrome://extensions/`. Inspect the relevant page or content-script context for UI, raw formatting, and preview behavior.
 
-Options → Diagnostics provides persistent local observations, JSON export, and clear with readback. See README.md's Crash Triage section for Brave/Windows attribution limits and isolation steps. `tests/diagnostics.test.js` covers reporter/storage/message contracts; `tests/DiagnosticsDialog.test.jsx` covers inspect/export/clear and visible errors. Production builds copy `src/content/diagnostics.js`; the manifest loads it before site scripts at `document_start`. Native crash capture and Windows reproduction require manual testing on the affected machine.
+### Diagnostics
+
+Options → Diagnostics reads records on demand; **Export diagnostics** downloads `url-porter-diagnostics.json`. **Clear diagnostics** removes records, then reads them back through the worker. With no intervening events, successful clear/readback shows an empty `records` array. Failed actions display an error; inspect permissions and the service-worker console before retrying.
+
+`tests/diagnostics.test.js` covers reporter, storage, and message contracts, including queue recovery and limits. `tests/DiagnosticsDialog.test.jsx` covers inspect/export/clear and visible failures. These tests do not establish native crash capture or affected-machine behavior.
+
+For reporter wiring, ownership, privacy boundaries, and packaged script order, read [Local Diagnostics in ARCHITECTURE.md](ARCHITECTURE.md#local-diagnostics). For Brave/Windows evidence and controlled isolation, follow [Crash Triage in README.md](README.md#crash-triage-brave--windows).
+
+### Coverage and Historical Results
 
 Coverage thresholds live in `vite.config.js` under `test.coverage.thresholds`. The coverage job's step-summary text contains stale hardcoded floors; use the configuration and actual coverage result, not that text.
+
+`DONE.eslint.md` is an archived v1.98.0 lint-cleanup report, not current validation evidence or a prohibition on content-script tests. `.oxlintrc.json` owns active rules; AGENTS.md owns current effect and form-state conventions.
 
 ## Making Changes
 

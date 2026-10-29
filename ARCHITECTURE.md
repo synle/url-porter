@@ -11,12 +11,12 @@ URL Porter is one Chrome Manifest V3 extension, not a hosted application or mono
 | Source                          | Responsibility                                                                    | Packaging                                                    |
 | ------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | `src/background/background.js`  | Service worker, redirects, reconciliation, messages, context menus, `go` omnibox. | Vite input → `background/background.js`.                     |
-| `src/pages/options/`            | Clean table, Advanced config editor, Stats, settings, import/export.              | Vite input → `pages/options/`.                               |
+| `src/pages/options/`            | Clean table, Advanced editor, Stats, settings, import/export, Diagnostics.        | Vite input → `pages/options/`.                               |
 | `src/pages/addlink/`            | Toolbar popup for adding the current page as a redirect alias.                    | Vite input → `pages/addlink/`.                               |
 | `src/pages/addrule/`            | Add a custom bookmark rule from context-menu-derived URL fields.                  | Vite input → `pages/addrule/`.                               |
 | `src/pages/newtab/`             | New-tab override using the saved homepage.                                        | Vite input → `pages/newtab/`.                                |
 | `src/pages/history/`            | Search, restore, and bulk-delete redirect change history.                         | Vite input → `pages/history/`.                               |
-| `src/content/`                  | Website integration, status detection, raw formatting.                            | Copied verbatim; manifest controls script order and matches. |
+| `src/content/`                  | Website integration, status detection, raw formatting, diagnostics reporter.      | Copied verbatim; manifest controls script order and matches. |
 | `src/viewer/textview.{html,js}` | Explicitly formatted selection with the shared raw-format toolbar.                | Static copy, not a Vite input.                               |
 | `src/viewer/mdview.{html,js}`   | Markdown preview frame.                                                           | Static copy plus manifest resource declarations.             |
 | `src/viewer/jsonview.{html,js}` | JSON tree preview frame.                                                          | Static copy plus manifest resource declarations.             |
@@ -59,7 +59,7 @@ Remote sync serializes `configs` before passing them to `setConfig`, saves the h
 
 ### Redirect Rules
 
-In `src/background/background.js`, install, `Myevent.updateConfig`, and sync `jsonConfig` changes call `updateRedirectRules()`. The Promise queue at `src/background/background.js:283` serializes the complete rebuild:
+In `src/background/background.js`, install, `Myevent.updateConfig`, and sync `jsonConfig` changes call `updateRedirectRules()`. `redirectUpdateQueue` chains `replaceRedirectRules()` to serialize the complete rebuild:
 
 1. Read current dynamic rules and remove their IDs.
 2. Read the latest stored config and normalize entries.

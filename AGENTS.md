@@ -6,11 +6,11 @@ Guidance for agents working in this repository.
 
 URL Porter is a Chrome Manifest V3 extension for redirect aliases, a custom new tab homepage, bookmark reconciliation, and remote config sync. Extension pages use React and MUI; Vite builds the pages and service worker. Content scripts and viewer pages also run outside React.
 
-Read [DEV.md](DEV.md) for commands, Chrome development, and CI/release mechanics. Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing entry points, storage, messages, reconcilers, or formatters. [README.md](README.md) owns user-facing features and configuration examples; manifests and source files override historical plan summaries.
+Read [DEV.md](DEV.md) for commands, Chrome development, and CI/release mechanics. Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing entry points, storage, messages, reconcilers, formatters, or diagnostics. [README.md](README.md) owns user-facing features and configuration examples; manifests and source files override historical plan summaries.
 
 ## Quality Checklist (mandatory)
 
-After every change, run `npm run validate`; all checks must pass. Batch related edits before this final gate. The script runs tests, Oxlint, declaration generation, production build, and oxfmt; formatting can modify files.
+Batch related edits, then run `npm run validate`; all checks must pass. The script runs tests, Oxlint, declaration generation, production build, and oxfmt; formatting can modify files.
 
 - Keep tests in root `tests/`, never inside `src/`.
 - Use Vitest and mock Chrome APIs with `vi.stubGlobal`. Use fictional fixture names such as Acme, Globex, Initech, FALCON, PLUTO, and ORBIT.
@@ -20,7 +20,7 @@ After every change, run `npm run validate`; all checks must pass. Batch related 
 
 ## Runtime and Build Boundaries
 
-- `package.json` owns commands and dependency versions; its Volta configuration pins Node 20.19.1. See DEV.md for CI runtime differences.
+- `package.json` owns commands, dependency versions, and the Volta Node pin. See DEV.md for runtime selection and CI differences.
 - Keep generated `dist/`, `types/`, `coverage/`, and `url-porter.zip` out of source edits.
 - `vite.config.js` and `src/manifest.json` must agree on packaged paths. Content scripts are copied verbatim, not Vite inputs; register them in the manifest and build-copy plugin.
 - Static viewer assets and bundled formatter libraries also require build-copy entries. Preserve their manifest resource declarations when used from web pages.
@@ -45,11 +45,24 @@ After every change, run `npm run validate`; all checks must pass. Batch related 
 - Preserve sandboxed Markdown rendering, the script-less fallback, JSON-tree sandbox restrictions, and background-mediated downloads on sandboxed pages.
 - Pass parsed values to the JSON viewer's `.data` property. The library treats string data as a URL and fetches it; preserve the wrapper used for primitives.
 
+## Diagnostics and Crash Triage
+
+Read `ARCHITECTURE.md` → Local Diagnostics before changing the recorder; read `README.md` → Crash Triage before changing attribution or isolation guidance.
+
+- Keep the worker as the sole diagnostics storage writer. Serialize append, read, and clear through the same recovering queue.
+- Preserve allowlisted fields, same-extension sender authentication, sender-derived context, and exact Options-page restrictions for read/clear. Keep diagnostics separate from settings export/import and remote sync.
+- Preserve retention, event-rate, and pending-write bounds in `src/content/diagnostics.js`. Never persist arbitrary error messages, raw stacks, page URLs/titles, configuration, selected text, or installed-extension inventories.
+- Preserve reporter wiring in the worker, React theme, manifest, and selection viewer. Keep script order and copied production assets aligned; sandboxed previews remain outside the recorder.
+- Keep diagnostics local-only and actions on demand, with visible failures and clear readback. Never add telemetry, heartbeat timers, keepalive ports, or automatic culprit labels.
+- Worker starts, idle gaps, and unfinished operations are observations, not crash proof. Native Brave/Windows attribution requires affected-machine evidence; JavaScript records alone do not establish the cause.
+
 ## Code and UI Conventions
 
 - Use ES modules for bundled code and the background worker. Copied content scripts remain classic scripts; preserve their shared globals and manifest load order.
 - Use React hooks for component state. React pages share `src/theme.jsx`: automatic light/dark mode, compact sizing, disabled animations and ripple.
 - Do not repeat `size="small"` on components whose theme default already supplies it.
+- Declare storage/history loaders before their effects. Keep the local async `boot()` wrapper when calling them from effects; direct calls trigger `react/set-state-in-effect`.
+- Initialize prop-derived form state at mount and remount by identity `key`, not synchronization effects.
 - Normalize redirect filters through `configUtils.js`: `from` receives `||` / `^`, and destinations without HTTP(S) receive `https://`.
 - Use `react-simple-code-editor` with Prism.js for Advanced Mode; retain the extension-compatible editor rather than introducing Monaco.
 

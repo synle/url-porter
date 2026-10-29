@@ -1,14 +1,14 @@
 # DONE: oxlint rules addressed
 
-Follow-up to the oxlint cleanup plan (formerly `TODO.eslint.md`). Every finding
-documented there has been fixed and every rule re-enabled, except one rule that
-is intentionally kept off for good reason.
+Historical completion report for the Oxlint cleanup plan (formerly `TODO.eslint.md`). Every finding documented there was fixed and every rule re-enabled, except `react/react-in-jsx-scope`, intentionally kept off.
 
-Completed against: oxlint 1.79.0, repo at v1.98.0 (2026-08-24).
+Completed against: oxlint 1.79.0, repo at v1.98.0 (2026-08-24). Results and test counts below describe that snapshot, not the current gate.
+
+For current commands and test entry points, read [DEV.md](DEV.md). `.oxlintrc.json` owns active rules; [AGENTS.md](AGENTS.md#code-and-ui-conventions) owns current effect and form-state conventions.
 
 ## Result
 
-`npm run lint` reports **0 findings** with this configuration:
+`npm run lint` reported **0 findings** with this configuration:
 
 ```json
 {
@@ -78,14 +78,10 @@ so `React` never needs to be in scope. Leave `"off"` in `.oxlintrc.json`.
 `src/content/jira-status.js` referenced `CLOSED_RE` and `NOT_STARTED_RE`,
 which were never defined anywhere — status detection threw a `ReferenceError`
 on every Jira page. The usages now point at the declared
-`CLOSED_PHRASE_RE` / `NOT_STARTED_PHRASE_RE`. Note: content scripts have no
-automated test coverage (repo convention), so this fix is verified by lint and
-manual reasoning only.
+`CLOSED_PHRASE_RE` / `NOT_STARTED_PHRASE_RE`. The original report verified this fix by lint and manual reasoning only.
+
+Content-script tests now exist, including `tests/rawFormatter.test.js` and `tests/diagnostics.test.js`. The historical verification gap is not a convention against adding tests.
 
 ## Notes for future agents
 
-- The `boot()` effect-wrapper pattern is the accepted idiom here for
-  storage/history loading effects; direct loader calls re-trigger
-  `react/set-state-in-effect`.
-- Forms that derive from a prop should keep initializing state at mount and be
-  remounted by `key`, not synced by effects.
+Follow [Code and UI Conventions in AGENTS.md](AGENTS.md#code-and-ui-conventions) for the preserved async `boot()` wrapper and identity-keyed form remount rules.

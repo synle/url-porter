@@ -48,9 +48,11 @@ After the next Windows incident:
 5. Reproduce in a separate test profile without sync or sensitive data. Compare URL Porter alone, URL Porter disabled, and other extensions added individually.
 6. Keep workload and versions unchanged; record attempts and failures. If crashes persist with URL Porter disabled, investigate Brave, other extensions, memory, GPU acceleration, and Windows drivers separately.
 
+For Windows Event Viewer evidence, retain the event source, timestamp, severity, and incident-time details. A missing-description warning or an `INFO` extension-garbage-collection entry alone does not establish a crash cause. Correlate it with the native crash report and reproduction results before changing code or attributing fault.
+
 Change one variable at a time. Correlation is not proof of fault. An extension cannot read the native dump or infer its signature from JavaScript logs.
 
-Maintainers: URL Porter maintainers; triage guidance reviewed 2026-10-27. Native Brave/Windows reproduction is still required before claiming a crash fix.
+Maintainers: URL Porter maintainers; triage guidance reviewed 2026-10-28. Native Brave/Windows reproduction is still required before claiming a crash fix.
 
 Sources: [Chrome worker lifecycle](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle), [storage persistence](https://developer.chrome.com/docs/extensions/reference/api/storage), [content-script isolation](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts), and [Brave manual crash reports](https://support.brave.app/hc/en-us/articles/22281484910221-How-do-I-manually-submit-crash-reports).
 
@@ -91,7 +93,7 @@ Prerequisites: Node.js 20.19+ ([Volta](https://volta.sh/) pins 20.19.1) and npm.
 
 ```bash
 git clone https://github.com/synle/url-porter.git && cd url-porter
-npm install
+npm ci
 npm run dev    # watch-mode build to dist/
 ```
 
@@ -115,16 +117,16 @@ With `npm run dev`, the extension auto-reloads on file changes.
 
 ### Scripts
 
-| Script             | Description                                          |
-| ------------------ | ---------------------------------------------------- |
-| `npm run dev`      | Build to `dist/` in watch mode                       |
-| `npm run build`    | One-off production build (also generates types)      |
-| `npm run bundle`   | Create `url-porter.zip` from `dist/`                 |
-| `npm run package`  | Build + bundle                                       |
-| `npm test`         | Run all tests with Vitest                            |
-| `npm run lint`     | Oxlint                                               |
-| `npm run format`   | Format code with oxfmt                               |
-| `npm run validate` | Run all quality checks: test + lint + build + format |
+| Script             | Description                                                   |
+| ------------------ | ------------------------------------------------------------- |
+| `npm run dev`      | Build to `dist/` in watch mode                                |
+| `npm run build`    | One-off production build (also generates types)               |
+| `npm run bundle`   | Create `url-porter.zip` from `dist/`                          |
+| `npm run package`  | Build + bundle                                                |
+| `npm test`         | Run all tests with Vitest                                     |
+| `npm run lint`     | Oxlint                                                        |
+| `npm run format`   | Format code with oxfmt                                        |
+| `npm run validate` | Tests, lint, production build, then formatting (writes files) |
 
 ### Agent Skills
 
@@ -136,15 +138,15 @@ Repository skills live in `.agents/skills/<name>/SKILL.md`, a shared, agent-neut
 .agents/skills/      # Shared agent skills (one <name>/SKILL.md per skill)
 src/
 ├── background/      # Service worker (redirect rules, context menus, omnibox, bookmark sync)
-├── content/         # Content scripts (PR status, Jira status, Keep markdown, fav export, raw formatter)
-├── components/      # Reusable UI components (SyncDialog, BookmarkRulesSection, BookmarkRuleForm)
+├── content/         # Content scripts, raw formatter, and shared local diagnostics reporter
+├── components/      # Reusable UI (sync, bookmark rules, history stats, diagnostics)
 ├── helpers/         # Shared utilities (storage, config, history, bookmarks, reconcilers)
 ├── pages/
 │   ├── addlink/     # Popup for quick-adding redirect rules
 │   ├── addrule/     # Page for adding bookmark rules (from context menu)
 │   ├── history/     # Audit trail of redirect rule changes
 │   ├── newtab/      # New tab override
-│   └── options/     # Settings UI (table mode + JSON editor + Stats)
+│   └── options/     # Settings UI (table mode + JSON editor + Stats + Diagnostics)
 ├── viewer/          # Static selection, Markdown, and JSON tree viewers
 ├── manifest.json    # Chrome extension manifest (Manifest V3)
 └── theme.jsx        # MUI theme (auto light/dark, compact sizing, no animations)
